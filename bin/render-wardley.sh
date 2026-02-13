@@ -127,6 +127,7 @@ if [ "$HAS_ATLAS" = false ] && [ "$HAS_PRESENTATIONS" = false ]; then
 <link rel="stylesheet" href="../style.css">
 </head>
 <body>
+<nav class="breadcrumb"><a href="../index.html">$ORG_NAME</a> &rsaquo; $PROJECT_NAME</nav>
 $nav
 <h1>$title</h1>
 $body
@@ -143,9 +144,6 @@ HTMLEOF
             embed_svg "$PROJECT/evolve/map.svg" "Evolution map"
         elif [ -f "$PROJECT/landscape.svg" ]; then
             embed_svg "$PROJECT/landscape.svg" "Landscape sketch (approximate)"
-        fi
-        if [ -f "$PROJECT/decisions.md" ]; then
-            md_to_html < "$PROJECT/decisions.md"
         fi
     } | wrap_page "Overview" "index" > "$SITE_DIR/index.html"
     echo "    index.html"
@@ -246,7 +244,11 @@ wrap_project_page() {
     nav="$(project_nav_html "$active" "$depth")"
 
     local css_path="../style.css"
-    [ "$depth" -eq 1 ] && css_path="../../style.css"
+    local crumb="<nav class=\"breadcrumb\"><a href=\"../index.html\">$ORG_NAME</a> &rsaquo; $PROJECT_NAME</nav>"
+    if [ "$depth" -eq 1 ]; then
+        css_path="../../style.css"
+        crumb="<nav class=\"breadcrumb\"><a href=\"../../index.html\">$ORG_NAME</a> &rsaquo; <a href=\"../index.html\">$PROJECT_NAME</a></nav>"
+    fi
 
     cat <<HTMLEOF
 <!DOCTYPE html>
@@ -258,6 +260,7 @@ wrap_project_page() {
 <link rel="stylesheet" href="$css_path">
 </head>
 <body>
+$crumb
 $nav
 <h1>$title</h1>
 $body

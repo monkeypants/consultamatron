@@ -20,6 +20,17 @@ h3 { font-size: 1.15rem; }
 a { color: #1a4d80; text-decoration: none; }
 a:hover { text-decoration: underline; }
 
+/* Breadcrumb */
+nav.breadcrumb {
+  font-size: 0.8rem;
+  color: #777;
+  padding: 0.4rem 0 0;
+  margin-bottom: 0;
+  border: none;
+}
+nav.breadcrumb a { color: #777; }
+nav.breadcrumb a:hover { color: #1a4d80; }
+
 /* Navigation */
 nav {
   border-bottom: 1px solid #ccc;

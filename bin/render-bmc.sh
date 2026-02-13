@@ -92,6 +92,7 @@ wrap_page() {
 <link rel="stylesheet" href="../style.css">
 </head>
 <body>
+<nav class="breadcrumb"><a href="../index.html">$ORG_NAME</a> &rsaquo; $PROJECT_NAME</nav>
 $nav
 <h1>$title</h1>
 $body
@@ -104,9 +105,7 @@ HTMLEOF
 
 # Index page
 {
-    if [ -f "$PROJECT/decisions.md" ]; then
-        cat "$PROJECT/decisions.md" | md_to_html
-    fi
+    echo ""
 } | wrap_page "Overview" "index" > "$SITE_DIR/index.html"
 echo "    index.html"
 
