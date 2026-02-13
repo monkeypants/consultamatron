@@ -106,6 +106,9 @@ projects/{slug}/
 │       ├── opening.md               # Audience-specific framing (in voice)
 │       └── transitions/             # Connective prose between entries
 │           └── NN-{slug}.md
+├── review/                         # Post-implementation review
+│   ├── review.md                   # Private review (not shared)
+│   └── findings.md                 # Sanitised findings for GitHub issues
 └── decisions.md
 ```
 

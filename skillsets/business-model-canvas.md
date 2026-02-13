@@ -39,6 +39,9 @@ projects/{slug}/
 │   └── segments.agreed.md
 ├── canvas.md
 ├── canvas.agreed.md
+├── review/                        # Post-implementation review
+│   ├── review.md                  # Private review (not shared)
+│   └── findings.md                # Sanitised findings for GitHub issues
 └── decisions.md
 ```
 

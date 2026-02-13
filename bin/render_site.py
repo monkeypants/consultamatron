@@ -67,19 +67,30 @@ def preprocess_kv(text):
 
 
 def preprocess_lists(text):
-    """Insert blank line before list items that follow a non-blank, non-list line.
+    """Insert blank line before the first list item after a paragraph.
 
     The Python markdown library (unlike pandoc) requires a blank line
     between a paragraph and a list for the list to be recognised.
+    Only insert before the *first* item in a run — not between items
+    or after continuation lines, which would create a loose list.
     """
     lines = text.split("\n")
     out = []
     list_re = re.compile(r"^(\s*[-*+]|\s*\d+\.) ")
+    in_list = False
     for i, line in enumerate(lines):
-        if list_re.match(line) and i > 0:
-            prev = lines[i - 1]
-            if prev.strip() and not list_re.match(prev):
+        is_list_item = bool(list_re.match(line))
+        is_continuation = not is_list_item and line.startswith("  ") and line.strip()
+        if is_list_item:
+            if not in_list and i > 0 and lines[i - 1].strip():
                 out.append("")
+            in_list = True
+        elif is_continuation and in_list:
+            pass  # still in the list
+        elif not line.strip() and in_list:
+            pass  # blank line inside list context, don't reset yet
+        else:
+            in_list = False
         out.append(line)
     return "\n".join(out)
 

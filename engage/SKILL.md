@@ -45,6 +45,17 @@ Determine:
 - What projects are in progress, completed, or not yet started
 - What cross-project references exist
 
+For each existing project, check whether it is **complete but
+unreviewed**. A project is complete when its terminal gate artifact
+exists (determined from the skillset manifest: `strategy/map.agreed.owm`
+for Wardley Mapping, `canvas.agreed.md` for Business Model Canvas) or
+when `decisions.md` contains entries from an `*-iterate` skill after the
+terminal gate. A project is unreviewed when `{project}/review/review.md`
+does not exist. Flag these with a specific recommendation:
+
+> "Project {slug} is complete but has not been reviewed. Run `review`
+> before planning new work."
+
 If research is stale (dates in the manifest are old), recommend running
 `org-research` to refresh before starting new projects.
 
@@ -109,6 +120,9 @@ Tell the client which skill to run next for each project. Be specific:
 
 - "Run `wm-research` to begin the Wardley Mapping project `maps-1`"
 - "Run `bmc-research` to begin the Business Model Canvas project `canvas-1`"
+
+After project completion, recommend running `review` for
+post-implementation evaluation and process improvement.
 
 ## Important notes
 

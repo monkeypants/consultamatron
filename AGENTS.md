@@ -7,12 +7,13 @@ share a common client workspace and research base.
 ## Architecture
 
 ```
-org-research → engage → {skillset pipeline}
+org-research → engage → {skillset pipeline} → review
 ```
 
 1. **org-research** gathers information about a client organisation
 2. **engage** plans which projects to run and in what order
 3. Each project follows its skillset's pipeline
+4. **review** captures lessons learned and raises improvement issues
 
 Skills read from `skillsets/*.md` manifests to discover available
 products and their pipelines.
@@ -36,6 +37,7 @@ directory structures.
 | org-research | Research an organisation from public sources |
 | engage | Plan engagements, create projects, direct next steps |
 | editorial-voice | Rewrite artifacts in Consultamatron's editorial voice |
+| review | Post-implementation review of completed projects, producing sanitised GitHub issues |
 
 ## Client workspace
 
@@ -50,7 +52,8 @@ clients/{org-slug}/
 ├── projects/
 │   ├── index.md        # Project registry
 │   └── {project-slug}/ # One directory per project
-└── engagement.md       # Cross-project engagement history
+├── review.md               # Engagement-level review synthesis
+└── engagement.md           # Cross-project engagement history
 ```
 
 See `org-research/assets/workspace-layout.md` for the full directory
@@ -154,6 +157,8 @@ output is "good enough" on its own.
   **bmc-iterate**
 - "Rewrite this in the right voice" →
   **editorial-voice**
+- "How did that go?" / "Review the project" / "Lessons learned" →
+  **review**
 
 If the user's request is ambiguous, check which gate artifacts exist in
 the workspace to determine where the engagement is and which skill applies.
