@@ -2,7 +2,7 @@
 
 ## Per-Need Chain Template
 
-Use this for each file in `3-chain/chains/{need-slug}.md`.
+Use this for each file in `chain/chains/{need-slug}.md`.
 
 ```markdown
 # Supply Chain: {Need Name}
@@ -31,14 +31,14 @@ Use this for each file in `3-chain/chains/{need-slug}.md`.
 
 ## Evidence
 
-- From `1-research/tasks/{topic}.md`: {supporting finding}
+- From `resources/{topic}.md`: {supporting finding}
 ```
 
 ---
 
 ## Consolidated Supply Chain Template
 
-Use this for `3-chain/supply-chain.md`.
+Use this for `chain/supply-chain.md`.
 
 ```markdown
 # Supply Chain — {Organisation Name}

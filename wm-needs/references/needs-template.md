@@ -1,6 +1,6 @@
 # Needs Document Template
 
-Use this template for the consolidated `2-needs/needs.md`.
+Use this template for the consolidated `needs/needs.md`.
 
 ---
 
