@@ -157,7 +157,7 @@ style wardley
 
 After writing any `.owm` file, render it to SVG:
 ```
-bin/ensure-owm.sh evolve/map.owm
+bin/ensure-owm.sh clients/{org}/projects/{slug}/evolve/map.owm
 ```
 
 This checks for `cli-owm` and installs it if missing, then produces

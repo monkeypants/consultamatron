@@ -170,7 +170,7 @@ deaccelerator Regulatory lock-in [0.60, 0.40]
 
 After writing any `.owm` file, render it to SVG:
 ```
-bin/ensure-owm.sh strategy/map.owm
+bin/ensure-owm.sh clients/{org}/projects/{slug}/strategy/map.owm
 ```
 
 This checks for `cli-owm` and installs it if missing, then produces

@@ -8,6 +8,13 @@
 # preserves whitespace.
 preprocess_trees() {
     awk '
+    /^```/ {
+        if (in_tree) { print "```"; in_tree = 0 }
+        in_fence = !in_fence
+        print
+        next
+    }
+    in_fence { print; next }
     /[├│└─┌┐┬┤┼┘┴]/ {
         if (!in_tree) { print "```"; in_tree = 1 }
         print

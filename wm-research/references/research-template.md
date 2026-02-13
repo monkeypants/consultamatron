@@ -1,6 +1,6 @@
 # Research Sub-Report Template
 
-Use this template for each parallel research task in `1-research/tasks/`.
+Use this template for each research sub-report in `resources/`.
 
 ---
 
