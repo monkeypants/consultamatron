@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block body %}
+{% for cat in categories %}
+{% if cat.views %}
+<div class="atlas-category">
+<h2>{{ cat.label }}</h2>
+<ul>
+{% for view in cat.views %}
+<li><a href="{{ view.url }}">{{ view.name }}</a></li>
+{% endfor %}
+</ul>
+</div>
+{% endif %}
+{% endfor %}
+{% endblock %}

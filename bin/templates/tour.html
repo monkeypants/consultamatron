@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block body %}
+{% if opening_html %}
+<div class="tour-section">
+{{ opening_html }}
+</div>
+{% endif %}
+{% for group in groups %}
+<div class="tour-section">
+{% for row in group.rows %}
+{% if row.is_header %}
+<{{ row.level }}>{{ row.title }}</{{ row.level }}>
+{% else %}
+<{{ row.level }}>{{ row.title }}</{{ row.level }}>
+{{ row.svgs_html }}
+{{ row.analysis_html }}
+{% endif %}
+{% endfor %}
+</div>
+{% if group.transition_html %}
+<div class="tour-section">
+{{ group.transition_html }}
+</div>
+{% endif %}
+{% endfor %}
+{% endblock %}

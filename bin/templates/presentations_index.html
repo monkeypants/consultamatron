@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block body %}
+<ul class="section-list">
+{% for tour in tours %}
+<li>
+<a href="{{ tour.url }}">{{ tour.title }}</a>
+{% if tour.description %}<span class="desc">{{ tour.description }}</span>{% endif %}
+</li>
+{% endfor %}
+</ul>
+{% endblock %}
