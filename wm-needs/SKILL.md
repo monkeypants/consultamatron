@@ -2,14 +2,14 @@
 name: wm-needs
 description: >
   Identify user needs for Wardley Mapping from prior research. Reads
-  research sub-reports and summary, proposes users and their needs,
+  shared research and the project brief, proposes users and their needs,
   then facilitates negotiation with the client. Produces a markdown
   needs document that must be explicitly agreed before proceeding.
-  Use after wm-research is complete and research artifacts exist.
+  Use after wm-research is complete and brief.agreed.md exists.
 metadata:
   author: monkeypants
-  version: "0.1"
-  methodology: wardley-mapping
+  version: "0.2"
+  skillset: wardley-mapping
   stage: "2"
 ---
 
@@ -21,15 +21,21 @@ needs, then reach agreement with the client.
 
 ## Prerequisites
 
-Check that the workspace contains:
-- `1-research/summary.md`
-- At least one file in `1-research/tasks/`
+Check that the project directory contains:
+- `brief.agreed.md`
 
-If these are missing, tell the user to run `wm-research` first.
+Check that the client workspace contains:
+- `resources/index.md` and research sub-reports in `resources/`
+
+If `brief.agreed.md` is missing, tell the user to run `wm-research` first.
+
+The project path is `clients/{org}/projects/{project-slug}/`.
 
 ## Step 1: Analyse research
 
-Read `1-research/summary.md` and all sub-reports in `1-research/tasks/`.
+Read `brief.agreed.md` for the agreed scope.
+
+Read `resources/index.md` and all sub-reports in `resources/`.
 
 Identify:
 - **User classes**: distinct groups of people or organisations who
@@ -45,7 +51,7 @@ only if they represent a distinct value chain.
 ## Step 2: Draft per user class
 
 For each identified user class, write a draft to
-`2-needs/drafts/{user-class-slug}.md` containing:
+`needs/drafts/{user-class-slug}.md` containing:
 
 ```markdown
 # {User Class Name}
@@ -61,8 +67,8 @@ For each identified user class, write a draft to
 
 ## Evidence
 
-- From `1-research/tasks/{file}`: "{relevant quote or finding}"
-- From `1-research/tasks/{file}`: "{relevant quote or finding}"
+- From `resources/{file}`: "{relevant quote or finding}"
+- From `resources/{file}`: "{relevant quote or finding}"
 
 ## Confidence
 
@@ -80,7 +86,7 @@ Guidelines:
 
 ## Step 3: Synthesise
 
-Consolidate all drafts into `2-needs/needs.md` using the template in
+Consolidate all drafts into `needs/needs.md` using the template in
 [needs-template.md](references/needs-template.md).
 
 Include:
@@ -111,13 +117,13 @@ This is a **negotiation**, not a presentation. Expect the client to:
 ## Step 5: Iterate and agree
 
 Based on client feedback:
-1. Update the drafts in `2-needs/drafts/` as needed
-2. Rewrite `2-needs/needs.md` to reflect agreed changes
+1. Update the drafts in `needs/drafts/` as needed
+2. Rewrite `needs/needs.md` to reflect agreed changes
 3. Ask the client to confirm: "Is this needs document now accurate
    and complete enough to proceed?"
 
 When the client agrees:
-1. Copy `2-needs/needs.md` to `2-needs/needs.agreed.md`
+1. Copy `needs/needs.md` to `needs/needs.agreed.md`
 2. Append to `decisions.md`:
    ```markdown
    ## {Date} — Stage 2: User needs agreed

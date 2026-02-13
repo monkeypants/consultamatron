@@ -1,4 +1,4 @@
-/* Wardley Mapping deliverable site — minimal, professional, print-friendly */
+/* Consultamatron deliverable site — minimal, professional, print-friendly */
 
 *, *::before, *::after { box-sizing: border-box; }
 
@@ -78,10 +78,46 @@ nav.toc li { padding: 0.15rem 0; }
 nav.toc li.active { font-weight: 700; }
 nav.toc li.active::marker { font-weight: 700; }
 
+/* BMC canvas grid */
+.bmc-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+  grid-template-rows: auto auto;
+  gap: 1px;
+  background: #ddd;
+  margin: 2rem 0;
+}
+.bmc-grid > section {
+  background: #fff;
+  padding: 0.75rem;
+  font-size: 0.85rem;
+}
+.bmc-grid > section h3 {
+  font-size: 0.9rem;
+  margin: 0 0 0.5rem;
+  color: #1a4d80;
+}
+.bmc-grid > section ul { margin: 0; padding-left: 1.2rem; }
+.bmc-grid > section li { padding: 0.1rem 0; }
+
+/* BMC grid layout:
+   KP  KA  VP  CR  CS
+   KP  KR  VP  CH  CS  */
+.bmc-kp { grid-column: 1; grid-row: 1 / 3; }
+.bmc-ka { grid-column: 2; grid-row: 1; }
+.bmc-kr { grid-column: 2; grid-row: 2; }
+.bmc-vp { grid-column: 3; grid-row: 1 / 3; }
+.bmc-cr { grid-column: 4; grid-row: 1; }
+.bmc-ch { grid-column: 4; grid-row: 2; }
+.bmc-cs-segments { grid-column: 5; grid-row: 1 / 3; }
+.bmc-cost { grid-column: 1 / 4; }
+.bmc-revenue { grid-column: 4 / 6; }
+
 /* Print */
 @media print {
   nav { display: none; }
   body { max-width: none; margin: 0; padding: 0; }
   pre { white-space: pre-wrap; }
   a { color: inherit; }
+  .bmc-grid { break-inside: avoid; }
 }

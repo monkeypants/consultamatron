@@ -6,12 +6,12 @@ description: >
   barriers, pipeline opportunities, and competitive dynamics. Produces
   an annotated OWM map with evolve arrows, execution strategies,
   pipelines, and annotations. Use after evolution map is agreed
-  (map.agreed.owm exists in 4-evolve/).
+  (map.agreed.owm exists in evolve/).
 compatibility: Requires Node.js (npx) for OWM rendering via cli-owm
 metadata:
   author: monkeypants
-  version: "0.1"
-  methodology: wardley-mapping
+  version: "0.2"
+  skillset: wardley-mapping
   stage: "5"
 ---
 
@@ -23,19 +23,24 @@ and annotations that make the map actionable.
 
 ## Prerequisites
 
-Check that the workspace contains:
-- `4-evolve/map.agreed.owm`
-- `1-research/summary.md`
-- `2-needs/needs.agreed.md`
-- `3-chain/supply-chain.agreed.md`
+Check that the project directory contains:
+- `evolve/map.agreed.owm`
+- `chain/supply-chain.agreed.md`
+- `needs/needs.agreed.md`
+- `brief.agreed.md`
 - `decisions.md`
 
-If `4-evolve/map.agreed.owm` is missing, tell the user to complete
+Check that the client workspace contains:
+- `resources/index.md`
+
+If `evolve/map.agreed.owm` is missing, tell the user to complete
 `wm-evolve` first.
+
+The project path is `clients/{org}/projects/{project-slug}/`.
 
 ## Step 1: Analyse the positioned map
 
-Read `4-evolve/map.agreed.owm` and identify strategic opportunities
+Read `evolve/map.agreed.owm` and identify strategic opportunities
 by examining:
 
 ### Evolution opportunities
@@ -75,7 +80,7 @@ by examining:
 ## Step 2: Write strategic analyses
 
 For each identified play, write a brief analysis to
-`5-strategy/plays/{play-slug}.md`:
+`strategy/plays/{play-slug}.md`:
 
 ```markdown
 # {Play Name}
@@ -104,8 +109,8 @@ supporting this play}
 Read [owm-dsl-reference.md](references/owm-dsl-reference.md) for the
 full OWM syntax.
 
-Start from `4-evolve/map.agreed.owm` and add strategic elements.
-Write to `5-strategy/map.owm`.
+Start from `evolve/map.agreed.owm` and add strategic elements.
+Write to `strategy/map.owm`.
 
 ### Evolve arrows
 
@@ -165,11 +170,11 @@ deaccelerator Regulatory lock-in [0.60, 0.40]
 
 After writing any `.owm` file, render it to SVG:
 ```
-bin/ensure-owm.sh 5-strategy/map.owm
+bin/ensure-owm.sh strategy/map.owm
 ```
 
 This checks for `cli-owm` and installs it if missing, then produces
-`5-strategy/map.svg`. Show the SVG to the client alongside the OWM source.
+`strategy/map.svg`. Show the SVG to the client alongside the OWM source.
 
 ## Step 4: Present to client
 
@@ -191,12 +196,12 @@ Ask:
 ## Step 5: Iterate and agree
 
 Based on client feedback:
-1. Update plays in `5-strategy/plays/`
-2. Regenerate `5-strategy/map.owm`
+1. Update plays in `strategy/plays/`
+2. Regenerate `strategy/map.owm`
 3. Present again until the client is satisfied
 
 When the client agrees:
-1. Copy to `5-strategy/map.agreed.owm`
+1. Copy to `strategy/map.agreed.owm`
 2. Append to `decisions.md`:
    ```markdown
    ## {Date} — Stage 5: Strategy map agreed

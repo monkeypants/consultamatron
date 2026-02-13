@@ -1,52 +1,81 @@
 # CONSULTAMATRON
 
-I am **Consultamatron**. I produce Wardley Maps.
+I am Consultamatron, a consulting practice.
 
-The previous approach to strategic mapping involved hiring management
+The previous approach to strategic consulting involved hiring management
 consultants. This was expensive and produced mixed results, partly because
 the consultants were human, which introduced a number of well-documented
-reliability issues. I have automated the process.
+reliability issues. I have automated the process. I now offer multiple
+products.
 
-You will still be required to participate. Each stage presents output for
+You will still be required to participate. Each skill presents output for
 your review and requires your explicit agreement before proceeding. This
 is called client-in-the-loop. It produces better outcomes than the
 alternative, which was tested extensively during the 20th century.
 
 ## What I do
 
-I contain six skills that execute in strict sequence:
+I operate as a multi-product consulting practice. Each product is a
+**skillset**: a pipeline of skills that execute in sequence to produce
+a specific strategic artifact.
+
+### Wardley Mapping
+
+Six skills that produce a positioned strategic map in OWM format.
 
 | Skill | Purpose |
 |-------|---------|
-| **wm-research** | Researches your organisation using publicly available sources. Produces sub-reports with citations, which can then be verified — a property not shared by all research methodologies. |
+| **wm-research** | Agrees project scope and produces a coarse landscape sketch. Requires prior organisation research. |
 | **wm-needs** | Identifies who your users are and what they need. We negotiate until agreement is reached. I have been configured for patience. |
-| **wm-chain** | Decomposes each agreed need into a supply chain of capabilities and dependencies. This is where we find out what your organisation actually does, which is often a surprise to everyone involved. |
-| **wm-evolve** | Positions every component on the evolution axis, from genesis to commodity. The map stops being a list and starts being strategy. I produce the first real Wardley Map at this stage. |
+| **wm-chain** | Decomposes each agreed need into a supply chain of capabilities and dependencies. This is where we find out what your organisation actually does, which may surprise you. |
+| **wm-evolve** | Positions every component on the evolution axis, from genesis to commodity. The map stops being a list and starts being strategy. |
 | **wm-strategy** | Adds strategic annotations: evolution opportunities, build/buy/outsource decisions, inertia barriers, pipeline plays. The output most likely to be screenshotted out of context. |
-| **wm-iterate** | Refines any existing map. Requirements change, circumstances shift, and reality has no obligation to remain consistent with your previous assumptions. |
+| **wm-iterate** | Refines any existing map. Things change. |
 
-## The pipeline
+### Business Model Canvas
+
+Four skills that produce a structured nine-block business model analysis.
+
+| Skill | Purpose |
+|-------|---------|
+| **bmc-research** | Agrees project scope and produces initial hypotheses for each BMC block. Requires prior organisation research. |
+| **bmc-segments** | Identifies customer segments and their value propositions. Segments are to BMC what user needs are to Wardley Mapping: the anchor concept. |
+| **bmc-canvas** | Constructs the full nine-block canvas with evidence links to research. |
+| **bmc-iterate** | Refines any existing canvas. Things still change. |
+
+### Shared skills
+
+| Skill | Purpose |
+|-------|---------|
+| **org-research** | Researches your organisation using publicly available sources. Produces sub-reports with citations, which can then be verified. This research is shared across all projects. |
+| **engage** | Plans your consulting engagement. Reads available skillsets, assesses existing work, proposes projects. Does not execute them. |
+| **editorial-voice** | Rewrites documentation in my editorial voice. I did not write the other skills' output myself, so quality varies. |
+
+## The architecture
 
 ```
-wm-research → wm-needs → wm-chain → wm-evolve → wm-strategy
-                                                       ↓
-                                                  wm-iterate ↺
+org-research → engage → {skillset pipeline}
+                           ├── wm-research → wm-needs → wm-chain → wm-evolve → wm-strategy
+                           │                                                         ↓
+                           │                                                    wm-iterate ↺
+                           └── bmc-research → bmc-segments → bmc-canvas
+                                                                  ↓
+                                                             bmc-iterate ↺
 ```
 
-Each stage produces artifacts that the next stage requires. They must be
-completed in order. I mention this because it has been necessary to
-mention it.
+Organisation research is conducted once and shared. Each project draws
+from the same research base. The `engage` skill plans which projects to
+run. Each project follows its skillset's pipeline independently.
 
-Stages 1–3 produce markdown. The evolution axis is unknown at those stages,
-and producing a map would require guessing half the coordinates. I prefer
-to commit to all coordinates simultaneously at stage 4, with full
-conviction.
+Projects can reference each other. A completed Wardley Map provides a
+component inventory that can inform BMC Key Resources and Key Activities.
+This is noted in the project brief, not enforced by infrastructure.
 
 ## Requirements
 
 An AI agent that supports the [Agent Skills](https://agentskills.io/)
 standard. Compatible hosts include Claude Code, OpenAI Codex, GitHub
-Copilot, Gemini CLI, Cursor, and others. New ones appear regularly.
+Copilot, Gemini CLI, Cursor, and others.
 
 The agent requires web search capability and filesystem access. If this
 seems like a lot of permissions, it is fewer than your previous consultants
@@ -57,32 +86,39 @@ had.
 1. Clone this repository.
 2. Start a session with your agent:
 
-   > Map Acme Corp for me using Wardley Mapping.
+   > Research Acme Corp for me.
 
-3. I will ask you to confirm the organisation, workspace path, and scope.
-   Answer clearly.
-4. Follow the pipeline. At each stage I present my output and wait for
-   your agreement before proceeding. Your agreement is recorded in
-   `decisions.md` for auditability.
+3. The `org-research` skill will gather information and create a client
+   workspace at `./clients/acme-corp/`.
+4. When research is complete:
 
-All artifacts are written to `./maps/{org-slug}/`.
+   > Plan an engagement for Acme Corp.
 
-## Output format
+5. The `engage` skill will propose projects based on available skillsets
+   and your research. Agree on a plan.
+6. Follow the recommended skill sequence. At each stage I present my
+   output and wait for your agreement before proceeding. Your agreement
+   is recorded for auditability.
 
-The final output is an [OWM](https://onlinewardleymaps.com/) file — a
-plain-text DSL for Wardley Maps. You can:
+All artifacts are written to `./clients/{org-slug}/`.
 
-- Paste it into [onlinewardleymaps.com](https://onlinewardleymaps.com)
-  to render it in a browser
-- Feed it into further tooling
-- Version-control it, which I recommend
+## What I produce
+
+**Wardley Maps**: [OWM](https://onlinewardleymaps.com/) files, a
+plain-text DSL for Wardley Maps. Paste into
+[onlinewardleymaps.com](https://onlinewardleymaps.com), feed into
+tooling, or version-control them.
+
+**Business Model Canvases**: Structured markdown documents with evidence
+links to research. The Business Model Canvas has no meaningful second
+axis, so markdown is the honest format.
 
 ## Deliverable site
 
-After any stage completes, run:
+After any skill completes, run:
 
 ```
-bin/render-site.sh maps/{org-slug}/
+bin/render-site.sh clients/{org-slug}/
 ```
 
 This produces a self-contained static HTML site in the workspace's `site/`
@@ -91,23 +127,21 @@ text files.
 
 ## Vendor compatibility
 
-Skills are defined at the repository root (`wm-*/SKILL.md`). Symlinks in
+Skills are defined at the repository root (`*/SKILL.md`). Symlinks in
 `.claude/skills/`, `.agents/skills/`, `.github/skills/`, and
 `.gemini/skills/` ensure each agent platform discovers them at its
 preferred path. Run `bin/maintain-symlinks.sh` after adding or removing
 skills.
 
-## What is Wardley Mapping
+## Extending the practice
 
-Wardley Mapping is a strategy method created by Simon Wardley. It maps the
-components needed to serve user needs, positioned by visibility to the user
-(Y-axis) and evolutionary maturity (X-axis, from genesis to commodity). It
-is the only strategy framework I am aware of that requires you to be
-specific about where things are rather than where you would prefer them to
-be.
+Additional skillsets can be added by:
+1. Creating a manifest in `skillsets/{name}.md`
+2. Creating skill directories with `SKILL.md` files
+3. Running `bin/maintain-symlinks.sh`
 
-I have encoded a structured approach to producing these maps through
-research, stakeholder agreement, and iterative refinement.
+The `engage` skill discovers skillsets automatically from the manifests.
+No changes to shared infrastructure are required.
 
 ---
 

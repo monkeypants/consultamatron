@@ -1,23 +1,63 @@
-# Wardley Mapping Skills
+# Consultamatron: Multi-Product Consulting Practice
 
-This repository contains a set of agent skills for conducting Wardley
-Mapping engagements. The skills form a staged pipeline, not a pick-and-mix
-menu.
+This repository contains agent skills for conducting strategic consulting
+engagements. Skills are organised into **skillsets** (product lines) that
+share a common client workspace and research base.
 
-## The pipeline
+## Architecture
 
-| Stage | Skill | Input gate | Output gate |
-|-------|-------|-----------|-------------|
-| 1 | wm-research | (none) | `1-research/summary.md` |
-| 2 | wm-needs | `1-research/summary.md` | `2-needs/needs.agreed.md` |
-| 3 | wm-chain | `2-needs/needs.agreed.md` | `3-chain/supply-chain.agreed.md` |
-| 4 | wm-evolve | `3-chain/supply-chain.agreed.md` | `4-evolve/map.agreed.owm` |
-| 5 | wm-strategy | `4-evolve/map.agreed.owm` | `5-strategy/map.agreed.owm` |
-| 6+ | wm-iterate | any `.owm` file | updated `.owm` file |
+```
+org-research → engage → {skillset pipeline}
+```
 
-Each stage requires its input gate artifact to exist before it will
-proceed. Do not skip stages. Do not run a skill if its gate is missing —
-tell the user which skill to run first.
+1. **org-research** gathers information about a client organisation
+2. **engage** plans which projects to run and in what order
+3. Each project follows its skillset's pipeline
+
+Skills read from `skillsets/*.md` manifests to discover available
+products and their pipelines.
+
+## Available skillsets
+
+| Skillset | Skills | Output |
+|----------|--------|--------|
+| Wardley Mapping | wm-research, wm-needs, wm-chain, wm-evolve, wm-strategy, wm-iterate | OWM map files |
+| Business Model Canvas | bmc-research, bmc-segments, bmc-canvas, bmc-iterate | Structured markdown canvas |
+
+See `skillsets/` for full pipeline definitions, gates, and project
+directory structures.
+
+## Shared skills
+
+| Skill | Purpose |
+|-------|---------|
+| org-research | Research an organisation from public sources |
+| engage | Plan engagements, create projects, direct next steps |
+| editorial-voice | Rewrite artifacts in Consultamatron's editorial voice |
+
+## Client workspace
+
+All skills operate on a shared workspace at `./clients/{org-slug}/`
+(the user may specify an alternative).
+
+```
+clients/{org-slug}/
+├── resources/          # Shared research (managed by org-research)
+│   ├── index.md        # Manifest + synthesis (gate artifact)
+│   └── {topic}.md      # Sub-reports with citations
+├── projects/
+│   ├── index.md        # Project registry
+│   └── {project-slug}/ # One directory per project
+└── engagement.md       # Cross-project engagement history
+```
+
+See `org-research/assets/workspace-layout.md` for the full directory
+structure including per-skillset project layouts.
+
+Before starting any skill, check `clients/` for existing engagements.
+If work already exists for an organisation, resume from where it left
+off. Read `engagement.md` and project `decisions.md` files to understand
+what has already been agreed.
 
 ## Gate protocol
 
@@ -26,21 +66,13 @@ confirmed the artifact. Skills create these only after the client says the
 output is acceptable. Never create a gate artifact without client
 agreement.
 
-## Workspace
-
-All skills operate on a shared workspace at `./maps/{org-slug}/` (the user
-may specify an alternative). The workspace is created by wm-research.
-See `wm-research/assets/workspace-layout.md` for the full directory
-structure.
-
-Before starting any skill, check `maps/` for existing engagements. If work
-already exists for an organisation, resume from where it left off rather
-than starting over. Read `decisions.md` in the workspace to understand what
-has already been agreed.
+Each skillset defines its own gate sequence. Gates are relative to the
+project directory. See `skillsets/*.md` for the specific gates per
+skillset.
 
 ## OWM rendering
 
-Stages 4+ produce `.owm` map files. To render these to SVG, run:
+Wardley Mapping stages 4+ produce `.owm` map files. To render to SVG:
 ```
 bin/ensure-owm.sh path/to/map.owm
 ```
@@ -52,16 +84,15 @@ visual map.
 
 ## Artifact format discipline
 
-Stages 1-3 produce **markdown only**. The evolution axis is unknown at
-these stages, so OWM files would require guessing half the coordinates.
-Markdown dependency trees are the honest representation.
-
-Stage 1 produces one exception: `landscape.owm`, a coarse sketch
-acknowledged as approximate. It is orientation, not commitment.
-
-Stages 4+ produce **OWM files**. Both axes (visibility and evolution) have
-grounded meaning at this point. The OWM DSL reference is bundled in
-`wm-evolve/references/owm-dsl-reference.md`.
+- **Organisation research**: Markdown with citations
+- **Wardley Mapping stages 1-3**: Markdown only. The evolution axis is
+  unknown, so OWM would impose false precision.
+- **Wardley Mapping stage 1 exception**: `landscape.owm` is a coarse
+  sketch acknowledged as approximate.
+- **Wardley Mapping stages 4+**: OWM files. Both axes have grounded
+  meaning.
+- **Business Model Canvas**: Markdown throughout. BMC has no meaningful
+  second axis.
 
 ## Site generation
 
@@ -69,11 +100,12 @@ After any skill completes (or after manual edits to workspace artifacts),
 regenerate the deliverable site:
 
 ```
-bin/render-site.sh maps/{org-slug}/
+bin/render-site.sh clients/{org-slug}/
 ```
 
 This produces a self-contained static HTML site in the workspace's `site/`
-directory, suitable for sharing with stakeholders.
+directory, suitable for sharing with stakeholders. The site renderer
+detects which projects exist and dispatches to per-skillset renderers.
 
 ## Client-in-the-loop
 
@@ -84,22 +116,48 @@ output is "good enough" on its own.
 
 ## Choosing the right skill
 
-- "Map this organisation" / "Research X for mapping" → **wm-research**
-- "What are the user needs?" / picking up after research → **wm-needs**
-- "How does the organisation deliver this?" / decompose needs → **wm-chain**
-- "Where are these components on the evolution axis?" → **wm-evolve**
-- "What strategic moves should we make?" → **wm-strategy**
-- "This component feels wrong" / "Update the map" / any refinement of an
-  existing map → **wm-iterate**
+- "Research this organisation" / "What do we know about X?" →
+  **org-research**
+- "What should we do for this client?" / "Plan the engagement" →
+  **engage**
+- "Start a Wardley Map" / "Map this organisation" →
+  **wm-research** (after org-research)
+- "What are the user needs?" →
+  **wm-needs**
+- "How does the organisation deliver this?" →
+  **wm-chain**
+- "Where are these components on the evolution axis?" →
+  **wm-evolve**
+- "What strategic moves should we make?" →
+  **wm-strategy**
+- "Update the map" / "This component feels wrong" →
+  **wm-iterate**
+- "Start a Business Model Canvas" / "What's their business model?" →
+  **bmc-research** (after org-research)
+- "Who are the customer segments?" →
+  **bmc-segments**
+- "Build the full canvas" →
+  **bmc-canvas**
+- "Update the canvas" →
+  **bmc-iterate**
+- "Rewrite this in the right voice" →
+  **editorial-voice**
 
-If the user's request is ambiguous, check which gate artifacts exist in the
-workspace to determine where the engagement is and which skill applies.
+If the user's request is ambiguous, check which gate artifacts exist in
+the workspace to determine where the engagement is and which skill applies.
 
 ## What is Wardley Mapping
 
 Wardley Mapping is a strategy method that maps the components needed to
 serve user needs, positioned by visibility (how visible to the user) on
 the Y-axis and evolution (how mature, from genesis to commodity) on the
-X-axis. The method was created by Simon Wardley. These skills encode a
-structured approach to producing Wardley Maps through research,
-stakeholder agreement, and iterative refinement.
+X-axis. The method was created by Simon Wardley. The Wardley Mapping
+skillset encodes a structured approach to producing these maps.
+
+## What is Business Model Canvas
+
+The Business Model Canvas is a strategic management tool that describes
+a business model through nine building blocks: Customer Segments, Value
+Propositions, Channels, Customer Relationships, Revenue Streams, Key
+Resources, Key Activities, Key Partnerships, and Cost Structure. It was
+developed by Alexander Osterwalder and Yves Pigneur.

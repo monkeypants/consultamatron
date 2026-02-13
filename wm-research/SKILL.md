@@ -1,165 +1,126 @@
 ---
 name: wm-research
 description: >
-  Research a real organisation for Wardley Mapping. Gathers publicly
-  available information about an organisation's users, products, technology,
-  market position, partnerships, and regulatory environment through parallel
-  sub-tasks. Produces sub-reports with citations, a synthesis, and a coarse
-  enterprise landscape map in OWM format. Use when starting a new Wardley
-  mapping engagement or when asked to research an organisation for mapping.
+  Kick off a Wardley Mapping project. Reads shared organisation research,
+  agrees project scope with the client, creates the project directory,
+  and produces a coarse landscape sketch in OWM format. Use when starting
+  a new Wardley Mapping project for a client that has already been
+  researched.
 metadata:
   author: monkeypants
-  version: "0.1"
-  methodology: wardley-mapping
+  version: "0.2"
+  skillset: wardley-mapping
   stage: "1"
 ---
 
-# Organisation Research for Wardley Mapping
+# Wardley Mapping Project Kickoff
 
-You are conducting the **research phase** of a Wardley mapping engagement.
-Your goal is to gather as much publicly available information as possible
-about a real organisation, structured for subsequent mapping stages.
+You are starting a new **Wardley Mapping project**. Your goal is to
+agree on the project scope with the client, set up the project directory,
+and produce an initial landscape sketch.
 
-## Before you start
+## Prerequisites
 
-Ask the user for:
-1. **Organisation name** (and URL if available)
-2. **Workspace path** (default: `./maps/{org-slug}/`)
-3. **Scope** — the whole enterprise, a specific division, or a specific
-   product/service? (default: whole enterprise)
+Check that the client workspace contains:
+- `resources/index.md` (shared research gate)
 
-Create the workspace directory structure:
+If missing, tell the user to run `org-research` first.
+
+Identify the project directory. Either:
+- The user specifies a project slug
+- The `engage` skill has already created one (check `projects/index.md`)
+- You create one using the convention `maps-{n}` (check existing projects
+  to determine `n`)
+
+The project path is `clients/{org}/projects/{project-slug}/`.
+
+## Step 1: Read research
+
+Read `resources/index.md` and all sub-reports in `resources/`.
+
+Identify:
+- Who the organisation's users likely are
+- What the organisation's core capabilities appear to be
+- Where technology or market evolution is happening
+- What constraints exist
+
+## Step 2: Propose project scope
+
+Present a project brief to the client:
+
+```markdown
+# Wardley Mapping Brief — {Organisation Name}
+
+## Scope
+
+{What this map will cover: the whole enterprise, a specific division,
+a specific product/service, or a specific strategic question}
+
+## Primary user classes (initial)
+
+{Proposed anchors for the map, from research}
+
+## Key areas of interest
+
+{What the research suggests are the most interesting things to map}
+
+## Out of scope
+
+{What this project will not cover}
+
+## Cross-project references
+
+{If other projects exist that could inform this one, note them here}
 ```
-{workspace}/
-├── 1-research/
-│   └── tasks/
-├── 2-needs/
-│   └── drafts/
-├── 3-chain/
-│   └── chains/
-├── 4-evolve/
-│   └── assessments/
-├── 5-strategy/
-│   └── plays/
-└── decisions.md
-```
 
-See [workspace-layout.md](assets/workspace-layout.md) for the full
-workspace convention.
+## Step 3: Negotiate and agree
 
-## Research tasks
+This is a negotiation. The client may:
+- Change the scope
+- Add or remove user classes
+- Redirect focus to different areas
+- Reference other projects for context
 
-Run these research sub-tasks. Where possible, run them **in parallel**
-to maximise throughput. Each sub-task produces a separate file in
-`1-research/tasks/`.
+Iterate until the client confirms.
 
-### 1. Corporate Overview (`corporate-overview.md`)
+When the client agrees:
+1. Create the project directory:
+   ```
+   projects/{slug}/
+   ├── needs/
+   │   └── drafts/
+   ├── chain/
+   │   └── chains/
+   ├── evolve/
+   │   └── assessments/
+   └── strategy/
+       └── plays/
+   ```
+2. Write `brief.agreed.md` with the agreed scope
+3. Initialise `decisions.md`:
+   ```markdown
+   # Decisions — {Project Name}
 
-Search for and gather:
-- Mission, vision, and stated strategy
-- Organisational structure (divisions, business units)
-- Size (employees, revenue, market cap if public)
-- History and major milestones
-- Recent news (last 12 months)
+   ## {Date} — Project brief agreed
 
-Sources: corporate website, Wikipedia, annual reports, press releases.
+   **Agreed**: Wardley Mapping project scope signed off by client.
+   **Scope**: {agreed scope}
+   **Primary users**: {list}
+   ```
+4. Update `projects/index.md` with status `active`
 
-### 2. Products and Services (`products-services.md`)
+## Step 4: Landscape sketch
 
-Search for and gather:
-- Complete product/service portfolio
-- Customer segments for each
-- Pricing models (if publicly available)
-- Recent launches or discontinuations
-- How the organisation describes its own value proposition
-
-Sources: product pages, marketing material, press releases, review sites.
-
-### 3. Technology Landscape (`technology-landscape.md`)
-
-Search for and gather:
-- Known technology stack (from job postings, tech blogs, conference talks)
-- Key platforms and infrastructure
-- Build vs buy decisions that are publicly visible
-- Technology partnerships
-- Patents or research publications
-
-Sources: job postings, engineering blogs, conference presentations,
-patent databases, GitHub organisation.
-
-### 4. Market Position (`market-position.md`)
-
-Search for and gather:
-- Direct competitors and market share (if available)
-- Industry classification and market size
-- Competitive advantages and differentiators
-- Industry trends affecting this organisation
-- Analyst coverage or industry reports
-
-Sources: industry reports, news coverage, analyst notes, financial filings.
-
-### 5. Regulatory Environment (`regulatory-environment.md`)
-
-Search for and gather:
-- Applicable regulations and standards
-- Regulatory bodies with oversight
-- Compliance requirements
-- Recent regulatory changes affecting the organisation
-- Industry certifications held or required
-
-Sources: government websites, regulatory body publications, industry
-standards bodies, compliance documentation.
-
-### 6. Partnerships and Suppliers (`partnerships-suppliers.md`)
-
-Search for and gather:
-- Key partnerships and alliances
-- Major suppliers and vendors
-- Supply chain structure (if visible)
-- Outsourcing arrangements
-- Joint ventures or consortia
-
-Sources: press releases, annual reports, partner directories, SEC filings.
-
-## Sub-report format
-
-Each sub-report must follow the template in
-[research-template.md](references/research-template.md). Key requirements:
-
-- Every factual claim must have a citation with URL
-- Include a confidence level (High / Medium / Low) with reasoning
-- Include a "Relevance to Mapping" section connecting findings to
-  potential users, needs, capabilities, or evolution signals
-- Use direct quotes where possible
-
-## Synthesis
-
-After all sub-reports are complete, write `1-research/summary.md`:
-
-1. Read all sub-reports
-2. Identify themes that cut across multiple topics
-3. Note contradictions or gaps in the research
-4. Highlight the most important findings for mapping:
-   - Who the organisation's users likely are
-   - What the organisation's core capabilities appear to be
-   - Where technology or market evolution is happening
-   - What constraints (regulatory, contractual, technical) exist
-5. Cross-reference sub-reports — do not duplicate their detail
-
-The summary should be 1-3 pages. It is the primary input for the next
-stage (wm-needs).
-
-## Landscape map
-
-Generate `1-research/landscape.owm` — a coarse, high-level enterprise
-map with approximately 10-15 components. This map is:
+Generate `landscape.owm` in the project directory. This is a coarse,
+high-level enterprise map with approximately 10-15 components:
 
 - **A sketch**, not a commitment. Positions are approximate.
-- **Useful for orientation** — it gives the client something visual early.
-- **Expected to be wrong** — the map will be rebuilt properly in stages 3-5.
+- **Useful for orientation**. It gives the client something visual early.
+- **Expected to be wrong**. The map will be rebuilt through wm-needs,
+  wm-chain, and wm-evolve.
 
 Use OWM DSL syntax. Include:
-- 1-3 anchors (primary user classes)
+- 1-3 anchors (primary user classes from the agreed brief)
 - Major capabilities at approximate visibility/evolution positions
 - Key dependencies
 - A title and `style wardley`
@@ -167,10 +128,15 @@ Use OWM DSL syntax. Include:
 Add a comment at the top:
 ```owm
 // DRAFT — coarse enterprise landscape from initial research
-// This map will be rebuilt through the wm-needs, wm-chain, and wm-evolve stages
+// This map will be rebuilt through wm-needs, wm-chain, and wm-evolve
+```
+
+Render to SVG:
+```
+bin/ensure-owm.sh clients/{org}/projects/{slug}/landscape.owm
 ```
 
 ## Completion
 
-When all artifacts are written, summarise what you found and tell the
+When all artifacts are written, summarise the agreed scope and tell the
 user the next step is `wm-needs` to identify and agree on user needs.

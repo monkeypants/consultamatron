@@ -9,8 +9,8 @@ description: >
 compatibility: Requires Node.js (npx) for OWM rendering via cli-owm
 metadata:
   author: monkeypants
-  version: "0.1"
-  methodology: wardley-mapping
+  version: "0.2"
+  skillset: wardley-mapping
   stage: "6+"
 ---
 
@@ -21,10 +21,10 @@ open-ended skill for ongoing map maintenance and evolution.
 
 ## Prerequisites
 
-Check that the workspace contains at least one `.owm` file. Typical
-locations:
-- `4-evolve/map.owm` or `4-evolve/map.agreed.owm`
-- `5-strategy/map.owm` or `5-strategy/map.agreed.owm`
+Check that the project directory contains at least one `.owm` file.
+Typical locations under `clients/{org}/projects/{project-slug}/`:
+- `evolve/map.owm` or `evolve/map.agreed.owm`
+- `strategy/map.owm` or `strategy/map.agreed.owm`
 
 If no OWM file exists, tell the user to complete earlier stages first
 (at minimum through `wm-evolve`).
@@ -35,8 +35,8 @@ full OWM DSL syntax.
 ## Identify the working map
 
 Ask the user which map to refine, or determine from context:
-- If a `5-strategy/map.agreed.owm` exists, that is likely the current map
-- If only `4-evolve/map.agreed.owm` exists, use that
+- If a `strategy/map.agreed.owm` exists, that is likely the current map
+- If only `evolve/map.agreed.owm` exists, use that
 - The user may specify a different file
 
 Read the current map and `decisions.md` for context.
@@ -55,7 +55,7 @@ component Platform [0.60, 0.35]
 component Platform [0.60, 0.55]
 ```
 
-Update the corresponding assessment in `4-evolve/assessments/` if it
+Update the corresponding assessment in `evolve/assessments/` if it
 exists, noting why the position changed.
 
 ### Split into pipeline
