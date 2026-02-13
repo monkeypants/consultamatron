@@ -8,8 +8,8 @@ description: >
   document. Use after user needs are agreed (needs.agreed.md exists).
 metadata:
   author: monkeypants
-  version: "0.1"
-  methodology: wardley-mapping
+  version: "0.2"
+  skillset: wardley-mapping
   stage: "3"
 ---
 
@@ -22,20 +22,24 @@ dependency graph.
 
 ## Prerequisites
 
-Check that the workspace contains:
-- `2-needs/needs.agreed.md`
-- `1-research/summary.md` and sub-reports in `1-research/tasks/`
+Check that the project directory contains:
+- `needs/needs.agreed.md`
+
+Check that the client workspace contains:
+- `resources/index.md` and research sub-reports in `resources/`
 
 If `needs.agreed.md` is missing, tell the user to complete `wm-needs`
 first. The `.agreed.md` suffix indicates the client has signed off.
 
+The project path is `clients/{org}/projects/{project-slug}/`.
+
 ## Step 1: Re-read research through the lens of needs
 
-Read `2-needs/needs.agreed.md` to understand the agreed user classes
+Read `needs/needs.agreed.md` to understand the agreed user classes
 and their needs.
 
-Then re-read `1-research/summary.md` and relevant sub-reports,
-specifically looking for:
+Then re-read `resources/index.md` and relevant sub-reports in
+`resources/`, specifically looking for:
 - **Capabilities** the organisation uses to deliver each need
 - **Technologies** and platforms underlying those capabilities
 - **External dependencies** (suppliers, partners, data sources)
@@ -55,7 +59,7 @@ For each agreed need, work **top-down**:
    - **External services** with no further visible decomposition
    - **Fundamental resources** (raw materials, data, people)
 
-Write each chain to `3-chain/chains/{need-slug}.md` using the template
+Write each chain to `chain/chains/{need-slug}.md` using the template
 in [chain-template.md](references/chain-template.md).
 
 Formatting rules for dependency trees:
@@ -86,7 +90,7 @@ Guidelines:
   chains, note it with "(shared)" and list which other needs also
   depend on it. Shared components are structurally important.
 - **Stop at sensible boundaries.** Don't decompose "electricity" into
-  "power generation → transmission → distribution." Stop where the
+  "power generation -> transmission -> distribution." Stop where the
   organisation's agency ends, unless infrastructure is specifically
   in scope.
 - **Use the organisation's language** where possible. If they call it
@@ -111,7 +115,7 @@ After all chains are written, look across them for:
 
 ## Step 4: Synthesise
 
-Write `3-chain/supply-chain.md` using the consolidated template in
+Write `chain/supply-chain.md` using the consolidated template in
 [chain-template.md](references/chain-template.md). Include:
 
 1. **Merged dependency graph** — all chains combined, deduplicating
@@ -148,13 +152,13 @@ The client will likely:
 ## Step 6: Iterate and agree
 
 Based on client feedback:
-1. Update individual chains in `3-chain/chains/` as needed
-2. Rewrite `3-chain/supply-chain.md`
+1. Update individual chains in `chain/chains/` as needed
+2. Rewrite `chain/supply-chain.md`
 3. Ask the client to confirm: "Is this supply chain now accurate
    and complete enough to proceed to evolution assessment?"
 
 When the client agrees:
-1. Copy to `3-chain/supply-chain.agreed.md`
+1. Copy to `chain/supply-chain.agreed.md`
 2. Append to `decisions.md`:
    ```markdown
    ## {Date} — Stage 3: Supply chain agreed

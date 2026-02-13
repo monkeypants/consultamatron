@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
 #
-# Generate a static HTML site from a Wardley Mapping workspace.
+# Generate a static HTML site from a client workspace.
 #
 # Usage:
-#   bin/render-site.sh maps/{org-slug}/
+#   bin/render-site.sh clients/{org-slug}/
 #
-# Requires: pandoc, node (for OWM rendering)
+# Reads the project registry, dispatches to per-skillset renderers,
+# and generates client-level pages (resources, engagement, project index).
+#
+# Requires: pandoc, node (for OWM rendering in Wardley projects)
 
 set -euo pipefail
 
@@ -25,8 +28,8 @@ if [ ! -d "$WS" ]; then
     exit 1
 fi
 
-if [ ! -f "$WS/1-research/summary.md" ]; then
-    echo "Error: no 1-research/summary.md in workspace. Run wm-research first." >&2
+if [ ! -f "$WS/resources/index.md" ]; then
+    echo "Error: no resources/index.md in workspace. Run org-research first." >&2
     exit 1
 fi
 
@@ -36,10 +39,10 @@ if ! command -v pandoc >/dev/null 2>&1; then
     exit 1
 fi
 
-# Extract org display name from H1 of decisions.md, fallback to directory name
+# Extract org display name from engagement.md H1, fallback to directory name
 ORG_NAME=""
-if [ -f "$WS/decisions.md" ]; then
-    ORG_NAME="$(sed -n 's/^# .*— *//p' "$WS/decisions.md" | head -1)"
+if [ -f "$WS/engagement.md" ]; then
+    ORG_NAME="$(sed -n 's/^# .*— *//p' "$WS/engagement.md" | head -1)"
 fi
 if [ -z "$ORG_NAME" ]; then
     ORG_NAME="$(basename "$WS")"
@@ -47,98 +50,31 @@ fi
 
 SITE="$WS/site"
 
-# ── Phase 1: Detect completed stages ─────────────────────────────────
+# Source shared helpers
+. "$SCRIPT_DIR/site-helpers.sh"
 
-HAS_STAGE1=false
-HAS_STAGE2=false
-HAS_STAGE3=false
-HAS_STAGE4=false
-HAS_STAGE5=false
-
-[ -f "$WS/1-research/summary.md" ]              && HAS_STAGE1=true
-[ -f "$WS/2-needs/needs.agreed.md" ]             && HAS_STAGE2=true
-[ -f "$WS/3-chain/supply-chain.agreed.md" ]      && HAS_STAGE3=true
-[ -f "$WS/4-evolve/map.agreed.owm" ]             && HAS_STAGE4=true
-[ -f "$WS/5-strategy/map.agreed.owm" ]           && HAS_STAGE5=true
-
-echo "Workspace: $WS ($ORG_NAME)"
-echo "Stages:  1=$HAS_STAGE1 2=$HAS_STAGE2 3=$HAS_STAGE3 4=$HAS_STAGE4 5=$HAS_STAGE5"
-
-# ── Phase 2: Render OWM → SVG ────────────────────────────────────────
-
-while IFS= read -r owm_file; do
-    svg_file="${owm_file%.owm}.svg"
-    if [ ! -f "$svg_file" ] || [ "$owm_file" -nt "$svg_file" ]; then
-        echo "Rendering $owm_file → SVG"
-        "$SCRIPT_DIR/ensure-owm.sh" "$owm_file" >/dev/null
-    fi
-done <<EOF
-$(find "$WS" -name '*.owm' -type f 2>/dev/null)
-EOF
-
-# ── Phase 3: Build site directory ─────────────────────────────────────
+# ── Phase 1: Build site directory ────────────────────────────────────
 
 rm -rf "$SITE"
-mkdir -p "$SITE/research"
+mkdir -p "$SITE/resources"
 cp "$SCRIPT_DIR/site.css" "$SITE/style.css"
 
-# ── Helpers ───────────────────────────────────────────────────────────
+echo "Workspace: $WS ($ORG_NAME)"
 
-# Preprocess box-drawing trees: wrap contiguous runs of lines containing
-# box-drawing characters (├ │ └ ─) in fenced code blocks so pandoc
-# preserves whitespace.
-preprocess_trees() {
-    awk '
-    /[├│└─┌┐┬┤┼┘┴]/ {
-        if (!in_tree) { print "```"; in_tree = 1 }
-        print
-        next
-    }
-    {
-        if (in_tree) { print "```"; in_tree = 0 }
-        print
-    }
-    END { if (in_tree) print "```" }
-    '
-}
+# ── Phase 2: Client-level navigation ────────────────────────────────
 
-# Preprocess key-value lines: insert blank line before **Label**: lines
-# that follow a non-blank line, so pandoc treats each as a separate <p>.
-preprocess_kv() {
-    awk '
-    /^\*\*[^*]+\*\*:/ {
-        if (prev != "" && prev !~ /^[[:space:]]*$/) print ""
-        print
-        prev = $0
-        next
-    }
-    { print; prev = $0 }
-    '
-}
+# Collect project list for navigation
+PROJECTS=""
+if [ -d "$WS/projects" ]; then
+    for proj_dir in "$WS/projects"/*/; do
+        [ -d "$proj_dir" ] || continue
+        proj_name="$(basename "$proj_dir")"
+        [ "$proj_name" = "site" ] && continue
+        PROJECTS="$PROJECTS $proj_name"
+    done
+fi
 
-# Convert markdown to HTML fragment via pandoc, stripping the first H1
-# (the page wrapper provides the canonical H1)
-md_to_html() {
-    preprocess_kv | preprocess_trees | pandoc -f markdown -t html5 --syntax-highlighting=none \
-        | awk '!done && /<h1[^>]*>.*<\/h1>/ { done=1; next } { print }'
-}
-
-# Embed an SVG file inline in a <figure>
-embed_svg() {
-    local svg_path="$1"
-    local caption="${2:-}"
-    if [ -f "$svg_path" ]; then
-        echo '<figure>'
-        sed 's/<svg /<svg style="max-width:100%;height:auto" /' "$svg_path"
-        if [ -n "$caption" ]; then
-            echo "<figcaption>$caption</figcaption>"
-        fi
-        echo '</figure>'
-    fi
-}
-
-# Generate navigation HTML
-nav_html() {
+client_nav_html() {
     local active="$1"
     local nav='<nav>'
 
@@ -146,52 +82,33 @@ nav_html() {
     [ "$active" = "index" ] && nav="$nav class=\"active\""
     nav="$nav>Overview</a>"
 
-    if [ "$HAS_STAGE5" = true ]; then
-        nav="$nav <a href=\"strategy.html\""
-        [ "$active" = "strategy" ] && nav="$nav class=\"active\""
-        nav="$nav>Strategy</a>"
-    fi
-
-    if [ "$HAS_STAGE4" = true ]; then
-        nav="$nav <a href=\"map.html\""
-        [ "$active" = "map" ] && nav="$nav class=\"active\""
-        nav="$nav>Map</a>"
-    fi
-
-    if [ "$HAS_STAGE3" = true ]; then
-        nav="$nav <a href=\"supply-chain.html\""
-        [ "$active" = "supply-chain" ] && nav="$nav class=\"active\""
-        nav="$nav>Supply Chain</a>"
-    fi
-
-    if [ "$HAS_STAGE2" = true ]; then
-        nav="$nav <a href=\"needs.html\""
-        [ "$active" = "needs" ] && nav="$nav class=\"active\""
-        nav="$nav>Needs</a>"
-    fi
-
-    nav="$nav <a href=\"research.html\""
-    [ "$active" = "research" ] && nav="$nav class=\"active\""
+    nav="$nav <a href=\"resources.html\""
+    [ "$active" = "resources" ] && nav="$nav class=\"active\""
     nav="$nav>Research</a>"
 
-    nav="$nav <a href=\"decisions.html\""
-    [ "$active" = "decisions" ] && nav="$nav class=\"active\""
-    nav="$nav>Decisions</a>"
+    for proj_name in $PROJECTS; do
+        nav="$nav <a href=\"$proj_name/index.html\""
+        [ "$active" = "$proj_name" ] && nav="$nav class=\"active\""
+        nav="$nav>$proj_name</a>"
+    done
+
+    if [ -f "$WS/engagement.md" ]; then
+        nav="$nav <a href=\"engagement.html\""
+        [ "$active" = "engagement" ] && nav="$nav class=\"active\""
+        nav="$nav>Engagement</a>"
+    fi
 
     nav="$nav</nav>"
     echo "$nav"
 }
 
-# Wrap pandoc HTML fragment in a full page
-# Args: page_title active_nav_item
-# Reads HTML body from stdin
-wrap_page() {
+wrap_client_page() {
     local title="$1"
     local active="$2"
     local body
     body="$(cat)"
     local nav
-    nav="$(nav_html "$active")"
+    nav="$(client_nav_html "$active")"
 
     cat <<HTMLEOF
 <!DOCTYPE html>
@@ -211,14 +128,12 @@ $body
 HTMLEOF
 }
 
-# Wrap a research sub-page (needs breadcrumb, different style.css path)
 wrap_research_subpage() {
     local title="$1"
     local body
     body="$(cat)"
     local nav
-    nav="$(nav_html "research")"
-    # Fix style.css path for subdirectory
+    nav="$(client_nav_html "resources")"
     nav="$(echo "$nav" | sed 's|href="|href="../|g')"
 
     cat <<HTMLEOF
@@ -239,56 +154,44 @@ $body
 HTMLEOF
 }
 
-# ── Phase 4: Generate pages ───────────────────────────────────────────
+# ── Phase 3: Generate client-level pages ─────────────────────────────
 
-echo "Generating pages..."
+echo "Generating client pages..."
 
-# -- Index page --
+# Index page
 {
-    # Hero: best available map SVG
-    if [ "$HAS_STAGE5" = true ] && [ -f "$WS/5-strategy/map.svg" ]; then
-        embed_svg "$WS/5-strategy/map.svg" "Strategy map"
-    elif [ "$HAS_STAGE4" = true ] && [ -f "$WS/4-evolve/map.svg" ]; then
-        embed_svg "$WS/4-evolve/map.svg" "Evolution map"
-    elif [ -f "$WS/1-research/landscape.svg" ]; then
-        embed_svg "$WS/1-research/landscape.svg" "Landscape sketch (approximate)"
+    if [ -f "$WS/engagement.md" ]; then
+        cat "$WS/engagement.md" | md_to_html
     fi
-
-    # Decisions summary
-    if [ -f "$WS/decisions.md" ]; then
-        cat "$WS/decisions.md" | md_to_html
+    if [ -f "$WS/projects/index.md" ]; then
+        echo "<h2>Projects</h2>"
+        cat "$WS/projects/index.md" | md_to_html
     fi
-} | wrap_page "Overview" "index" > "$SITE/index.html"
+} | wrap_client_page "Overview" "index" > "$SITE/index.html"
 echo "  index.html"
 
-# -- Decisions page --
-if [ -f "$WS/decisions.md" ]; then
-    cat "$WS/decisions.md" | md_to_html | wrap_page "Decisions" "decisions" > "$SITE/decisions.html"
-    echo "  decisions.html"
+# Engagement page
+if [ -f "$WS/engagement.md" ]; then
+    cat "$WS/engagement.md" | md_to_html | wrap_client_page "Engagement History" "engagement" > "$SITE/engagement.html"
+    echo "  engagement.html"
 fi
 
-# -- Research pages --
-# Build task list (slug|title pairs) once for TOC and sub-page navigation
+# Research pages
 TASK_LIST=""
 TASK_COUNT=0
-if [ -d "$WS/1-research/tasks" ]; then
-    for task_file in "$WS/1-research/tasks/"*.md; do
-        [ -f "$task_file" ] || continue
-        slug="$(basename "$task_file" .md)"
-        task_title="$(sed -n 's/^# *//p' "$task_file" | head -1)"
-        if [ -z "$task_title" ]; then
-            task_title="$slug"
-        fi
-        task_title="${task_title% — $ORG_NAME}"
-        TASK_LIST="$TASK_LIST$slug|$task_title
+for res_file in "$WS/resources/"*.md; do
+    [ -f "$res_file" ] || continue
+    slug="$(basename "$res_file" .md)"
+    [ "$slug" = "index" ] && continue
+    res_title="$(sed -n 's/^# *//p' "$res_file" | head -1)"
+    if [ -z "$res_title" ]; then
+        res_title="$slug"
+    fi
+    TASK_LIST="$TASK_LIST$slug|$res_title
 "
-        TASK_COUNT=$((TASK_COUNT + 1))
-    done
-fi
-TOTAL_PAGES=$((TASK_COUNT + 1))
+    TASK_COUNT=$((TASK_COUNT + 1))
+done
 
-# Helper: emit the research TOC as an <ol>
-# Args: prefix (empty or "../"), active_slug (empty for summary page)
 research_toc() {
     local prefix="$1"
     local active_slug="$2"
@@ -297,88 +200,74 @@ research_toc() {
     if [ -z "$active_slug" ]; then
         echo "<li class=\"active\">Synthesis</li>"
     else
-        echo "<li><a href=\"${prefix}research.html\">Synthesis</a></li>"
+        echo "<li><a href=\"${prefix}resources.html\">Synthesis</a></li>"
     fi
     echo "$TASK_LIST" | while IFS='|' read -r slug title; do
         [ -z "$slug" ] && continue
         if [ "$slug" = "$active_slug" ]; then
             echo "<li class=\"active\">$title</li>"
         else
-            echo "<li><a href=\"${prefix}research/$slug.html\">$title</a></li>"
+            echo "<li><a href=\"${prefix}resources/$slug.html\">$title</a></li>"
         fi
     done
     echo '</ol>'
     echo '</nav>'
 }
 
-# -- Research summary page (1 of N) --
+# Research summary page
 {
     research_toc "" ""
-    cat "$WS/1-research/summary.md" | md_to_html
-} | wrap_page "Research" "research" > "$SITE/research.html"
-echo "  research.html"
+    cat "$WS/resources/index.md" | md_to_html
+} | wrap_client_page "Research" "resources" > "$SITE/resources.html"
+echo "  resources.html"
 
-# -- Research sub-pages (2..N of N) --
-PAGE_NUM=1
+# Research sub-pages
 echo "$TASK_LIST" | while IFS='|' read -r slug title; do
     [ -z "$slug" ] && continue
-    PAGE_NUM=$((PAGE_NUM + 1))
     {
         research_toc "../" "$slug"
-        cat "$WS/1-research/tasks/$slug.md" | md_to_html
-    } | wrap_research_subpage "$title" > "$SITE/research/$slug.html"
-    echo "  research/$slug.html"
+        cat "$WS/resources/$slug.md" | md_to_html
+    } | wrap_research_subpage "$title" > "$SITE/resources/$slug.html"
+    echo "  resources/$slug.html"
 done
 
-# -- Needs page --
-if [ "$HAS_STAGE2" = true ]; then
-    cat "$WS/2-needs/needs.agreed.md" | md_to_html | wrap_page "User Needs" "needs" > "$SITE/needs.html"
-    echo "  needs.html"
-fi
+# ── Phase 4: Render projects ────────────────────────────────────────
 
-# -- Supply chain page --
-if [ "$HAS_STAGE3" = true ]; then
-    cat "$WS/3-chain/supply-chain.agreed.md" | md_to_html | wrap_page "Supply Chain" "supply-chain" > "$SITE/supply-chain.html"
-    echo "  supply-chain.html"
-fi
+for proj_name in $PROJECTS; do
+    proj_dir="$WS/projects/$proj_name"
+    site_proj_dir="$SITE/$proj_name"
 
-# -- Map page (stage 4) --
-if [ "$HAS_STAGE4" = true ]; then
-    {
-        if [ -f "$WS/4-evolve/map.svg" ]; then
-            embed_svg "$WS/4-evolve/map.svg" "Evolution map"
+    echo ""
+    echo "Project: $proj_name"
+
+    # Detect skillset from project slug convention or brief
+    skillset=""
+    case "$proj_name" in
+        maps-*|map-*|wardley-*) skillset="wardley" ;;
+        canvas-*|bmc-*)         skillset="bmc" ;;
+    esac
+
+    # Fallback: check for skillset-specific artifacts
+    if [ -z "$skillset" ]; then
+        if [ -d "$proj_dir/needs" ] || [ -d "$proj_dir/chain" ] || [ -d "$proj_dir/evolve" ]; then
+            skillset="wardley"
+        elif [ -d "$proj_dir/segments" ] || [ -f "$proj_dir/canvas.md" ] || [ -f "$proj_dir/canvas.agreed.md" ]; then
+            skillset="bmc"
         fi
+    fi
 
-        # Include assessment files
-        if [ -d "$WS/4-evolve/assessments" ]; then
-            for assess_file in "$WS/4-evolve/assessments/"*.md; do
-                [ -f "$assess_file" ] || continue
-                cat "$assess_file" | md_to_html
-                echo "<hr>"
-            done
-        fi
-    } | wrap_page "Evolution Map" "map" > "$SITE/map.html"
-    echo "  map.html"
-fi
-
-# -- Strategy page (stage 5) --
-if [ "$HAS_STAGE5" = true ]; then
-    {
-        if [ -f "$WS/5-strategy/map.svg" ]; then
-            embed_svg "$WS/5-strategy/map.svg" "Strategy map"
-        fi
-
-        # Include play files
-        if [ -d "$WS/5-strategy/plays" ]; then
-            for play_file in "$WS/5-strategy/plays/"*.md; do
-                [ -f "$play_file" ] || continue
-                cat "$play_file" | md_to_html
-                echo "<hr>"
-            done
-        fi
-    } | wrap_page "Strategy" "strategy" > "$SITE/strategy.html"
-    echo "  strategy.html"
-fi
+    case "$skillset" in
+        wardley)
+            "$SCRIPT_DIR/render-wardley.sh" "$proj_dir" "$site_proj_dir" "$ORG_NAME"
+            ;;
+        bmc)
+            "$SCRIPT_DIR/render-bmc.sh" "$proj_dir" "$site_proj_dir" "$ORG_NAME"
+            ;;
+        *)
+            echo "    Unknown skillset for $proj_name, skipping"
+            ;;
+    esac
+done
 
 echo ""
 echo "Site generated: $SITE/"

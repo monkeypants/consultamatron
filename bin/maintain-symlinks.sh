@@ -4,14 +4,15 @@
 #
 # Canonical layout:
 #   AGENTS.md              project instructions
-#   wm-*/SKILL.md          skills (any directory containing a SKILL.md)
+#   */SKILL.md             skills (any directory containing a SKILL.md)
+#                          includes: org-research, engage, wm-*, bmc-*, editorial-voice
 #
 # Vendor expectations:
 #   CLAUDE.md, GEMINI.md   → AGENTS.md
-#   .claude/skills/*       → ../../wm-*
-#   .agents/skills/*       → ../../wm-*
-#   .github/skills/*       → ../../wm-*
-#   .gemini/skills/*       → ../../wm-*
+#   .claude/skills/*       → ../../{skill-dir}
+#   .agents/skills/*       → ../../{skill-dir}
+#   .github/skills/*       → ../../{skill-dir}
+#   .gemini/skills/*       → ../../{skill-dir}
 
 set -euo pipefail
 

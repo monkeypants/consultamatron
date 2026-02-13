@@ -10,8 +10,8 @@ description: >
 compatibility: Requires Node.js (npx) for OWM rendering via cli-owm
 metadata:
   author: monkeypants
-  version: "0.1"
-  methodology: wardley-mapping
+  version: "0.2"
+  skillset: wardley-mapping
   stage: "4"
 ---
 
@@ -24,13 +24,18 @@ established in the supply chain stage.
 
 ## Prerequisites
 
-Check that the workspace contains:
-- `3-chain/supply-chain.agreed.md`
-- `1-research/summary.md` and sub-reports in `1-research/tasks/`
-- `2-needs/needs.agreed.md`
+Check that the project directory contains:
+- `chain/supply-chain.agreed.md`
+- `needs/needs.agreed.md`
+- `brief.agreed.md`
+
+Check that the client workspace contains:
+- `resources/index.md` and research sub-reports in `resources/`
 
 If `supply-chain.agreed.md` is missing, tell the user to complete
 `wm-chain` first.
+
+The project path is `clients/{org}/projects/{project-slug}/`.
 
 ## Understanding evolution
 
@@ -47,8 +52,8 @@ for the full assessment framework. The key question for each component:
 
 ## Step 1: Cluster components
 
-Group the components from `supply-chain.agreed.md` into logical clusters
-for assessment. Clusters might be:
+Group the components from `chain/supply-chain.agreed.md` into logical
+clusters for assessment. Clusters might be:
 - Components in the same domain (e.g. "fleet management cluster")
 - Components at similar depths in the value chain
 - Components from the same technology area
@@ -59,7 +64,7 @@ show clusters.
 ## Step 2: Assess evolution per cluster
 
 For each cluster, write an assessment to
-`4-evolve/assessments/{cluster-slug}.md`:
+`evolve/assessments/{cluster-slug}.md`:
 
 ```markdown
 # Evolution Assessment: {Cluster Name}
@@ -99,10 +104,10 @@ investment, skills lock-in, contractual obligations, cultural attachment).
 Read [owm-dsl-reference.md](references/owm-dsl-reference.md) for the
 full OWM syntax.
 
-Generate `4-evolve/map.owm` by combining:
-- **Anchors** from `needs.agreed.md` (user classes → anchors at
+Generate `evolve/map.owm` by combining:
+- **Anchors** from `needs/needs.agreed.md` (user classes -> anchors at
   visibility 0.90-0.97)
-- **Components** from `supply-chain.agreed.md` with:
+- **Components** from `chain/supply-chain.agreed.md` with:
   - Visibility (Y) derived from depth in the dependency tree
   - Maturity (X) from your evolution assessments
 - **Dependencies** from the supply chain
@@ -152,11 +157,11 @@ style wardley
 
 After writing any `.owm` file, render it to SVG:
 ```
-bin/ensure-owm.sh 4-evolve/map.owm
+bin/ensure-owm.sh evolve/map.owm
 ```
 
 This checks for `cli-owm` and installs it if missing, then produces
-`4-evolve/map.svg`. Show the SVG to the client alongside the OWM source.
+`evolve/map.svg`. Show the SVG to the client alongside the OWM source.
 
 ## Step 4: Present to client
 
@@ -180,12 +185,12 @@ iteration.
 ## Step 5: Iterate and agree
 
 Based on client feedback:
-1. Update assessments in `4-evolve/assessments/`
-2. Regenerate `4-evolve/map.owm`
+1. Update assessments in `evolve/assessments/`
+2. Regenerate `evolve/map.owm`
 3. Present again until the client is satisfied
 
 When the client agrees:
-1. Copy to `4-evolve/map.agreed.owm`
+1. Copy to `evolve/map.agreed.owm`
 2. Append to `decisions.md`:
    ```markdown
    ## {Date} — Stage 4: Evolution map agreed
