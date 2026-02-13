@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:code.visualstudio.com)",
+      "Bash(ln:*)",
+      "Bash(for skill in wm-research wm-needs wm-chain wm-evolve wm-strategy wm-iterate)",
+      "Bash(do ln -s \"../../$skill\" \".claude/skills/$skill\")",
+      "Bash(done)",
+      "Bash(chmod:*)"
+    ]
+  }
+}
