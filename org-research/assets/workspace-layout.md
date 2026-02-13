@@ -51,10 +51,21 @@ projects/{slug}/
 │   ├── assessments/{cluster-slug}.md
 │   ├── map.owm
 │   └── map.agreed.owm
-├── strategy/
+├── strategy/                      # Comprehensive map (source of truth)
 │   ├── plays/{play-slug}.md
 │   ├── map.owm
 │   └── map.agreed.owm
+├── atlas/                         # Derived views (no client gate)
+│   └── {topic}/
+│       ├── map.owm                # Focused map (projection of strategy map)
+│       ├── map.svg
+│       └── analysis.md            # Analytical prose
+├── presentations/                 # Audience-specific tours
+│   └── {tour-name}/
+│       ├── manifest.md            # Selected atlas entries + sequence
+│       ├── opening.md             # Audience framing (Consultamatron voice)
+│       └── transitions/
+│           └── NN-{slug}.md       # Connective prose between atlas entries
 └── decisions.md
 ```
 
@@ -96,6 +107,8 @@ skills check for their prerequisite gates before proceeding.
 | wm-evolve | `chain/supply-chain.agreed.md` | `evolve/map.agreed.owm` |
 | wm-strategy | `evolve/map.agreed.owm` | `strategy/map.agreed.owm` |
 | wm-iterate | any `.owm` file | updated `.owm` file |
+| wm-atlas-* | `strategy/map.agreed.owm` | `atlas/{topic}/` (no gate, derived) |
+| wm-tour-* | `atlas/` entries | `presentations/{tour}/` (no gate, derived) |
 
 ### Business Model Canvas gates (project-relative)
 

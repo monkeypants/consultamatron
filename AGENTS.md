@@ -21,7 +21,9 @@ products and their pipelines.
 
 | Skillset | Skills | Output |
 |----------|--------|--------|
-| Wardley Mapping | wm-research, wm-needs, wm-chain, wm-evolve, wm-strategy, wm-iterate | OWM map files |
+| Wardley Mapping (core) | wm-research, wm-needs, wm-chain, wm-evolve, wm-strategy, wm-iterate | OWM map files |
+| Wardley Mapping (atlas) | wm-atlas-overview, wm-atlas-anchor-chains, wm-atlas-need-traces, wm-atlas-bottlenecks, wm-atlas-shared-components, wm-atlas-layers, wm-atlas-plays, wm-atlas-sourcing, wm-atlas-movement, wm-atlas-inertia, wm-atlas-flows, wm-atlas-forces, wm-atlas-doctrine, wm-atlas-risk, wm-atlas-teams, wm-atlas-pipelines, wm-atlas-evolution-mismatch | Focused OWM maps + analysis |
+| Wardley Mapping (tours) | wm-tour-investor, wm-tour-technical, wm-tour-executive, wm-tour-operations, wm-tour-onboarding, wm-tour-competitive | Curated presentations |
 | Business Model Canvas | bmc-research, bmc-segments, bmc-canvas, bmc-iterate | Structured markdown canvas |
 
 See `skillsets/` for full pipeline definitions, gates, and project
@@ -89,8 +91,12 @@ visual map.
   unknown, so OWM would impose false precision.
 - **Wardley Mapping stage 1 exception**: `landscape.owm` is a coarse
   sketch acknowledged as approximate.
-- **Wardley Mapping stages 4+**: OWM files. Both axes have grounded
+- **Wardley Mapping stages 4-5**: OWM files. Both axes have grounded
   meaning.
+- **Wardley Mapping atlas**: OWM projections of the strategy map plus
+  analytical markdown. Same coordinates as the comprehensive map.
+- **Wardley Mapping tours**: Markdown prose in the Consultamatron
+  editorial voice. Tours reference atlas content, not duplicate it.
 - **Business Model Canvas**: Markdown throughout. BMC has no meaningful
   second axis.
 
@@ -132,6 +138,12 @@ output is "good enough" on its own.
   **wm-strategy**
 - "Update the map" / "This component feels wrong" →
   **wm-iterate**
+- "Generate the atlas" / "Produce all derived views" →
+  **wm-atlas-*** (run all applicable atlas skills)
+- "Create the investor presentation" / "Make a tour for the board" →
+  **wm-tour-{audience}**
+- "Generate all presentations" →
+  **wm-tour-*** (run all applicable tour skills)
 - "Start a Business Model Canvas" / "What's their business model?" →
   **bmc-research** (after org-research)
 - "Who are the customer segments?" →
