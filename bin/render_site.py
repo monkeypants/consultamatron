@@ -66,9 +66,28 @@ def preprocess_kv(text):
     return "\n".join(out)
 
 
+def preprocess_lists(text):
+    """Insert blank line before list items that follow a non-blank, non-list line.
+
+    The Python markdown library (unlike pandoc) requires a blank line
+    between a paragraph and a list for the list to be recognised.
+    """
+    lines = text.split("\n")
+    out = []
+    list_re = re.compile(r"^(\s*[-*+]|\s*\d+\.) ")
+    for i, line in enumerate(lines):
+        if list_re.match(line) and i > 0:
+            prev = lines[i - 1]
+            if prev.strip() and not list_re.match(prev):
+                out.append("")
+        out.append(line)
+    return "\n".join(out)
+
+
 def md_to_html(text):
     """Preprocess and convert markdown to HTML, stripping the first H1."""
     text = preprocess_kv(text)
+    text = preprocess_lists(text)
     text = preprocess_trees(text)
     html = markdown.markdown(text, extensions=["tables", "fenced_code"])
     # Strip first h1
