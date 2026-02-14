@@ -58,6 +58,7 @@ from bin.cli.repositories import (
     DecisionRepository,
     EngagementRepository,
     IdGenerator,
+    ProjectPresenter,
     ProjectRepository,
     ResearchTopicRepository,
     SiteRenderer,
@@ -482,7 +483,7 @@ class ListResearchTopicsUseCase:
 
 
 class RenderSiteUseCase:
-    """Gather structured data and delegate to the site renderer."""
+    """Gather structured data, assemble contributions, and render."""
 
     def __init__(
         self,
@@ -490,34 +491,36 @@ class RenderSiteUseCase:
         tours: TourManifestRepository,
         research: ResearchTopicRepository,
         renderer: SiteRenderer,
+        presenters: dict[str, ProjectPresenter],
     ) -> None:
         self._projects = projects
         self._tours = tours
         self._research = research
         self._renderer = renderer
+        self._presenters = presenters
 
     def execute(self, request: RenderSiteRequest) -> RenderSiteResponse:
         if not self._projects.client_exists(request.client):
             raise NotFoundError(f"Client not found: {request.client}")
 
         projects = self._projects.list_all(request.client)
-
-        tours: dict[str, list] = {}
-        for project in projects:
-            project_tours = self._tours.list_all(request.client, project.slug)
-            if project_tours:
-                tours[project.slug] = project_tours
-
         research_topics = self._research.list_all(request.client)
+
+        contributions = []
+        for project in projects:
+            presenter = self._presenters.get(project.skillset)
+            if presenter is None:
+                print(f"    Unknown skillset '{project.skillset}', skipping")
+                continue
+            project_tours = self._tours.list_all(request.client, project.slug)
+            contributions.append(presenter.present(project, project_tours))
 
         site_path = self._renderer.render(
             client=request.client,
-            projects=projects,
-            tours=tours,
+            contributions=contributions,
             research_topics=research_topics,
         )
 
-        # Count HTML files produced
         page_count = len(list(site_path.rglob("*.html")))
 
         return RenderSiteResponse(
