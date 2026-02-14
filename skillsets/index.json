@@ -10,7 +10,7 @@
         "skill": "wm-research",
         "prerequisite_gate": "resources/index.md",
         "produces_gate": "brief.agreed.md",
-        "description": "Stage 1: Research and brief agreed"
+        "description": "Stage 1: Project brief agreed"
       },
       {
         "order": 2,
@@ -80,7 +80,7 @@
         "skill": "bmc-research",
         "prerequisite_gate": "resources/index.md",
         "produces_gate": "brief.agreed.md",
-        "description": "Project brief agreed"
+        "description": "Stage 1: Project brief agreed"
       },
       {
         "order": 2,
