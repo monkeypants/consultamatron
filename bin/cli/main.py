@@ -17,7 +17,7 @@ import click
 
 from bin.cli.config import Config
 from bin.cli.di import Container
-from bin.cli.entities import DomainError
+from bin.cli.entities import DomainError, TourStop
 from bin.cli.dtos import (
     AddEngagementEntryRequest,
     GetProjectProgressRequest,
@@ -31,7 +31,6 @@ from bin.cli.dtos import (
     RegisterResearchTopicRequest,
     RegisterTourRequest,
     RenderSiteRequest,
-    TourStopInput,
     UpdateProjectStatusRequest,
 )
 from bin.cli.usecases import (
@@ -449,7 +448,7 @@ def tour_register(
         project_slug=project_slug,
         name=name,
         title=title,
-        stops=[TourStopInput(**s) for s in stops_data],
+        stops=[TourStop(**s) for s in stops_data],
     )
     resp = _run(usecase, req)
     click.echo(

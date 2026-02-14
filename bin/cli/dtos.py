@@ -12,6 +12,8 @@ from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
 
+from bin.cli.entities import TourStop
+
 if TYPE_CHECKING:
     from bin.cli.entities import DecisionEntry, Project, ResearchTopic
 
@@ -19,16 +21,6 @@ if TYPE_CHECKING:
 # ---------------------------------------------------------------------------
 # Shared sub-DTOs
 # ---------------------------------------------------------------------------
-
-
-class TourStopInput(BaseModel):
-    """One stop in a tour registration request."""
-
-    order: str
-    title: str
-    atlas_source: str
-    map_file: str = "map.svg"
-    analysis_file: str = "analysis.md"
 
 
 class ProjectInfo(BaseModel):
@@ -201,7 +193,7 @@ class RegisterTourRequest(BaseModel):
     project_slug: str
     name: str
     title: str
-    stops: list[TourStopInput]
+    stops: list[TourStop]
 
 
 class RegisterTourResponse(BaseModel):

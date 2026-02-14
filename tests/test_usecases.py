@@ -15,7 +15,12 @@ from __future__ import annotations
 
 import pytest
 
-from bin.cli.entities import DuplicateError, InvalidTransitionError, NotFoundError
+from bin.cli.entities import (
+    DuplicateError,
+    InvalidTransitionError,
+    NotFoundError,
+    TourStop,
+)
 from bin.cli.di import Container
 from bin.cli.dtos import (
     AddEngagementEntryRequest,
@@ -29,7 +34,6 @@ from bin.cli.dtos import (
     RegisterProjectRequest,
     RegisterResearchTopicRequest,
     RegisterTourRequest,
-    TourStopInput,
     UpdateProjectStatusRequest,
 )
 
@@ -399,17 +403,17 @@ class TestRegisterTour:
                 name="investor",
                 title="Investor Briefing: Strategic Position and Defensibility",
                 stops=[
-                    TourStopInput(
+                    TourStop(
                         order="1",
                         title="Strategic Overview",
                         atlas_source="atlas/overview/",
                     ),
-                    TourStopInput(
+                    TourStop(
                         order="2",
                         title="Competitive Moats",
                         atlas_source="atlas/bottlenecks/",
                     ),
-                    TourStopInput(
+                    TourStop(
                         order="3",
                         title="Evolution Programme",
                         atlas_source="atlas/movement/",
@@ -428,12 +432,12 @@ class TestRegisterTour:
                 name="executive",
                 title="Executive Summary: Risk and Opportunity",
                 stops=[
-                    TourStopInput(
+                    TourStop(
                         order="1",
                         title="Landscape",
                         atlas_source="atlas/overview/",
                     ),
-                    TourStopInput(
+                    TourStop(
                         order="2",
                         title="Risk Profile",
                         atlas_source="atlas/risk/",
@@ -455,7 +459,7 @@ class TestRegisterTour:
                     name="investor",
                     title="Phantom Tour",
                     stops=[
-                        TourStopInput(
+                        TourStop(
                             order="1",
                             title="Nothing",
                             atlas_source="atlas/void/",

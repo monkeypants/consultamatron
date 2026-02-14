@@ -52,7 +52,6 @@ from bin.cli.entities import (
     ProjectStatus,
     ResearchTopic,
     TourManifest,
-    TourStop,
 )
 from bin.cli.repositories import (
     Clock,
@@ -340,14 +339,13 @@ class RegisterTourUseCase:
                 f"Project not found: {request.client}/{request.project_slug}"
             )
 
-        stops = [TourStop(**s.model_dump()) for s in request.stops]
         self._tours.save(
             TourManifest(
                 name=request.name,
                 client=request.client,
                 project_slug=request.project_slug,
                 title=request.title,
-                stops=stops,
+                stops=request.stops,
             )
         )
 
@@ -355,7 +353,7 @@ class RegisterTourUseCase:
             client=request.client,
             project_slug=request.project_slug,
             name=request.name,
-            stop_count=len(stops),
+            stop_count=len(request.stops),
         )
 
 
