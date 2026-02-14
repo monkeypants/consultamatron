@@ -11,7 +11,7 @@
 #   clients/{client}/projects/{slug}/decisions.json  — Decision log (append:
 #                                                      "Stage 1: Project brief agreed")
 #   clients/{client}/projects/index.json             — Project registry
-#                                                      (status -> active)
+#                                                      (status -> elaboration)
 #
 # The files listed above are JSON documents managed by the consultamatron
 # CLI (bin/cli/). Agents may read these files directly for inspection.
@@ -52,4 +52,4 @@ done
 
 # Activate the project
 $CLI project update-status \
-  --client "$CLIENT" --project "$PROJECT" --status active
+  --client "$CLIENT" --project "$PROJECT" --status elaboration

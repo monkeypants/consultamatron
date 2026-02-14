@@ -149,7 +149,7 @@ class RegisterProjectUseCase:
                 slug=request.slug,
                 client=request.client,
                 skillset=request.skillset,
-                status=ProjectStatus.PLANNED,
+                status=ProjectStatus.PLANNING,
                 created=today,
                 notes=request.notes,
             )

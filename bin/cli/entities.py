@@ -69,14 +69,16 @@ class Skillset(BaseModel):
 class ProjectStatus(str, Enum):
     """Lifecycle phase of a consulting project.
 
-    The lifecycle is linear: planned → active → complete → reviewed.
-    This is the envelope the work lives in, not the work graph itself.
+    The lifecycle is linear:
+    planning → elaboration → implementation → review → closed.
+    Each label describes the project's phase, not the operator's activity.
     """
 
-    PLANNED = "planned"
-    ACTIVE = "active"
-    COMPLETE = "complete"
-    REVIEWED = "reviewed"
+    PLANNING = "planning"
+    ELABORATION = "elaboration"
+    IMPLEMENTATION = "implementation"
+    REVIEW = "review"
+    CLOSED = "closed"
 
     def next(self) -> ProjectStatus | None:
         """Return the next lifecycle phase, or None if terminal."""

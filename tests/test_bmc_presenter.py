@@ -28,7 +28,7 @@ def _make_project(**overrides) -> Project:
         slug=SLUG,
         client=CLIENT,
         skillset="business-model-canvas",
-        status=ProjectStatus.ACTIVE,
+        status=ProjectStatus.ELABORATION,
         created=date(2025, 6, 1),
     )
     return Project(**(defaults | overrides))

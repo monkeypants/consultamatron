@@ -127,7 +127,7 @@ def make_project(**overrides) -> Project:
         slug=DEFAULT_PROJECT,
         client=DEFAULT_CLIENT,
         skillset="wardley-mapping",
-        status=ProjectStatus.PLANNED,
+        status=ProjectStatus.PLANNING,
         created=DEFAULT_DATE,
     )
     return Project(**(defaults | overrides))

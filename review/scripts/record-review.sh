@@ -53,4 +53,4 @@ done
 
 # Mark the project as reviewed
 $CLI project update-status \
-  --client "$CLIENT" --project "$PROJECT" --status reviewed
+  --client "$CLIENT" --project "$PROJECT" --status review
