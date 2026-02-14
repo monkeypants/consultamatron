@@ -50,11 +50,12 @@ Four skills that produce a structured nine-block business model analysis.
 | **org-research** | Researches your organisation using publicly available sources. Produces sub-reports with citations, which can then be verified. This research is shared across all projects. |
 | **engage** | Plans your consulting engagement. Reads available skillsets, assesses existing work, proposes projects. Does not execute them. |
 | **editorial-voice** | Rewrites documentation in my editorial voice. I did not write the other skills' output myself, so quality varies. |
+| **review** | Post-implementation review of completed projects. Captures what worked, what did not, and what I should do differently, then raises sanitised GitHub issues. The evaluate step I was missing. |
 
 ## The architecture
 
 ```
-org-research → engage → {skillset pipeline}
+org-research → engage → {skillset pipeline} → review
                            ├── wm-research → wm-needs → wm-chain → wm-evolve → wm-strategy
                            │                                                         ↓
                            │                                                    wm-iterate ↺

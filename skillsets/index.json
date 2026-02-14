@@ -1,0 +1,103 @@
+[
+  {
+    "name": "wardley-mapping",
+    "display_name": "Wardley Mapping",
+    "description": "Strategic mapping methodology that positions components by visibility to the user and evolutionary maturity. Produces OWM map files suitable for strategic decision-making.",
+    "slug_pattern": "maps-{n}",
+    "pipeline": [
+      {
+        "order": 1,
+        "skill": "wm-research",
+        "prerequisite_gate": "resources/index.md",
+        "produces_gate": "brief.agreed.md",
+        "description": "Stage 1: Research and brief agreed"
+      },
+      {
+        "order": 2,
+        "skill": "wm-needs",
+        "prerequisite_gate": "brief.agreed.md",
+        "produces_gate": "needs/needs.agreed.md",
+        "description": "Stage 2: User needs agreed"
+      },
+      {
+        "order": 3,
+        "skill": "wm-chain",
+        "prerequisite_gate": "needs/needs.agreed.md",
+        "produces_gate": "chain/supply-chain.agreed.md",
+        "description": "Stage 3: Supply chain agreed"
+      },
+      {
+        "order": 4,
+        "skill": "wm-evolve",
+        "prerequisite_gate": "chain/supply-chain.agreed.md",
+        "produces_gate": "evolve/map.agreed.owm",
+        "description": "Stage 4: Evolution map agreed"
+      },
+      {
+        "order": 5,
+        "skill": "wm-strategy",
+        "prerequisite_gate": "evolve/map.agreed.owm",
+        "produces_gate": "strategy/map.agreed.owm",
+        "description": "Stage 5: Strategy map agreed"
+      }
+    ],
+    "atlas_skills": [
+      "wm-atlas-overview",
+      "wm-atlas-anchor-chains",
+      "wm-atlas-need-traces",
+      "wm-atlas-bottlenecks",
+      "wm-atlas-shared-components",
+      "wm-atlas-layers",
+      "wm-atlas-plays",
+      "wm-atlas-sourcing",
+      "wm-atlas-movement",
+      "wm-atlas-inertia",
+      "wm-atlas-flows",
+      "wm-atlas-forces",
+      "wm-atlas-doctrine",
+      "wm-atlas-risk",
+      "wm-atlas-teams",
+      "wm-atlas-pipelines",
+      "wm-atlas-evolution-mismatch"
+    ],
+    "tour_skills": [
+      "wm-tour-investor",
+      "wm-tour-technical",
+      "wm-tour-executive",
+      "wm-tour-operations",
+      "wm-tour-onboarding",
+      "wm-tour-competitive"
+    ]
+  },
+  {
+    "name": "business-model-canvas",
+    "display_name": "Business Model Canvas",
+    "description": "Structured analysis of an organisation's business model across nine building blocks. Produces evidence-linked canvas documents grounded in research.",
+    "slug_pattern": "canvas-{n}",
+    "pipeline": [
+      {
+        "order": 1,
+        "skill": "bmc-research",
+        "prerequisite_gate": "resources/index.md",
+        "produces_gate": "brief.agreed.md",
+        "description": "Project brief agreed"
+      },
+      {
+        "order": 2,
+        "skill": "bmc-segments",
+        "prerequisite_gate": "brief.agreed.md",
+        "produces_gate": "segments/segments.agreed.md",
+        "description": "Stage 2: Customer segments agreed"
+      },
+      {
+        "order": 3,
+        "skill": "bmc-canvas",
+        "prerequisite_gate": "segments/segments.agreed.md",
+        "produces_gate": "canvas.agreed.md",
+        "description": "Stage 3: Business Model Canvas agreed"
+      }
+    ],
+    "atlas_skills": [],
+    "tour_skills": []
+  }
+]

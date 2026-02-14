@@ -45,6 +45,17 @@ Determine:
 - What projects are in progress, completed, or not yet started
 - What cross-project references exist
 
+For each existing project, check whether it is **complete but
+unreviewed**. A project is complete when its terminal gate artifact
+exists (determined from the skillset manifest: `strategy/map.agreed.owm`
+for Wardley Mapping, `canvas.agreed.md` for Business Model Canvas) or
+when `decisions.md` contains entries from an `*-iterate` skill after the
+terminal gate. A project is unreviewed when `{project}/review/review.md`
+does not exist. Flag these with a specific recommendation:
+
+> "Project {slug} is complete but has not been reviewed. Run `review`
+> before planning new work."
+
 If research is stale (dates in the manifest are old), recommend running
 `org-research` to refresh before starting new projects.
 
@@ -80,28 +91,16 @@ Iterate until the client confirms the plan.
 For each agreed project:
 
 1. Read the skillset manifest to determine the project directory structure
-2. Create the project directory under `projects/{project-slug}/`
-3. Initialise `decisions.md`:
-   ```markdown
-   # Decisions — {Project Name}
-
-   ## {Date} — Project created
-
-   **Action**: Project directory created via engage skill.
-   **Skillset**: {skillset name}
-   **Scope**: {agreed scope from engagement plan}
+2. Register the project (creates registry entry, decision log, and
+   engagement entry):
    ```
+   engage/scripts/register-project.sh --client {org} --slug {slug} \
+     --skillset "{skillset}" --scope "{scope}" --notes "{notes}"
+   ```
+3. Create the project subdirectory structure as defined by the skillset
+   manifest
 4. Do NOT create `brief.agreed.md`. That is the first skill's job after
    negotiation with the client.
-
-Update `projects/index.md`:
-```markdown
-| Project | Skillset | Status | Created | Notes |
-|---------|----------|--------|---------|-------|
-| {slug} | {skillset} | planned | {date} | {scope note} |
-```
-
-Update `engagement.md` with the planning decisions.
 
 ## Step 6: Direct the client
 
@@ -109,6 +108,9 @@ Tell the client which skill to run next for each project. Be specific:
 
 - "Run `wm-research` to begin the Wardley Mapping project `maps-1`"
 - "Run `bmc-research` to begin the Business Model Canvas project `canvas-1`"
+
+After project completion, recommend running `review` for
+post-implementation evaluation and process improvement.
 
 ## Important notes
 

@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+#
+# Register the competitive tour manifest for a Wardley Mapping project.
+#
+# Usage:
+#   wm-tour-competitive/scripts/register-tour.sh --client CLIENT --project PROJECT \
+#     --title "TITLE" --stops 'JSON_ARRAY'
+#
+# The --stops argument is a JSON array of tour stops. Each stop must have
+# order, title, and atlas_source fields:
+#   [{"order":"1","title":"The landscape","atlas_source":"atlas/overview/"}]
+#
+# Files modified by this script:
+#   clients/{client}/projects/{slug}/presentations/competitive/manifest.json
+#     — Tour manifest (replaced entirely on each call)
+#
+# The files listed above are JSON documents managed by the consultamatron
+# CLI (bin/cli/). Agents may read these files directly for inspection.
+# Do not edit them by hand — use the CLI to ensure validation, timestamps,
+# and cross-file consistency are maintained.
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
+CLIENT="" PROJECT="" TITLE="" STOPS=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --client)  CLIENT="$2"; shift 2 ;;
+    --project) PROJECT="$2"; shift 2 ;;
+    --title)   TITLE="$2"; shift 2 ;;
+    --stops)   STOPS="$2"; shift 2 ;;
+    *) echo "Unknown option: $1" >&2; exit 1 ;;
+  esac
+done
+
+if [[ -z "$CLIENT" || -z "$PROJECT" || -z "$TITLE" || -z "$STOPS" ]]; then
+  echo "Usage: $0 --client CLIENT --project PROJECT --title TITLE --stops JSON" >&2
+  exit 1
+fi
+
+exec uv run --project "$REPO_DIR" consultamatron tour register \
+  --client "$CLIENT" \
+  --project "$PROJECT" \
+  --name competitive \
+  --title "$TITLE" \
+  --stops "$STOPS"

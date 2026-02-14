@@ -97,17 +97,11 @@ When the client agrees:
        └── plays/
    ```
 2. Write `brief.agreed.md` with the agreed scope
-3. Initialise `decisions.md`:
-   ```markdown
-   # Decisions — {Project Name}
-
-   ## {Date} — Project brief agreed
-
-   **Agreed**: Wardley Mapping project scope signed off by client.
-   **Scope**: {agreed scope}
-   **Primary users**: {list}
+3. Record the brief agreement and activate the project:
    ```
-4. Update `projects/index.md` with status `active`
+   wm-research/scripts/record-brief-agreed.sh --client {org} --project {slug} \
+     --field "Scope={agreed scope}" --field "Primary users={list}"
+   ```
 
 ## Step 4: Landscape sketch
 

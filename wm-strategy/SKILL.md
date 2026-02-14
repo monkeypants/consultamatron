@@ -202,14 +202,12 @@ Based on client feedback:
 
 When the client agrees:
 1. Copy to `strategy/map.agreed.owm`
-2. Append to `decisions.md`:
-   ```markdown
-   ## {Date} — Stage 5: Strategy map agreed
-
-   **Agreed**: Strategy-annotated Wardley Map signed off.
-   **Key plays**: {list of agreed strategic moves}
-   **Priorities**: {which plays the client considers most important}
-   **Deferred**: {plays considered but deferred, with reasoning}
+2. Record the agreement:
+   ```
+   wm-strategy/scripts/record-agreement.sh --client {org} --project {slug} \
+     --field "Key plays={list of agreed strategic moves}" \
+     --field "Priorities={which plays the client considers most important}" \
+     --field "Deferred={plays considered but deferred, with reasoning}"
    ```
 
 ## Guidelines

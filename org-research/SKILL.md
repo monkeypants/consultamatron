@@ -29,33 +29,18 @@ If no workspace exists, ask the user for:
 1. **Organisation name** (and URL if available)
 2. **Workspace path** (default: `./clients/{org-slug}/`)
 
-Create the workspace directory structure:
+Initialize the workspace:
 ```
-clients/{org-slug}/
-├── resources/
-├── projects/
-│   └── index.md
-└── engagement.md
+org-research/scripts/init-workspace.sh --client {org-slug}
+```
+
+Then create the `resources/` directory for research sub-reports:
+```
+mkdir -p clients/{org-slug}/resources
 ```
 
 See [workspace-layout.md](assets/workspace-layout.md) for the full
 workspace convention.
-
-Initialise `projects/index.md` with an empty project registry:
-```markdown
-# Projects — {Organisation Name}
-
-No projects yet. Use the `engage` skill to plan an engagement.
-```
-
-Initialise `engagement.md`:
-```markdown
-# Engagement History — {Organisation Name}
-
-## {Date} — Client onboarded
-
-**Action**: Organisation research initiated.
-```
 
 ## Research tasks
 
@@ -157,23 +142,18 @@ After all sub-reports are complete, write `resources/index.md`:
 5. Cross-reference sub-reports but do not duplicate their detail
 6. Include a manifest listing each sub-report, its date, and confidence
 
+After each sub-report is written, register it in the structured manifest:
+```
+org-research/scripts/register-topic.sh --client {org-slug} \
+  --topic "{topic name}" --filename "{filename}.md" --confidence "{level}"
+```
+
 ### Index format
 
-```markdown
-# Research — {Organisation Name}
-
-## Manifest
-
-| Topic | File | Date | Confidence |
-|-------|------|------|------------|
-| Corporate Overview | `corporate-overview.md` | {date} | {level} |
-| Products and Services | `products-services.md` | {date} | {level} |
-| ... | ... | ... | ... |
-
-## Synthesis
-
-{1-3 page synthesis of findings across all topics}
-```
+The synthesis document `resources/index.md` is still written as markdown
+(it is research content, not accounting data). Include the synthesis of
+findings across all topics. The structured topic manifest in
+`resources/index.json` is maintained by the register-topic script above.
 
 The index is the primary input for downstream skills. It is the gate
 artifact for this skill.

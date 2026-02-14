@@ -7,12 +7,13 @@ share a common client workspace and research base.
 ## Architecture
 
 ```
-org-research → engage → {skillset pipeline}
+org-research → engage → {skillset pipeline} → review
 ```
 
 1. **org-research** gathers information about a client organisation
 2. **engage** plans which projects to run and in what order
 3. Each project follows its skillset's pipeline
+4. **review** captures lessons learned and raises improvement issues
 
 Skills read from `skillsets/*.md` manifests to discover available
 products and their pipelines.
@@ -21,7 +22,9 @@ products and their pipelines.
 
 | Skillset | Skills | Output |
 |----------|--------|--------|
-| Wardley Mapping | wm-research, wm-needs, wm-chain, wm-evolve, wm-strategy, wm-iterate | OWM map files |
+| Wardley Mapping (core) | wm-research, wm-needs, wm-chain, wm-evolve, wm-strategy, wm-iterate | OWM map files |
+| Wardley Mapping (atlas) | wm-atlas-overview, wm-atlas-anchor-chains, wm-atlas-need-traces, wm-atlas-bottlenecks, wm-atlas-shared-components, wm-atlas-layers, wm-atlas-plays, wm-atlas-sourcing, wm-atlas-movement, wm-atlas-inertia, wm-atlas-flows, wm-atlas-forces, wm-atlas-doctrine, wm-atlas-risk, wm-atlas-teams, wm-atlas-pipelines, wm-atlas-evolution-mismatch | Focused OWM maps + analysis |
+| Wardley Mapping (tours) | wm-tour-investor, wm-tour-technical, wm-tour-executive, wm-tour-operations, wm-tour-onboarding, wm-tour-competitive | Curated presentations |
 | Business Model Canvas | bmc-research, bmc-segments, bmc-canvas, bmc-iterate | Structured markdown canvas |
 
 See `skillsets/` for full pipeline definitions, gates, and project
@@ -34,6 +37,7 @@ directory structures.
 | org-research | Research an organisation from public sources |
 | engage | Plan engagements, create projects, direct next steps |
 | editorial-voice | Rewrite artifacts in Consultamatron's editorial voice |
+| review | Post-implementation review of completed projects, producing sanitised GitHub issues |
 
 ## Client workspace
 
@@ -48,7 +52,8 @@ clients/{org-slug}/
 ├── projects/
 │   ├── index.md        # Project registry
 │   └── {project-slug}/ # One directory per project
-└── engagement.md       # Cross-project engagement history
+├── review.md               # Engagement-level review synthesis
+└── engagement.md           # Cross-project engagement history
 ```
 
 See `org-research/assets/workspace-layout.md` for the full directory
@@ -89,8 +94,12 @@ visual map.
   unknown, so OWM would impose false precision.
 - **Wardley Mapping stage 1 exception**: `landscape.owm` is a coarse
   sketch acknowledged as approximate.
-- **Wardley Mapping stages 4+**: OWM files. Both axes have grounded
+- **Wardley Mapping stages 4-5**: OWM files. Both axes have grounded
   meaning.
+- **Wardley Mapping atlas**: OWM projections of the strategy map plus
+  analytical markdown. Same coordinates as the comprehensive map.
+- **Wardley Mapping tours**: Markdown prose in the Consultamatron
+  editorial voice. Tours reference atlas content, not duplicate it.
 - **Business Model Canvas**: Markdown throughout. BMC has no meaningful
   second axis.
 
@@ -132,6 +141,12 @@ output is "good enough" on its own.
   **wm-strategy**
 - "Update the map" / "This component feels wrong" →
   **wm-iterate**
+- "Generate the atlas" / "Produce all derived views" →
+  **wm-atlas-*** (run all applicable atlas skills)
+- "Create the investor presentation" / "Make a tour for the board" →
+  **wm-tour-{audience}**
+- "Generate all presentations" →
+  **wm-tour-*** (run all applicable tour skills)
 - "Start a Business Model Canvas" / "What's their business model?" →
   **bmc-research** (after org-research)
 - "Who are the customer segments?" →
@@ -142,6 +157,8 @@ output is "good enough" on its own.
   **bmc-iterate**
 - "Rewrite this in the right voice" →
   **editorial-voice**
+- "How did that go?" / "Review the project" / "Lessons learned" →
+  **review**
 
 If the user's request is ambiguous, check which gate artifacts exist in
 the workspace to determine where the engagement is and which skill applies.

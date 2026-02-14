@@ -30,6 +30,7 @@ clients/{org-slug}/
 │   │   └── ...                    # Skillset-specific artifacts
 │   └── ...
 │
+├── review.md                      # Engagement-level review synthesis
 └── engagement.md                  # Cross-project engagement history
 ```
 
@@ -51,10 +52,24 @@ projects/{slug}/
 │   ├── assessments/{cluster-slug}.md
 │   ├── map.owm
 │   └── map.agreed.owm
-├── strategy/
+├── strategy/                      # Comprehensive map (source of truth)
 │   ├── plays/{play-slug}.md
 │   ├── map.owm
 │   └── map.agreed.owm
+├── atlas/                         # Derived views (no client gate)
+│   └── {topic}/
+│       ├── map.owm                # Focused map (projection of strategy map)
+│       ├── map.svg
+│       └── analysis.md            # Analytical prose
+├── presentations/                 # Audience-specific tours
+│   └── {tour-name}/
+│       ├── manifest.md            # Selected atlas entries + sequence
+│       ├── opening.md             # Audience framing (Consultamatron voice)
+│       └── transitions/
+│           └── NN-{slug}.md       # Connective prose between atlas entries
+├── review/                        # Post-implementation review
+│   ├── review.md                  # Private review (not shared)
+│   └── findings.md                # Sanitised findings for GitHub issues
 └── decisions.md
 ```
 
@@ -70,6 +85,9 @@ projects/{slug}/
 │   └── segments.agreed.md
 ├── canvas.md                      # Full 9-block canvas
 ├── canvas.agreed.md
+├── review/                        # Post-implementation review
+│   ├── review.md                  # Private review (not shared)
+│   └── findings.md                # Sanitised findings for GitHub issues
 └── decisions.md
 ```
 
@@ -96,6 +114,8 @@ skills check for their prerequisite gates before proceeding.
 | wm-evolve | `chain/supply-chain.agreed.md` | `evolve/map.agreed.owm` |
 | wm-strategy | `evolve/map.agreed.owm` | `strategy/map.agreed.owm` |
 | wm-iterate | any `.owm` file | updated `.owm` file |
+| wm-atlas-* | `strategy/map.agreed.owm` | `atlas/{topic}/` (no gate, derived) |
+| wm-tour-* | `atlas/` entries | `presentations/{tour}/` (no gate, derived) |
 
 ### Business Model Canvas gates (project-relative)
 
@@ -137,3 +157,18 @@ This provides an audit trail of the engagement.
 The client-level `engagement.md` tracks cross-project history:
 research refreshes, project starts, project completions, and any
 strategic decisions that span projects.
+
+## Review Artifacts
+
+The `review` skill produces two artifacts per project:
+
+- **`review/review.md`**: Private review containing client-specific
+  observations, interview transcripts, and findings. Never shared
+  outside the workspace. Its existence signals that the project has
+  been reviewed.
+- **`review/findings.md`**: Sanitised findings suitable for GitHub
+  issues. All client-identifying information is removed.
+
+If multiple projects are reviewed in the same engagement, a client-level
+**`review.md`** captures cross-project patterns and engagement-wide
+synthesis.

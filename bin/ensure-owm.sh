@@ -22,9 +22,9 @@ if [ $# -gt 0 ]; then
     input="$1"
     output="${input%.owm}.svg"
     if command -v owm >/dev/null 2>&1; then
-        owm "$input" -o "$output"
+        owm "$input" -w 1000 -H 1200 -o "$output"
     else
-        npx cli-owm "$input" -o "$output"
+        npx cli-owm "$input" -w 1000 -H 1200 -o "$output"
     fi
     echo "$output"
 fi

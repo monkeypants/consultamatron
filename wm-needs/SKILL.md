@@ -124,13 +124,11 @@ Based on client feedback:
 
 When the client agrees:
 1. Copy `needs/needs.md` to `needs/needs.agreed.md`
-2. Append to `decisions.md`:
-   ```markdown
-   ## {Date} — Stage 2: User needs agreed
-
-   **Agreed**: User needs document signed off by client.
-   **Users**: {list of agreed user classes}
-   **Scope**: {any scope notes}
+2. Record the agreement:
+   ```
+   wm-needs/scripts/record-agreement.sh --client {org} --project {slug} \
+     --field "Users={list of agreed user classes}" \
+     --field "Scope={any scope notes}"
    ```
 
 ## Important notes
