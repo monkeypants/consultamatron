@@ -9,13 +9,12 @@ from __future__ import annotations
 
 import json
 
-from bin.cli.infrastructure import (
+from bin.cli.infrastructure.json_repos import (
     JsonProjectRepository,
     JsonResearchTopicRepository,
     JsonTourManifestRepository,
-    _read_json_array,
-    _read_json_object,
 )
+from bin.cli.infrastructure.json_repos import _read_json_array, _read_json_object
 
 from .conftest import make_project, make_research, make_tour
 

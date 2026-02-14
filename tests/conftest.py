@@ -22,7 +22,7 @@ from bin.cli.entities import (
     TourManifest,
     TourStop,
 )
-from bin.cli.infrastructure import (
+from bin.cli.infrastructure.json_repos import (
     JsonDecisionRepository,
     JsonEngagementRepository,
     JsonProjectRepository,

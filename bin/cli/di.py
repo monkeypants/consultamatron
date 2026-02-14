@@ -11,8 +11,8 @@ import uuid
 from datetime import date
 
 from bin.cli.config import Config
-from bin.cli.infrastructure import (
-    JinjaSiteRenderer,
+from bin.cli.infrastructure.jinja_renderer import JinjaSiteRenderer
+from bin.cli.infrastructure.json_repos import (
     JsonDecisionRepository,
     JsonEngagementRepository,
     JsonProjectRepository,
