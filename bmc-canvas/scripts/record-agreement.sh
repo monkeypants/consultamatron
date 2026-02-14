@@ -9,6 +9,8 @@
 # Files modified by this script:
 #   clients/{client}/projects/{slug}/decisions.json  — Decision log (append:
 #                                                      "Stage 3: Business Model Canvas agreed")
+#   clients/{client}/projects/index.json             — Project registry
+#                                                      (status -> implementation)
 #
 # The files listed above are JSON documents managed by the consultamatron
 # CLI (bin/cli/). Agents may read these files directly for inspection.
@@ -36,11 +38,17 @@ if [[ -z "$CLIENT" || -z "$PROJECT" ]]; then
   exit 1
 fi
 
-CMD=(uv run --project "$REPO_DIR" consultamatron decision record \
+CLI="uv run --project $REPO_DIR consultamatron"
+
+CMD=($CLI decision record \
   --client "$CLIENT" --project "$PROJECT" \
   --title "Stage 3: Business Model Canvas agreed" \
   --field "Agreed=Full nine-block canvas signed off by client")
 for f in "${FIELDS[@]}"; do
   CMD+=(--field "$f")
 done
-exec "${CMD[@]}"
+"${CMD[@]}"
+
+# Terminal interactive gate — transition to implementation
+$CLI project update-status \
+  --client "$CLIENT" --project "$PROJECT" --status implementation

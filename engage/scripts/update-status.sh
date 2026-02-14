@@ -5,8 +5,8 @@
 # Usage:
 #   engage/scripts/update-status.sh --client CLIENT --project PROJECT --status STATUS
 #
-# STATUS must be one of: planned, active, complete, reviewed
-# Transitions are strictly ordered: planned -> active -> complete -> reviewed
+# STATUS must be one of: planning, elaboration, implementation, review, closed
+# Transitions are strictly ordered: planning -> elaboration -> implementation -> review -> closed
 #
 # Files modified by this script:
 #   clients/{client}/projects/index.json  — Project registry (status field updated)
