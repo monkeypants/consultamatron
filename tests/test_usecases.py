@@ -536,61 +536,6 @@ class TestGetProjectProgress:
         assert resp.current_stage == "wm-research"
         assert resp.next_prerequisite == "resources/index.md"
 
-    def test_first_stage_completed_advances_current(self, project):
-        project.record_decision_usecase.execute(
-            RecordDecisionRequest(
-                client=CLIENT,
-                project_slug="maps-1",
-                title="Stage 1: Research and brief agreed",
-                fields={"Scope": "Freight division"},
-            )
-        )
-        resp = project.get_project_progress_usecase.execute(
-            GetProjectProgressRequest(client=CLIENT, project_slug="maps-1")
-        )
-        assert resp.stages[0].completed is True
-        assert resp.stages[0].skill == "wm-research"
-        assert resp.stages[1].completed is False
-        assert resp.current_stage == "wm-needs"
-        assert resp.next_prerequisite == "brief.agreed.md"
-
-    def test_all_five_stages_completed(self, project):
-        for title in [
-            "Stage 1: Research and brief agreed",
-            "Stage 2: User needs agreed",
-            "Stage 3: Supply chain agreed",
-            "Stage 4: Evolution map agreed",
-            "Stage 5: Strategy map agreed",
-        ]:
-            project.record_decision_usecase.execute(
-                RecordDecisionRequest(
-                    client=CLIENT,
-                    project_slug="maps-1",
-                    title=title,
-                    fields={},
-                )
-            )
-        resp = project.get_project_progress_usecase.execute(
-            GetProjectProgressRequest(client=CLIENT, project_slug="maps-1")
-        )
-        assert all(s.completed for s in resp.stages)
-        assert resp.current_stage is None
-        assert resp.next_prerequisite is None
-
-    def test_stages_report_skill_names(self, project):
-        """Each stage carries the skill that executes it."""
-        resp = project.get_project_progress_usecase.execute(
-            GetProjectProgressRequest(client=CLIENT, project_slug="maps-1")
-        )
-        skills = [s.skill for s in resp.stages]
-        assert skills == [
-            "wm-research",
-            "wm-needs",
-            "wm-chain",
-            "wm-evolve",
-            "wm-strategy",
-        ]
-
     @pytest.mark.parametrize(
         "stage_decisions, expected_current, expected_gate",
         [
