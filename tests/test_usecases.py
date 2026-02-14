@@ -79,6 +79,20 @@ def _activate(di, client=CLIENT, slug="maps-1"):
     )
 
 
+@pytest.fixture
+def workspace(di):
+    """Initialized Holloway Group workspace."""
+    _init(di)
+    return di
+
+
+@pytest.fixture
+def project(workspace):
+    """Workspace with maps-1 registered as wardley-mapping."""
+    _register(workspace)
+    return workspace
+
+
 # ---------------------------------------------------------------------------
 # InitializeWorkspace
 # ---------------------------------------------------------------------------
@@ -111,46 +125,40 @@ class TestInitializeWorkspace:
 class TestRegisterProject:
     """Register a consulting project, seeding decision log and engagement."""
 
-    def test_registration_echoes_details(self, di):
-        _init(di)
-        resp = _register(di)
+    def test_registration_echoes_details(self, workspace):
+        resp = _register(workspace)
         assert resp.client == CLIENT
         assert resp.slug == "maps-1"
         assert resp.skillset == "wardley-mapping"
 
-    def test_project_entity_created_as_planned(self, di):
-        _init(di)
-        _register(di)
-        project = di.projects.get(CLIENT, "maps-1")
+    def test_project_entity_created_as_planned(self, workspace):
+        _register(workspace)
+        project = workspace.projects.get(CLIENT, "maps-1")
         assert project is not None
         assert project.status.value == "planned"
         assert project.skillset == "wardley-mapping"
 
-    def test_project_created_decision_seeded(self, di):
-        _init(di)
-        _register(di)
-        decisions = di.decisions.list_all(CLIENT, "maps-1")
+    def test_project_created_decision_seeded(self, workspace):
+        _register(workspace)
+        decisions = workspace.decisions.list_all(CLIENT, "maps-1")
         assert len(decisions) == 1
         assert decisions[0].title == "Project created"
         assert decisions[0].fields["Skillset"] == "wardley-mapping"
         assert decisions[0].fields["Scope"] == "Freight operations and digital platform"
 
-    def test_engagement_entry_logged(self, di):
-        _init(di)
-        _register(di)
-        titles = [e.title for e in di.engagement.list_all(CLIENT)]
+    def test_engagement_entry_logged(self, workspace):
+        _register(workspace)
+        titles = [e.title for e in workspace.engagement.list_all(CLIENT)]
         assert "Project registered: maps-1" in titles
 
-    def test_two_projects_coexist(self, di):
-        _init(di)
-        _register(di, slug="maps-1", scope="Freight operations")
-        _register(di, slug="maps-2", scope="Warehouse logistics")
-        assert len(di.projects.list_all(CLIENT)) == 2
+    def test_two_projects_coexist(self, workspace):
+        _register(workspace, slug="maps-1", scope="Freight operations")
+        _register(workspace, slug="maps-2", scope="Warehouse logistics")
+        assert len(workspace.projects.list_all(CLIENT)) == 2
 
-    def test_unknown_skillset_rejected(self, di):
-        _init(di)
+    def test_unknown_skillset_rejected(self, workspace):
         with pytest.raises(ValueError, match="Unknown skillset"):
-            di.register_project_usecase.execute(
+            workspace.register_project_usecase.execute(
                 RegisterProjectRequest(
                     client=CLIENT,
                     slug="tarot-1",
@@ -159,11 +167,10 @@ class TestRegisterProject:
                 )
             )
 
-    def test_duplicate_slug_rejected(self, di):
-        _init(di)
-        _register(di)
+    def test_duplicate_slug_rejected(self, workspace):
+        _register(workspace)
         with pytest.raises(ValueError, match="already exists"):
-            _register(di)
+            _register(workspace)
 
 
 # ---------------------------------------------------------------------------
@@ -174,54 +181,43 @@ class TestRegisterProject:
 class TestUpdateProjectStatus:
     """Transition projects through planned, active, complete, reviewed."""
 
-    def test_planned_to_active(self, di):
-        _init(di)
-        _register(di)
-        resp = _activate(di)
+    def test_planned_to_active(self, project):
+        resp = _activate(project)
         assert resp.status == "active"
 
-    def test_transition_persists(self, di):
-        _init(di)
-        _register(di)
-        _activate(di)
-        assert di.projects.get(CLIENT, "maps-1").status.value == "active"
+    def test_transition_persists(self, project):
+        _activate(project)
+        assert project.projects.get(CLIENT, "maps-1").status.value == "active"
 
-    def test_full_lifecycle(self, di):
-        _init(di)
-        _register(di)
+    def test_full_lifecycle(self, project):
         for status in ("active", "complete", "reviewed"):
-            di.update_project_status_usecase.execute(
+            project.update_project_status_usecase.execute(
                 UpdateProjectStatusRequest(
                     client=CLIENT, project_slug="maps-1", status=status
                 )
             )
-        assert di.projects.get(CLIENT, "maps-1").status.value == "reviewed"
+        assert project.projects.get(CLIENT, "maps-1").status.value == "reviewed"
 
-    def test_skipping_a_step_rejected(self, di):
-        _init(di)
-        _register(di)
+    def test_skipping_a_step_rejected(self, project):
         with pytest.raises(ValueError, match="Invalid transition"):
-            di.update_project_status_usecase.execute(
+            project.update_project_status_usecase.execute(
                 UpdateProjectStatusRequest(
                     client=CLIENT, project_slug="maps-1", status="complete"
                 )
             )
 
-    def test_reversing_status_rejected(self, di):
-        _init(di)
-        _register(di)
-        _activate(di)
+    def test_reversing_status_rejected(self, project):
+        _activate(project)
         with pytest.raises(ValueError, match="Invalid transition"):
-            di.update_project_status_usecase.execute(
+            project.update_project_status_usecase.execute(
                 UpdateProjectStatusRequest(
                     client=CLIENT, project_slug="maps-1", status="planned"
                 )
             )
 
-    def test_nonexistent_project_rejected(self, di):
-        _init(di)
+    def test_nonexistent_project_rejected(self, workspace):
         with pytest.raises(ValueError, match="not found"):
-            di.update_project_status_usecase.execute(
+            workspace.update_project_status_usecase.execute(
                 UpdateProjectStatusRequest(
                     client=CLIENT, project_slug="phantom-1", status="active"
                 )
@@ -236,10 +232,8 @@ class TestUpdateProjectStatus:
 class TestRecordDecision:
     """Append timestamped decisions to a project's log."""
 
-    def test_returns_generated_id(self, di):
-        _init(di)
-        _register(di)
-        resp = di.record_decision_usecase.execute(
+    def test_returns_generated_id(self, project):
+        resp = project.record_decision_usecase.execute(
             RecordDecisionRequest(
                 client=CLIENT,
                 project_slug="maps-1",
@@ -249,10 +243,8 @@ class TestRecordDecision:
         )
         assert resp.decision_id  # non-empty UUID
 
-    def test_decision_persists_with_fields(self, di):
-        _init(di)
-        _register(di)
-        resp = di.record_decision_usecase.execute(
+    def test_decision_persists_with_fields(self, project):
+        resp = project.record_decision_usecase.execute(
             RecordDecisionRequest(
                 client=CLIENT,
                 project_slug="maps-1",
@@ -262,19 +254,17 @@ class TestRecordDecision:
                 },
             )
         )
-        got = di.decisions.get(CLIENT, "maps-1", resp.decision_id)
+        got = project.decisions.get(CLIENT, "maps-1", resp.decision_id)
         assert got.title == "Stage 2: User needs agreed"
         assert "Fleet operators" in got.fields["Users"]
 
-    def test_decisions_accumulate(self, di):
-        _init(di)
-        _register(di)
+    def test_decisions_accumulate(self, project):
         for title in [
             "Stage 1: Research and brief agreed",
             "Stage 2: User needs agreed",
             "Stage 3: Supply chain agreed",
         ]:
-            di.record_decision_usecase.execute(
+            project.record_decision_usecase.execute(
                 RecordDecisionRequest(
                     client=CLIENT,
                     project_slug="maps-1",
@@ -283,12 +273,11 @@ class TestRecordDecision:
                 )
             )
         # +1 for the "Project created" decision seeded by registration
-        assert len(di.decisions.list_all(CLIENT, "maps-1")) == 4
+        assert len(project.decisions.list_all(CLIENT, "maps-1")) == 4
 
-    def test_nonexistent_project_rejected(self, di):
-        _init(di)
+    def test_nonexistent_project_rejected(self, workspace):
         with pytest.raises(ValueError, match="not found"):
-            di.record_decision_usecase.execute(
+            workspace.record_decision_usecase.execute(
                 RecordDecisionRequest(
                     client=CLIENT,
                     project_slug="phantom-1",
@@ -306,9 +295,8 @@ class TestRecordDecision:
 class TestAddEngagementEntry:
     """Append timestamped entries to the client engagement log."""
 
-    def test_returns_generated_id(self, di):
-        _init(di)
-        resp = di.add_engagement_entry_usecase.execute(
+    def test_returns_generated_id(self, workspace):
+        resp = workspace.add_engagement_entry_usecase.execute(
             AddEngagementEntryRequest(
                 client=CLIENT,
                 title="Strategy workshop scheduled",
@@ -320,16 +308,15 @@ class TestAddEngagementEntry:
         )
         assert resp.entry_id  # non-empty UUID
 
-    def test_entry_persists(self, di):
-        _init(di)
-        di.add_engagement_entry_usecase.execute(
+    def test_entry_persists(self, workspace):
+        workspace.add_engagement_entry_usecase.execute(
             AddEngagementEntryRequest(
                 client=CLIENT,
                 title="Research findings presented",
                 fields={},
             )
         )
-        titles = [e.title for e in di.engagement.list_all(CLIENT)]
+        titles = [e.title for e in workspace.engagement.list_all(CLIENT)]
         assert "Research findings presented" in titles
 
     def test_nonexistent_client_rejected(self, di):
@@ -351,9 +338,8 @@ class TestAddEngagementEntry:
 class TestRegisterResearchTopic:
     """Register research topics in the client's knowledge manifest."""
 
-    def test_echoes_filename(self, di):
-        _init(di)
-        resp = di.register_research_topic_usecase.execute(
+    def test_echoes_filename(self, workspace):
+        resp = workspace.register_research_topic_usecase.execute(
             RegisterResearchTopicRequest(
                 client=CLIENT,
                 topic="Technology stack and build-vs-buy decisions",
@@ -363,9 +349,8 @@ class TestRegisterResearchTopic:
         )
         assert resp.filename == "technology-landscape.md"
 
-    def test_topic_persists_with_confidence(self, di):
-        _init(di)
-        di.register_research_topic_usecase.execute(
+    def test_topic_persists_with_confidence(self, workspace):
+        workspace.register_research_topic_usecase.execute(
             RegisterResearchTopicRequest(
                 client=CLIENT,
                 topic="Market position in Australian freight",
@@ -373,13 +358,12 @@ class TestRegisterResearchTopic:
                 confidence="High",
             )
         )
-        got = di.research.get(CLIENT, "market-position.md")
+        got = workspace.research.get(CLIENT, "market-position.md")
         assert got is not None
         assert got.confidence.value == "High"
 
-    def test_duplicate_filename_rejected(self, di):
-        _init(di)
-        di.register_research_topic_usecase.execute(
+    def test_duplicate_filename_rejected(self, workspace):
+        workspace.register_research_topic_usecase.execute(
             RegisterResearchTopicRequest(
                 client=CLIENT,
                 topic="Regulatory environment",
@@ -388,7 +372,7 @@ class TestRegisterResearchTopic:
             )
         )
         with pytest.raises(ValueError, match="already exists"):
-            di.register_research_topic_usecase.execute(
+            workspace.register_research_topic_usecase.execute(
                 RegisterResearchTopicRequest(
                     client=CLIENT,
                     topic="Updated regulatory analysis",
@@ -406,10 +390,8 @@ class TestRegisterResearchTopic:
 class TestRegisterTour:
     """Register curated presentation tours for specific audiences."""
 
-    def test_returns_stop_count(self, di):
-        _init(di)
-        _register(di)
-        resp = di.register_tour_usecase.execute(
+    def test_returns_stop_count(self, project):
+        resp = project.register_tour_usecase.execute(
             RegisterTourRequest(
                 client=CLIENT,
                 project_slug="maps-1",
@@ -437,10 +419,8 @@ class TestRegisterTour:
         assert resp.stop_count == 3
         assert resp.name == "investor"
 
-    def test_tour_persists(self, di):
-        _init(di)
-        _register(di)
-        di.register_tour_usecase.execute(
+    def test_tour_persists(self, project):
+        project.register_tour_usecase.execute(
             RegisterTourRequest(
                 client=CLIENT,
                 project_slug="maps-1",
@@ -460,15 +440,14 @@ class TestRegisterTour:
                 ],
             )
         )
-        got = di.tours.get(CLIENT, "maps-1", "executive")
+        got = project.tours.get(CLIENT, "maps-1", "executive")
         assert got is not None
         assert len(got.stops) == 2
         assert got.stops[1].atlas_source == "atlas/risk/"
 
-    def test_nonexistent_project_rejected(self, di):
-        _init(di)
+    def test_nonexistent_project_rejected(self, workspace):
         with pytest.raises(ValueError, match="not found"):
-            di.register_tour_usecase.execute(
+            workspace.register_tour_usecase.execute(
                 RegisterTourRequest(
                     client=CLIENT,
                     project_slug="phantom-1",
@@ -493,26 +472,24 @@ class TestRegisterTour:
 class TestListProjects:
     """Query the project registry with optional filters."""
 
-    def test_empty_registry(self, di):
-        _init(di)
-        resp = di.list_projects_usecase.execute(ListProjectsRequest(client=CLIENT))
+    def test_empty_registry(self, workspace):
+        resp = workspace.list_projects_usecase.execute(
+            ListProjectsRequest(client=CLIENT)
+        )
         assert resp.projects == []
 
-    def test_one_project(self, di):
-        _init(di)
-        _register(di)
-        resp = di.list_projects_usecase.execute(ListProjectsRequest(client=CLIENT))
+    def test_one_project(self, project):
+        resp = project.list_projects_usecase.execute(ListProjectsRequest(client=CLIENT))
         assert len(resp.projects) == 1
         assert resp.projects[0].slug == "maps-1"
         assert resp.projects[0].skillset == "wardley-mapping"
         assert resp.projects[0].status == "planned"
 
-    def test_filter_by_status(self, di):
-        _init(di)
-        _register(di, slug="maps-1", scope="Freight operations")
-        _register(di, slug="maps-2", scope="Warehouse logistics")
-        _activate(di, slug="maps-2")
-        resp = di.list_projects_usecase.execute(
+    def test_filter_by_status(self, workspace):
+        _register(workspace, slug="maps-1", scope="Freight operations")
+        _register(workspace, slug="maps-2", scope="Warehouse logistics")
+        _activate(workspace, slug="maps-2")
+        resp = workspace.list_projects_usecase.execute(
             ListProjectsRequest(client=CLIENT, status="active")
         )
         assert len(resp.projects) == 1
@@ -527,17 +504,14 @@ class TestListProjects:
 class TestGetProject:
     """Retrieve a single project by slug."""
 
-    def test_not_found(self, di):
-        _init(di)
-        resp = di.get_project_usecase.execute(
+    def test_not_found(self, workspace):
+        resp = workspace.get_project_usecase.execute(
             GetProjectRequest(client=CLIENT, slug="nonexistent")
         )
         assert resp.project is None
 
-    def test_found(self, di):
-        _init(di)
-        _register(di)
-        resp = di.get_project_usecase.execute(
+    def test_found(self, project):
+        resp = project.get_project_usecase.execute(
             GetProjectRequest(client=CLIENT, slug="maps-1")
         )
         assert resp.project is not None
@@ -553,10 +527,8 @@ class TestGetProject:
 class TestGetProjectProgress:
     """Match decisions against the skillset pipeline to report progress."""
 
-    def test_no_decisions_all_stages_pending(self, di):
-        _init(di)
-        _register(di)
-        resp = di.get_project_progress_usecase.execute(
+    def test_no_decisions_all_stages_pending(self, project):
+        resp = project.get_project_progress_usecase.execute(
             GetProjectProgressRequest(client=CLIENT, project_slug="maps-1")
         )
         assert len(resp.stages) == 5
@@ -564,10 +536,8 @@ class TestGetProjectProgress:
         assert resp.current_stage == "wm-research"
         assert resp.next_prerequisite == "resources/index.md"
 
-    def test_first_stage_completed_advances_current(self, di):
-        _init(di)
-        _register(di)
-        di.record_decision_usecase.execute(
+    def test_first_stage_completed_advances_current(self, project):
+        project.record_decision_usecase.execute(
             RecordDecisionRequest(
                 client=CLIENT,
                 project_slug="maps-1",
@@ -575,7 +545,7 @@ class TestGetProjectProgress:
                 fields={"Scope": "Freight division"},
             )
         )
-        resp = di.get_project_progress_usecase.execute(
+        resp = project.get_project_progress_usecase.execute(
             GetProjectProgressRequest(client=CLIENT, project_slug="maps-1")
         )
         assert resp.stages[0].completed is True
@@ -584,9 +554,7 @@ class TestGetProjectProgress:
         assert resp.current_stage == "wm-needs"
         assert resp.next_prerequisite == "brief.agreed.md"
 
-    def test_all_five_stages_completed(self, di):
-        _init(di)
-        _register(di)
+    def test_all_five_stages_completed(self, project):
         for title in [
             "Stage 1: Research and brief agreed",
             "Stage 2: User needs agreed",
@@ -594,7 +562,7 @@ class TestGetProjectProgress:
             "Stage 4: Evolution map agreed",
             "Stage 5: Strategy map agreed",
         ]:
-            di.record_decision_usecase.execute(
+            project.record_decision_usecase.execute(
                 RecordDecisionRequest(
                     client=CLIENT,
                     project_slug="maps-1",
@@ -602,18 +570,16 @@ class TestGetProjectProgress:
                     fields={},
                 )
             )
-        resp = di.get_project_progress_usecase.execute(
+        resp = project.get_project_progress_usecase.execute(
             GetProjectProgressRequest(client=CLIENT, project_slug="maps-1")
         )
         assert all(s.completed for s in resp.stages)
         assert resp.current_stage is None
         assert resp.next_prerequisite is None
 
-    def test_stages_report_skill_names(self, di):
+    def test_stages_report_skill_names(self, project):
         """Each stage carries the skill that executes it."""
-        _init(di)
-        _register(di)
-        resp = di.get_project_progress_usecase.execute(
+        resp = project.get_project_progress_usecase.execute(
             GetProjectProgressRequest(client=CLIENT, project_slug="maps-1")
         )
         skills = [s.skill for s in resp.stages]
@@ -679,13 +645,11 @@ class TestGetProjectProgress:
         ],
     )
     def test_pipeline_advances_through_stages(
-        self, di, stage_decisions, expected_current, expected_gate
+        self, project, stage_decisions, expected_current, expected_gate
     ):
         """Each stage decision advances the pipeline to the next skill."""
-        _init(di)
-        _register(di)
         for title in stage_decisions:
-            di.record_decision_usecase.execute(
+            project.record_decision_usecase.execute(
                 RecordDecisionRequest(
                     client=CLIENT,
                     project_slug="maps-1",
@@ -693,16 +657,15 @@ class TestGetProjectProgress:
                     fields={},
                 )
             )
-        resp = di.get_project_progress_usecase.execute(
+        resp = project.get_project_progress_usecase.execute(
             GetProjectProgressRequest(client=CLIENT, project_slug="maps-1")
         )
         assert resp.current_stage == expected_current
         assert resp.next_prerequisite == expected_gate
 
-    def test_nonexistent_project_rejected(self, di):
-        _init(di)
+    def test_nonexistent_project_rejected(self, workspace):
         with pytest.raises(ValueError, match="not found"):
-            di.get_project_progress_usecase.execute(
+            workspace.get_project_progress_usecase.execute(
                 GetProjectProgressRequest(client=CLIENT, project_slug="phantom-1")
             )
 
@@ -715,19 +678,15 @@ class TestGetProjectProgress:
 class TestListDecisions:
     """List a project's decision log."""
 
-    def test_registration_seeds_one_decision(self, di):
-        _init(di)
-        _register(di)
-        resp = di.list_decisions_usecase.execute(
+    def test_registration_seeds_one_decision(self, project):
+        resp = project.list_decisions_usecase.execute(
             ListDecisionsRequest(client=CLIENT, project_slug="maps-1")
         )
         assert len(resp.decisions) == 1
         assert resp.decisions[0].title == "Project created"
 
-    def test_recorded_decisions_appear(self, di):
-        _init(di)
-        _register(di)
-        di.record_decision_usecase.execute(
+    def test_recorded_decisions_appear(self, project):
+        project.record_decision_usecase.execute(
             RecordDecisionRequest(
                 client=CLIENT,
                 project_slug="maps-1",
@@ -735,7 +694,7 @@ class TestListDecisions:
                 fields={"Scope": "Freight division"},
             )
         )
-        resp = di.list_decisions_usecase.execute(
+        resp = project.list_decisions_usecase.execute(
             ListDecisionsRequest(client=CLIENT, project_slug="maps-1")
         )
         titles = [d.title for d in resp.decisions]
@@ -751,16 +710,14 @@ class TestListDecisions:
 class TestListResearchTopics:
     """List the client's research manifest."""
 
-    def test_empty_manifest(self, di):
-        _init(di)
-        resp = di.list_research_topics_usecase.execute(
+    def test_empty_manifest(self, workspace):
+        resp = workspace.list_research_topics_usecase.execute(
             ListResearchTopicsRequest(client=CLIENT)
         )
         assert resp.topics == []
 
-    def test_registered_topics_appear(self, di):
-        _init(di)
-        di.register_research_topic_usecase.execute(
+    def test_registered_topics_appear(self, workspace):
+        workspace.register_research_topic_usecase.execute(
             RegisterResearchTopicRequest(
                 client=CLIENT,
                 topic="Partnerships and fleet suppliers",
@@ -768,7 +725,7 @@ class TestListResearchTopics:
                 confidence="Medium-High",
             )
         )
-        resp = di.list_research_topics_usecase.execute(
+        resp = workspace.list_research_topics_usecase.execute(
             ListResearchTopicsRequest(client=CLIENT)
         )
         assert len(resp.topics) == 1
