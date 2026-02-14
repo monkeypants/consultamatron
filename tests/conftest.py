@@ -229,6 +229,40 @@ WM_PIPELINE = [
 ]
 
 
+BMC_PIPELINE = [
+    PipelineStage(
+        order=1,
+        skill="bmc-research",
+        prerequisite_gate="resources/index.md",
+        produces_gate="brief.agreed.md",
+        description="Stage 1: BMC research and brief agreed",
+    ),
+    PipelineStage(
+        order=2,
+        skill="bmc-segments",
+        prerequisite_gate="brief.agreed.md",
+        produces_gate="segments/segments.agreed.md",
+        description="Stage 2: Customer segments agreed",
+    ),
+    PipelineStage(
+        order=3,
+        skill="bmc-canvas",
+        prerequisite_gate="segments/segments.agreed.md",
+        produces_gate="canvas.agreed.md",
+        description="Stage 3: Canvas agreed",
+    ),
+]
+
+
+def _write_skillsets(skillsets_root, skillsets):
+    """Write skillset manifests to the test workspace index."""
+    index = skillsets_root / "index.json"
+    index.parent.mkdir(parents=True, exist_ok=True)
+    index.write_text(
+        json.dumps([s.model_dump(mode="json") for s in skillsets], indent=2) + "\n"
+    )
+
+
 def seed_wardley_mapping(skillsets_root):
     """Write the wardley-mapping skillset manifest to a test workspace.
 
@@ -247,6 +281,38 @@ def seed_wardley_mapping(skillsets_root):
         pipeline=WM_PIPELINE,
         slug_pattern="maps-{n}",
     )
-    index = skillsets_root / "index.json"
-    index.parent.mkdir(parents=True, exist_ok=True)
-    index.write_text(json.dumps([skillset.model_dump(mode="json")], indent=2) + "\n")
+    _write_skillsets(skillsets_root, [skillset])
+
+
+def seed_bmc_skillset(skillsets_root):
+    """Write the business-model-canvas skillset manifest."""
+    skillset = Skillset(
+        name="business-model-canvas",
+        display_name="Business Model Canvas",
+        description="Nine-block business model analysis.",
+        pipeline=BMC_PIPELINE,
+        slug_pattern="bmc-{n}",
+    )
+    _write_skillsets(skillsets_root, [skillset])
+
+
+def seed_all_skillsets(skillsets_root):
+    """Write both wardley-mapping and business-model-canvas skillsets."""
+    wm = Skillset(
+        name="wardley-mapping",
+        display_name="Wardley Mapping",
+        description=(
+            "Strategic mapping from user needs through supply chain"
+            " to evolution positioning and strategic annotation."
+        ),
+        pipeline=WM_PIPELINE,
+        slug_pattern="maps-{n}",
+    )
+    bmc = Skillset(
+        name="business-model-canvas",
+        display_name="Business Model Canvas",
+        description="Nine-block business model analysis.",
+        pipeline=BMC_PIPELINE,
+        slug_pattern="bmc-{n}",
+    )
+    _write_skillsets(skillsets_root, [wm, bmc])
