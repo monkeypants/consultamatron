@@ -17,6 +17,7 @@ import click
 
 from bin.cli.config import Config
 from bin.cli.di import Container
+from bin.cli.entities import DomainError
 from bin.cli.dtos import (
     AddEngagementEntryRequest,
     GetProjectProgressRequest,
@@ -84,7 +85,7 @@ def _inject(attr: str) -> Callable[..., Any]:
 
 
 def _run(usecase: UseCase[TRequest, TResponse], request: TRequest) -> TResponse:
-    """Execute a usecase, converting ValueError to a clean CLI error.
+    """Execute a usecase, converting DomainError to a clean CLI error.
 
     The TypeVars are unbound at module scope, but mypy/pyright infer the
     concrete types at each call site.  If this stops being sufficient
@@ -93,7 +94,7 @@ def _run(usecase: UseCase[TRequest, TResponse], request: TRequest) -> TResponse:
     """
     try:
         return usecase.execute(request)
-    except ValueError as e:
+    except DomainError as e:
         raise click.ClickException(str(e))
 
 

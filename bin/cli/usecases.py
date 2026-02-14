@@ -44,7 +44,10 @@ from bin.cli.dtos import (
 from bin.cli.entities import (
     Confidence,
     DecisionEntry,
+    DuplicateError,
     EngagementEntry,
+    InvalidTransitionError,
+    NotFoundError,
     Project,
     ProjectStatus,
     ResearchTopic,
@@ -107,7 +110,7 @@ class InitializeWorkspaceUseCase:
         self, request: InitializeWorkspaceRequest
     ) -> InitializeWorkspaceResponse:
         if self._projects.client_exists(request.client):
-            raise ValueError(f"Client workspace already exists: {request.client}")
+            raise DuplicateError(f"Client workspace already exists: {request.client}")
         self._engagement.save(
             EngagementEntry(
                 id=self._id_gen.new_id(),
@@ -141,9 +144,11 @@ class RegisterProjectUseCase:
 
     def execute(self, request: RegisterProjectRequest) -> RegisterProjectResponse:
         if self._skillsets.get(request.skillset) is None:
-            raise ValueError(f"Unknown skillset: {request.skillset}")
+            raise NotFoundError(f"Unknown skillset: {request.skillset}")
         if self._projects.get(request.client, request.slug) is not None:
-            raise ValueError(f"Project already exists: {request.client}/{request.slug}")
+            raise DuplicateError(
+                f"Project already exists: {request.client}/{request.slug}"
+            )
 
         today = self._clock.today()
         self._projects.save(
@@ -196,7 +201,7 @@ class UpdateProjectStatusUseCase:
     ) -> UpdateProjectStatusResponse:
         project = self._projects.get(request.client, request.project_slug)
         if project is None:
-            raise ValueError(
+            raise NotFoundError(
                 f"Project not found: {request.client}/{request.project_slug}"
             )
 
@@ -204,7 +209,7 @@ class UpdateProjectStatusUseCase:
         current_idx = _STATUS_ORDER.index(project.status)
         new_idx = _STATUS_ORDER.index(new_status)
         if new_idx != current_idx + 1:
-            raise ValueError(
+            raise InvalidTransitionError(
                 f"Invalid transition: {project.status.value} -> {new_status.value}"
             )
 
@@ -234,7 +239,7 @@ class RecordDecisionUseCase:
 
     def execute(self, request: RecordDecisionRequest) -> RecordDecisionResponse:
         if self._projects.get(request.client, request.project_slug) is None:
-            raise ValueError(
+            raise NotFoundError(
                 f"Project not found: {request.client}/{request.project_slug}"
             )
 
@@ -274,7 +279,7 @@ class AddEngagementEntryUseCase:
 
     def execute(self, request: AddEngagementEntryRequest) -> AddEngagementEntryResponse:
         if not self._projects.client_exists(request.client):
-            raise ValueError(f"Client not found: {request.client}")
+            raise NotFoundError(f"Client not found: {request.client}")
 
         entry_id = self._id_gen.new_id()
         self._engagement.save(
@@ -310,7 +315,7 @@ class RegisterResearchTopicUseCase:
         self, request: RegisterResearchTopicRequest
     ) -> RegisterResearchTopicResponse:
         if self._research.exists(request.client, request.filename):
-            raise ValueError(f"Research topic already exists: {request.filename}")
+            raise DuplicateError(f"Research topic already exists: {request.filename}")
 
         self._research.save(
             ResearchTopic(
@@ -341,7 +346,7 @@ class RegisterTourUseCase:
 
     def execute(self, request: RegisterTourRequest) -> RegisterTourResponse:
         if self._projects.get(request.client, request.project_slug) is None:
-            raise ValueError(
+            raise NotFoundError(
                 f"Project not found: {request.client}/{request.project_slug}"
             )
 
@@ -435,13 +440,13 @@ class GetProjectProgressUseCase:
     def execute(self, request: GetProjectProgressRequest) -> GetProjectProgressResponse:
         project = self._projects.get(request.client, request.project_slug)
         if project is None:
-            raise ValueError(
+            raise NotFoundError(
                 f"Project not found: {request.client}/{request.project_slug}"
             )
 
         skillset = self._skillsets.get(project.skillset)
         if skillset is None:
-            raise ValueError(f"Skillset not found: {project.skillset}")
+            raise NotFoundError(f"Skillset not found: {project.skillset}")
 
         decisions = self._decisions.list_all(request.client, request.project_slug)
         decision_titles = {d.title for d in decisions}
@@ -536,7 +541,7 @@ class RenderSiteUseCase:
 
     def execute(self, request: RenderSiteRequest) -> RenderSiteResponse:
         if not self._projects.client_exists(request.client):
-            raise ValueError(f"Client not found: {request.client}")
+            raise NotFoundError(f"Client not found: {request.client}")
 
         projects = self._projects.list_all(request.client)
 

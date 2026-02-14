@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import pytest
 
+from bin.cli.entities import DuplicateError, InvalidTransitionError, NotFoundError
 from bin.cli.di import Container
 from bin.cli.dtos import (
     AddEngagementEntryRequest,
@@ -113,7 +114,7 @@ class TestInitializeWorkspace:
 
     def test_duplicate_workspace_rejected(self, di):
         _init(di)
-        with pytest.raises(ValueError, match="already exists"):
+        with pytest.raises(DuplicateError, match="already exists"):
             _init(di)
 
 
@@ -157,7 +158,7 @@ class TestRegisterProject:
         assert len(workspace.projects.list_all(CLIENT)) == 2
 
     def test_unknown_skillset_rejected(self, workspace):
-        with pytest.raises(ValueError, match="Unknown skillset"):
+        with pytest.raises(NotFoundError, match="Unknown skillset"):
             workspace.register_project_usecase.execute(
                 RegisterProjectRequest(
                     client=CLIENT,
@@ -169,7 +170,7 @@ class TestRegisterProject:
 
     def test_duplicate_slug_rejected(self, workspace):
         _register(workspace)
-        with pytest.raises(ValueError, match="already exists"):
+        with pytest.raises(DuplicateError, match="already exists"):
             _register(workspace)
 
 
@@ -199,7 +200,7 @@ class TestUpdateProjectStatus:
         assert project.projects.get(CLIENT, "maps-1").status.value == "reviewed"
 
     def test_skipping_a_step_rejected(self, project):
-        with pytest.raises(ValueError, match="Invalid transition"):
+        with pytest.raises(InvalidTransitionError, match="Invalid transition"):
             project.update_project_status_usecase.execute(
                 UpdateProjectStatusRequest(
                     client=CLIENT, project_slug="maps-1", status="complete"
@@ -208,7 +209,7 @@ class TestUpdateProjectStatus:
 
     def test_reversing_status_rejected(self, project):
         _activate(project)
-        with pytest.raises(ValueError, match="Invalid transition"):
+        with pytest.raises(InvalidTransitionError, match="Invalid transition"):
             project.update_project_status_usecase.execute(
                 UpdateProjectStatusRequest(
                     client=CLIENT, project_slug="maps-1", status="planned"
@@ -216,7 +217,7 @@ class TestUpdateProjectStatus:
             )
 
     def test_nonexistent_project_rejected(self, workspace):
-        with pytest.raises(ValueError, match="not found"):
+        with pytest.raises(NotFoundError, match="not found"):
             workspace.update_project_status_usecase.execute(
                 UpdateProjectStatusRequest(
                     client=CLIENT, project_slug="phantom-1", status="active"
@@ -276,7 +277,7 @@ class TestRecordDecision:
         assert len(project.decisions.list_all(CLIENT, "maps-1")) == 4
 
     def test_nonexistent_project_rejected(self, workspace):
-        with pytest.raises(ValueError, match="not found"):
+        with pytest.raises(NotFoundError, match="not found"):
             workspace.record_decision_usecase.execute(
                 RecordDecisionRequest(
                     client=CLIENT,
@@ -320,7 +321,7 @@ class TestAddEngagementEntry:
         assert "Research findings presented" in titles
 
     def test_nonexistent_client_rejected(self, di):
-        with pytest.raises(ValueError, match="not found"):
+        with pytest.raises(NotFoundError, match="not found"):
             di.add_engagement_entry_usecase.execute(
                 AddEngagementEntryRequest(
                     client="phantom-corp",
@@ -371,7 +372,7 @@ class TestRegisterResearchTopic:
                 confidence="Medium",
             )
         )
-        with pytest.raises(ValueError, match="already exists"):
+        with pytest.raises(DuplicateError, match="already exists"):
             workspace.register_research_topic_usecase.execute(
                 RegisterResearchTopicRequest(
                     client=CLIENT,
@@ -446,7 +447,7 @@ class TestRegisterTour:
         assert got.stops[1].atlas_source == "atlas/risk/"
 
     def test_nonexistent_project_rejected(self, workspace):
-        with pytest.raises(ValueError, match="not found"):
+        with pytest.raises(NotFoundError, match="not found"):
             workspace.register_tour_usecase.execute(
                 RegisterTourRequest(
                     client=CLIENT,
@@ -609,7 +610,7 @@ class TestGetProjectProgress:
         assert resp.next_prerequisite == expected_gate
 
     def test_nonexistent_project_rejected(self, workspace):
-        with pytest.raises(ValueError, match="not found"):
+        with pytest.raises(NotFoundError, match="not found"):
             workspace.get_project_progress_usecase.execute(
                 GetProjectProgressRequest(client=CLIENT, project_slug="phantom-1")
             )

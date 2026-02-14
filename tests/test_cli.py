@@ -5,6 +5,10 @@ codes, output text, and error messages. This is the outermost test
 boundary — if a test here fails, either argument parsing, output
 formatting, or error handling is broken.
 
+Business rule validation (duplicate slugs, unknown skillsets, invalid
+transitions) lives in test_usecases.py. One representative error test
+here verifies that _run() surfaces DomainError as exit code 1 + message.
+
 The sample data continues the Holloway Group engagement from
 test_usecases.py: a freight logistics company commissioning a
 Wardley Map of their operations.
@@ -103,30 +107,6 @@ class TestProjectRegister:
         assert "wardley-mapping" in result.output
         assert "holloway-group" in result.output
 
-    def test_unknown_skillset_reports_error(self, run):
-        _init(run)
-        result = run(
-            "project",
-            "register",
-            "--client",
-            CLIENT,
-            "--slug",
-            "tarot-1",
-            "--skillset",
-            "tarot-reading",
-            "--scope",
-            "Divination services",
-        )
-        assert result.exit_code == 1
-        assert "Unknown skillset" in result.output
-
-    def test_duplicate_slug_reports_error(self, run):
-        _init(run)
-        _register(run)
-        result = _register(run)
-        assert result.exit_code == 1
-        assert "already exists" in result.output
-
 
 # ---------------------------------------------------------------------------
 # project update-status
@@ -151,22 +131,6 @@ class TestProjectUpdateStatus:
         )
         assert result.exit_code == 0
         assert "active" in result.output
-
-    def test_invalid_transition_reports_error(self, run):
-        _init(run)
-        _register(run)
-        result = run(
-            "project",
-            "update-status",
-            "--client",
-            CLIENT,
-            "--project",
-            "maps-1",
-            "--status",
-            "complete",
-        )
-        assert result.exit_code == 1
-        assert "Invalid transition" in result.output
 
     def test_invalid_status_value_rejected_by_click(self, run):
         result = run(
@@ -226,12 +190,6 @@ class TestProjectGet:
         assert "Slug:     maps-1" in result.output
         assert "Skillset: wardley-mapping" in result.output
         assert "Status:   planned" in result.output
-
-    def test_not_found_exits_with_error(self, run):
-        _init(run)
-        result = run("project", "get", "--client", CLIENT, "--slug", "phantom-1")
-        assert result.exit_code == 1
-        assert "not found" in result.output
 
 
 # ---------------------------------------------------------------------------
@@ -359,18 +317,6 @@ class TestEngagementAdd:
         )
         assert result.exit_code == 0
         assert "Strategy workshop scheduled" in result.output
-
-    def test_nonexistent_client_reports_error(self, run):
-        result = run(
-            "engagement",
-            "add",
-            "--client",
-            "phantom-corp",
-            "--title",
-            "Meeting",
-        )
-        assert result.exit_code == 1
-        assert "not found" in result.output
 
 
 # ---------------------------------------------------------------------------
