@@ -358,6 +358,8 @@ class TestResearchAdd:
             "Legendary",
         )
         assert result.exit_code != 0
+        assert "Legendary" in result.output
+        assert "Invalid value" in result.output
 
 
 class TestResearchList:
@@ -431,3 +433,5 @@ class TestTourRegister:
             "not valid json",
         )
         assert result.exit_code != 0
+        assert "Invalid" in result.output
+        assert "JSON" in result.output
