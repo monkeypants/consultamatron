@@ -108,6 +108,7 @@ class InitializeWorkspaceUseCase:
                 id=self._id_gen.new_id(),
                 client=request.client,
                 date=self._clock.today(),
+                timestamp=self._clock.now(),
                 title="Client onboarded",
                 fields={},
             )
@@ -161,6 +162,7 @@ class RegisterProjectUseCase:
                 client=request.client,
                 project_slug=request.slug,
                 date=today,
+                timestamp=self._clock.now(),
                 title="Project created",
                 fields=fields,
             )
@@ -170,6 +172,7 @@ class RegisterProjectUseCase:
                 id=self._id_gen.new_id(),
                 client=request.client,
                 date=today,
+                timestamp=self._clock.now(),
                 title=f"Project registered: {request.slug}",
                 fields=fields,
             )
@@ -240,6 +243,7 @@ class RecordDecisionUseCase:
                 client=request.client,
                 project_slug=request.project_slug,
                 date=self._clock.today(),
+                timestamp=self._clock.now(),
                 title=request.title,
                 fields=request.fields,
             )
@@ -277,6 +281,7 @@ class AddEngagementEntryUseCase:
                 id=entry_id,
                 client=request.client,
                 date=self._clock.today(),
+                timestamp=self._clock.now(),
                 title=request.title,
                 fields=request.fields,
             )
@@ -461,6 +466,7 @@ class ListDecisionsUseCase:
 
     def execute(self, request: ListDecisionsRequest) -> ListDecisionsResponse:
         decisions = self._decisions.list_all(request.client, request.project_slug)
+        decisions.sort(key=lambda d: d.timestamp)
         return ListDecisionsResponse(
             client=request.client,
             project_slug=request.project_slug,

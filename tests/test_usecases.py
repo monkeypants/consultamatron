@@ -13,9 +13,12 @@ research, needs, chain, evolution, strategy.
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 import pytest
 
 from bin.cli.entities import (
+    DecisionEntry,
     DuplicateError,
     InvalidTransitionError,
     NotFoundError,
@@ -650,6 +653,50 @@ class TestListDecisions:
         titles = [d.title for d in resp.decisions]
         assert "Project created" in titles
         assert "Stage 1: Research and brief agreed" in titles
+
+    def test_returns_chronological_order(self, project):
+        """Decisions are returned sorted by timestamp, not insertion order."""
+        # Save directly to repo in reverse chronological order
+        project.decisions.save(
+            DecisionEntry(
+                id="late",
+                client=CLIENT,
+                project_slug="maps-1",
+                date=datetime(2025, 6, 3, tzinfo=timezone.utc).date(),
+                timestamp=datetime(2025, 6, 3, 14, 0, 0, tzinfo=timezone.utc),
+                title="Third decision",
+                fields={},
+            )
+        )
+        project.decisions.save(
+            DecisionEntry(
+                id="early",
+                client=CLIENT,
+                project_slug="maps-1",
+                date=datetime(2025, 6, 1, tzinfo=timezone.utc).date(),
+                timestamp=datetime(2025, 6, 1, 9, 0, 0, tzinfo=timezone.utc),
+                title="First decision",
+                fields={},
+            )
+        )
+        project.decisions.save(
+            DecisionEntry(
+                id="middle",
+                client=CLIENT,
+                project_slug="maps-1",
+                date=datetime(2025, 6, 2, tzinfo=timezone.utc).date(),
+                timestamp=datetime(2025, 6, 2, 11, 0, 0, tzinfo=timezone.utc),
+                title="Second decision",
+                fields={},
+            )
+        )
+        resp = project.list_decisions_usecase.execute(
+            ListDecisionsRequest(client=CLIENT, project_slug="maps-1")
+        )
+        # Skip the "Project created" decision seeded by registration
+        titles = [d.title for d in resp.decisions]
+        assert titles.index("First decision") < titles.index("Second decision")
+        assert titles.index("Second decision") < titles.index("Third decision")
 
 
 # ---------------------------------------------------------------------------

@@ -13,7 +13,7 @@ Follows the same conventions as bingo-frog bounded contexts:
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime, tzinfo
 from pathlib import Path
 from typing import Protocol, runtime_checkable
 
@@ -293,10 +293,22 @@ class SiteRenderer(Protocol):
 
 @runtime_checkable
 class Clock(Protocol):
-    """Wall-clock abstraction for timestamping domain events."""
+    """Wall-clock abstraction for timestamping domain events.
+
+    Provides both date (for display) and datetime (for ordering).
+    The timezone is available for consumers that need temporal context.
+    """
 
     def today(self) -> date:
-        """Return the current date."""
+        """Return the current date in the configured timezone."""
+        ...
+
+    def now(self) -> datetime:
+        """Return the current timezone-aware datetime."""
+        ...
+
+    def tz(self) -> tzinfo:
+        """Return the configured timezone."""
         ...
 
 

@@ -8,7 +8,7 @@ on implementations directly.
 from __future__ import annotations
 
 import uuid
-from datetime import date
+from datetime import date, datetime, timezone
 
 from bin.cli.config import Config
 from bin.cli.infrastructure.bmc_presenter import BmcProjectPresenter
@@ -57,10 +57,18 @@ from bin.cli.usecases import (
 
 
 class WallClock:
-    """Production clock — returns the real date."""
+    """Production clock — real time anchored to UTC."""
+
+    _tz = timezone.utc
 
     def today(self) -> date:
-        return date.today()
+        return datetime.now(self._tz).date()
+
+    def now(self) -> datetime:
+        return datetime.now(self._tz)
+
+    def tz(self) -> timezone:
+        return self._tz
 
 
 class UuidGenerator:
