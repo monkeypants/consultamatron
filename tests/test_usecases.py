@@ -80,10 +80,12 @@ def _register(
     )
 
 
-def _activate(di, client=CLIENT, slug="maps-1"):
-    """Transition a project from planned to active."""
+def _elaborate(di, client=CLIENT, slug="maps-1"):
+    """Transition a project from planning to elaboration."""
     return di.update_project_status_usecase.execute(
-        UpdateProjectStatusRequest(client=client, project_slug=slug, status="active")
+        UpdateProjectStatusRequest(
+            client=client, project_slug=slug, status="elaboration"
+        )
     )
 
 
@@ -139,11 +141,11 @@ class TestRegisterProject:
         assert resp.slug == "maps-1"
         assert resp.skillset == "wardley-mapping"
 
-    def test_project_entity_created_as_planned(self, workspace):
+    def test_project_entity_created_in_planning(self, workspace):
         _register(workspace)
         project = workspace.projects.get(CLIENT, "maps-1")
         assert project is not None
-        assert project.status.value == "planned"
+        assert project.status.value == "planning"
         assert project.skillset == "wardley-mapping"
 
     def test_project_created_decision_seeded(self, workspace):
@@ -187,39 +189,39 @@ class TestRegisterProject:
 
 
 class TestUpdateProjectStatus:
-    """Transition projects through planned, active, complete, reviewed."""
+    """Transition projects through planning, elaboration, implementation, review."""
 
-    def test_planned_to_active(self, project):
-        resp = _activate(project)
-        assert resp.status == "active"
+    def test_planning_to_elaboration(self, project):
+        resp = _elaborate(project)
+        assert resp.status == "elaboration"
 
     def test_transition_persists(self, project):
-        _activate(project)
-        assert project.projects.get(CLIENT, "maps-1").status.value == "active"
+        _elaborate(project)
+        assert project.projects.get(CLIENT, "maps-1").status.value == "elaboration"
 
     def test_full_lifecycle(self, project):
-        for status in ("active", "complete", "reviewed"):
+        for status in ("elaboration", "implementation", "review"):
             project.update_project_status_usecase.execute(
                 UpdateProjectStatusRequest(
                     client=CLIENT, project_slug="maps-1", status=status
                 )
             )
-        assert project.projects.get(CLIENT, "maps-1").status.value == "reviewed"
+        assert project.projects.get(CLIENT, "maps-1").status.value == "review"
 
     def test_skipping_a_step_rejected(self, project):
         with pytest.raises(InvalidTransitionError, match="Invalid transition"):
             project.update_project_status_usecase.execute(
                 UpdateProjectStatusRequest(
-                    client=CLIENT, project_slug="maps-1", status="complete"
+                    client=CLIENT, project_slug="maps-1", status="implementation"
                 )
             )
 
     def test_reversing_status_rejected(self, project):
-        _activate(project)
+        _elaborate(project)
         with pytest.raises(InvalidTransitionError, match="Invalid transition"):
             project.update_project_status_usecase.execute(
                 UpdateProjectStatusRequest(
-                    client=CLIENT, project_slug="maps-1", status="planned"
+                    client=CLIENT, project_slug="maps-1", status="planning"
                 )
             )
 
@@ -227,7 +229,7 @@ class TestUpdateProjectStatus:
         with pytest.raises(NotFoundError, match="not found"):
             workspace.update_project_status_usecase.execute(
                 UpdateProjectStatusRequest(
-                    client=CLIENT, project_slug="phantom-1", status="active"
+                    client=CLIENT, project_slug="phantom-1", status="elaboration"
                 )
             )
 
@@ -491,14 +493,14 @@ class TestListProjects:
         assert len(resp.projects) == 1
         assert resp.projects[0].slug == "maps-1"
         assert resp.projects[0].skillset == "wardley-mapping"
-        assert resp.projects[0].status == "planned"
+        assert resp.projects[0].status == "planning"
 
     def test_filter_by_status(self, workspace):
         _register(workspace, slug="maps-1", scope="Freight operations")
         _register(workspace, slug="maps-2", scope="Warehouse logistics")
-        _activate(workspace, slug="maps-2")
+        _elaborate(workspace, slug="maps-2")
         resp = workspace.list_projects_usecase.execute(
-            ListProjectsRequest(client=CLIENT, status="active")
+            ListProjectsRequest(client=CLIENT, status="elaboration")
         )
         assert len(resp.projects) == 1
         assert resp.projects[0].slug == "maps-2"
@@ -524,7 +526,7 @@ class TestGetProject:
         )
         assert resp.project is not None
         assert resp.project.slug == "maps-1"
-        assert resp.project.status == "planned"
+        assert resp.project.status == "planning"
 
 
 # ---------------------------------------------------------------------------

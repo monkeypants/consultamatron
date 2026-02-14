@@ -84,10 +84,10 @@ class TestProjectContract:
         assert len(project_repo.list_all("holloway-group")) == 2
 
     def test_save_existing_updates(self, project_repo):
-        project_repo.save(make_project(status=ProjectStatus.PLANNED))
-        project_repo.save(make_project(status=ProjectStatus.ACTIVE))
+        project_repo.save(make_project(status=ProjectStatus.PLANNING))
+        project_repo.save(make_project(status=ProjectStatus.ELABORATION))
         got = project_repo.get("holloway-group", "maps-1")
-        assert got.status == ProjectStatus.ACTIVE
+        assert got.status == ProjectStatus.ELABORATION
         assert len(project_repo.list_all("holloway-group")) == 1
 
     def test_list_filtered_by_skillset(self, project_repo):
@@ -102,18 +102,18 @@ class TestProjectContract:
         assert result[0].slug == "maps-1"
 
     def test_list_filtered_by_status(self, project_repo):
-        project_repo.save(make_project(slug="maps-1", status=ProjectStatus.PLANNED))
-        project_repo.save(make_project(slug="maps-2", status=ProjectStatus.ACTIVE))
+        project_repo.save(make_project(slug="maps-1", status=ProjectStatus.PLANNING))
+        project_repo.save(make_project(slug="maps-2", status=ProjectStatus.ELABORATION))
         result = project_repo.list_filtered(
-            "holloway-group", status=ProjectStatus.ACTIVE
+            "holloway-group", status=ProjectStatus.ELABORATION
         )
         assert len(result) == 1
         assert result[0].slug == "maps-2"
 
     def test_list_filtered_no_match(self, project_repo):
-        project_repo.save(make_project(status=ProjectStatus.PLANNED))
+        project_repo.save(make_project(status=ProjectStatus.PLANNING))
         result = project_repo.list_filtered(
-            "holloway-group", status=ProjectStatus.COMPLETE
+            "holloway-group", status=ProjectStatus.IMPLEMENTATION
         )
         assert result == []
 

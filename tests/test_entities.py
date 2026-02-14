@@ -94,9 +94,9 @@ class TestRoundTrip:
         assert dumped["created"] == "2025-03-15"
 
     def test_enum_serialises_as_value(self):
-        p = make_project(status=ProjectStatus.ACTIVE)
+        p = make_project(status=ProjectStatus.ELABORATION)
         dumped = p.model_dump(mode="json")
-        assert dumped["status"] == "active"
+        assert dumped["status"] == "elaboration"
 
     def test_fields_dict_preserved(self):
         d = make_decision(fields={"Users": "CTO, VP", "Scope": "Narrow"})

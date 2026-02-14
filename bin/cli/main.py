@@ -171,7 +171,9 @@ def project_register(
 @click.option(
     "--status",
     required=True,
-    type=click.Choice(["planned", "active", "complete", "reviewed"]),
+    type=click.Choice(
+        ["planning", "elaboration", "implementation", "review", "closed"]
+    ),
     help="New status.",
 )
 @_inject("update_project_status_usecase")
@@ -180,8 +182,8 @@ def project_update_status(
 ) -> None:
     """Update a project's status.
 
-    Validates the transition follows planned -> active -> complete ->
-    reviewed. No skipping, no reversal.
+    Validates the transition follows planning -> elaboration ->
+    implementation -> review. No skipping, no reversal.
     """
     req = UpdateProjectStatusRequest(
         client=client, project_slug=project_slug, status=status
@@ -196,7 +198,9 @@ def project_update_status(
 @click.option(
     "--status",
     default=None,
-    type=click.Choice(["planned", "active", "complete", "reviewed"]),
+    type=click.Choice(
+        ["planning", "elaboration", "implementation", "review", "closed"]
+    ),
     help="Filter by status.",
 )
 @_inject("list_projects_usecase")

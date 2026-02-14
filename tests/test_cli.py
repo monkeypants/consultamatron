@@ -127,10 +127,10 @@ class TestProjectUpdateStatus:
             "--project",
             "maps-1",
             "--status",
-            "active",
+            "elaboration",
         )
         assert result.exit_code == 0
-        assert "active" in result.output
+        assert "elaboration" in result.output
 
     def test_invalid_status_value_rejected_by_click(self, run):
         result = run(
@@ -171,7 +171,7 @@ class TestProjectList:
         assert result.exit_code == 0
         assert "maps-1" in result.output
         assert "wardley-mapping" in result.output
-        assert "planned" in result.output
+        assert "planning" in result.output
 
 
 # ---------------------------------------------------------------------------
@@ -189,7 +189,7 @@ class TestProjectGet:
         assert result.exit_code == 0
         assert "Slug:     maps-1" in result.output
         assert "Skillset: wardley-mapping" in result.output
-        assert "Status:   planned" in result.output
+        assert "Status:   planning" in result.output
 
 
 # ---------------------------------------------------------------------------
