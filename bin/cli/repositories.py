@@ -13,6 +13,7 @@ Follows the same conventions as bingo-frog bounded contexts:
 
 from __future__ import annotations
 
+from datetime import date
 from pathlib import Path
 from typing import Protocol, runtime_checkable
 
@@ -260,4 +261,27 @@ class SiteRenderer(Protocol):
         research_topics: list[ResearchTopic],
     ) -> Path:
         """Render a static site for a client. Returns the output directory."""
+        ...
+
+
+# ---------------------------------------------------------------------------
+# Infrastructure services — clock and identity generation
+# ---------------------------------------------------------------------------
+
+
+@runtime_checkable
+class Clock(Protocol):
+    """Wall-clock abstraction for timestamping domain events."""
+
+    def today(self) -> date:
+        """Return the current date."""
+        ...
+
+
+@runtime_checkable
+class IdGenerator(Protocol):
+    """Identity generation for new domain entities."""
+
+    def new_id(self) -> str:
+        """Return a new unique identifier."""
         ...

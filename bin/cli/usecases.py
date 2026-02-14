@@ -7,8 +7,6 @@ constructor.
 
 from __future__ import annotations
 
-import uuid
-from datetime import date
 from typing import Protocol, TypeVar
 
 from bin.cli.dtos import (
@@ -54,8 +52,10 @@ from bin.cli.entities import (
     TourStop,
 )
 from bin.cli.repositories import (
+    Clock,
     DecisionRepository,
     EngagementRepository,
+    IdGenerator,
     ProjectRepository,
     ResearchTopicRepository,
     SiteRenderer,
@@ -81,10 +81,6 @@ _STATUS_ORDER = [
 ]
 
 
-def _new_id() -> str:
-    return str(uuid.uuid4())
-
-
 # ---------------------------------------------------------------------------
 # Write usecases
 # ---------------------------------------------------------------------------
@@ -98,10 +94,14 @@ class InitializeWorkspaceUseCase:
         projects: ProjectRepository,
         engagement: EngagementRepository,
         research: ResearchTopicRepository,
+        clock: Clock,
+        id_gen: IdGenerator,
     ) -> None:
         self._projects = projects
         self._engagement = engagement
         self._research = research
+        self._clock = clock
+        self._id_gen = id_gen
 
     def execute(
         self, request: InitializeWorkspaceRequest
@@ -110,9 +110,9 @@ class InitializeWorkspaceUseCase:
             raise ValueError(f"Client workspace already exists: {request.client}")
         self._engagement.save(
             EngagementEntry(
-                id=_new_id(),
+                id=self._id_gen.new_id(),
                 client=request.client,
-                date=date.today(),
+                date=self._clock.today(),
                 title="Client onboarded",
                 fields={},
             )
@@ -129,11 +129,15 @@ class RegisterProjectUseCase:
         decisions: DecisionRepository,
         engagement: EngagementRepository,
         skillsets: SkillsetRepository,
+        clock: Clock,
+        id_gen: IdGenerator,
     ) -> None:
         self._projects = projects
         self._decisions = decisions
         self._engagement = engagement
         self._skillsets = skillsets
+        self._clock = clock
+        self._id_gen = id_gen
 
     def execute(self, request: RegisterProjectRequest) -> RegisterProjectResponse:
         if self._skillsets.get(request.skillset) is None:
@@ -141,13 +145,14 @@ class RegisterProjectUseCase:
         if self._projects.get(request.client, request.slug) is not None:
             raise ValueError(f"Project already exists: {request.client}/{request.slug}")
 
+        today = self._clock.today()
         self._projects.save(
             Project(
                 slug=request.slug,
                 client=request.client,
                 skillset=request.skillset,
                 status=ProjectStatus.PLANNED,
-                created=date.today(),
+                created=today,
                 notes=request.notes,
             )
         )
@@ -155,19 +160,19 @@ class RegisterProjectUseCase:
         fields = {"Skillset": request.skillset, "Scope": request.scope}
         self._decisions.save(
             DecisionEntry(
-                id=_new_id(),
+                id=self._id_gen.new_id(),
                 client=request.client,
                 project_slug=request.slug,
-                date=date.today(),
+                date=today,
                 title="Project created",
                 fields=fields,
             )
         )
         self._engagement.save(
             EngagementEntry(
-                id=_new_id(),
+                id=self._id_gen.new_id(),
                 client=request.client,
-                date=date.today(),
+                date=today,
                 title=f"Project registered: {request.slug}",
                 fields=fields,
             )
@@ -219,9 +224,13 @@ class RecordDecisionUseCase:
         self,
         projects: ProjectRepository,
         decisions: DecisionRepository,
+        clock: Clock,
+        id_gen: IdGenerator,
     ) -> None:
         self._projects = projects
         self._decisions = decisions
+        self._clock = clock
+        self._id_gen = id_gen
 
     def execute(self, request: RecordDecisionRequest) -> RecordDecisionResponse:
         if self._projects.get(request.client, request.project_slug) is None:
@@ -229,13 +238,13 @@ class RecordDecisionUseCase:
                 f"Project not found: {request.client}/{request.project_slug}"
             )
 
-        entry_id = _new_id()
+        entry_id = self._id_gen.new_id()
         self._decisions.save(
             DecisionEntry(
                 id=entry_id,
                 client=request.client,
                 project_slug=request.project_slug,
-                date=date.today(),
+                date=self._clock.today(),
                 title=request.title,
                 fields=request.fields,
             )
@@ -255,20 +264,24 @@ class AddEngagementEntryUseCase:
         self,
         projects: ProjectRepository,
         engagement: EngagementRepository,
+        clock: Clock,
+        id_gen: IdGenerator,
     ) -> None:
         self._projects = projects
         self._engagement = engagement
+        self._clock = clock
+        self._id_gen = id_gen
 
     def execute(self, request: AddEngagementEntryRequest) -> AddEngagementEntryResponse:
         if not self._projects.client_exists(request.client):
             raise ValueError(f"Client not found: {request.client}")
 
-        entry_id = _new_id()
+        entry_id = self._id_gen.new_id()
         self._engagement.save(
             EngagementEntry(
                 id=entry_id,
                 client=request.client,
-                date=date.today(),
+                date=self._clock.today(),
                 title=request.title,
                 fields=request.fields,
             )
@@ -287,9 +300,11 @@ class RegisterResearchTopicUseCase:
         self,
         projects: ProjectRepository,
         research: ResearchTopicRepository,
+        clock: Clock,
     ) -> None:
         self._projects = projects
         self._research = research
+        self._clock = clock
 
     def execute(
         self, request: RegisterResearchTopicRequest
@@ -302,7 +317,7 @@ class RegisterResearchTopicUseCase:
                 filename=request.filename,
                 client=request.client,
                 topic=request.topic,
-                date=date.today(),
+                date=self._clock.today(),
                 confidence=Confidence(request.confidence),
             )
         )

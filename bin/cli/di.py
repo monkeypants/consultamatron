@@ -7,6 +7,9 @@ on implementations directly.
 
 from __future__ import annotations
 
+import uuid
+from datetime import date
+
 from bin.cli.config import Config
 from bin.cli.infrastructure import (
     JinjaSiteRenderer,
@@ -18,8 +21,10 @@ from bin.cli.infrastructure import (
     JsonTourManifestRepository,
 )
 from bin.cli.repositories import (
+    Clock,
     DecisionRepository,
     EngagementRepository,
+    IdGenerator,
     ProjectRepository,
     ResearchTopicRepository,
     SiteRenderer,
@@ -43,6 +48,30 @@ from bin.cli.usecases import (
 )
 
 
+# ---------------------------------------------------------------------------
+# Infrastructure service implementations
+# ---------------------------------------------------------------------------
+
+
+class WallClock:
+    """Production clock — returns the real date."""
+
+    def today(self) -> date:
+        return date.today()
+
+
+class UuidGenerator:
+    """Production identity generator — returns a random UUID."""
+
+    def new_id(self) -> str:
+        return str(uuid.uuid4())
+
+
+# ---------------------------------------------------------------------------
+# Container
+# ---------------------------------------------------------------------------
+
+
 class Container:
     """Wires repository implementations and usecases.
 
@@ -53,6 +82,10 @@ class Container:
     """
 
     def __init__(self, config: Config) -> None:
+        # -- Infrastructure services ----------------------------------------
+        self.clock: Clock = WallClock()
+        self.id_gen: IdGenerator = UuidGenerator()
+
         # -- Repositories --------------------------------------------------
         self.skillsets: SkillsetRepository = JsonSkillsetRepository(
             config.skillsets_root,
@@ -82,12 +115,16 @@ class Container:
             projects=self.projects,
             engagement=self.engagement,
             research=self.research,
+            clock=self.clock,
+            id_gen=self.id_gen,
         )
         self.register_project_usecase = RegisterProjectUseCase(
             projects=self.projects,
             decisions=self.decisions,
             engagement=self.engagement,
             skillsets=self.skillsets,
+            clock=self.clock,
+            id_gen=self.id_gen,
         )
         self.update_project_status_usecase = UpdateProjectStatusUseCase(
             projects=self.projects,
@@ -95,14 +132,19 @@ class Container:
         self.record_decision_usecase = RecordDecisionUseCase(
             projects=self.projects,
             decisions=self.decisions,
+            clock=self.clock,
+            id_gen=self.id_gen,
         )
         self.add_engagement_entry_usecase = AddEngagementEntryUseCase(
             projects=self.projects,
             engagement=self.engagement,
+            clock=self.clock,
+            id_gen=self.id_gen,
         )
         self.register_research_topic_usecase = RegisterResearchTopicUseCase(
             projects=self.projects,
             research=self.research,
+            clock=self.clock,
         )
         self.register_tour_usecase = RegisterTourUseCase(
             projects=self.projects,
