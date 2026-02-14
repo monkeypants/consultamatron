@@ -15,6 +15,7 @@ import click
 
 from bin.cli.config import Config
 from bin.cli.di import Container
+from bin.cli.usecases import TRequest, TResponse, UseCase
 from bin.cli.dtos import (
     AddEngagementEntryRequest,
     GetProjectProgressRequest,
@@ -44,8 +45,14 @@ def _parse_fields(raw: tuple[str, ...]) -> dict[str, str]:
     return fields
 
 
-def _run(usecase, request):
-    """Execute a usecase, converting ValueError to a clean CLI error."""
+def _run(usecase: UseCase[TRequest, TResponse], request: TRequest) -> TResponse:
+    """Execute a usecase, converting ValueError to a clean CLI error.
+
+    The TypeVars are unbound at module scope, but mypy/pyright infer the
+    concrete types at each call site.  If this stops being sufficient
+    (e.g. the function grows overloads), replace with an explicit Generic
+    wrapper class.
+    """
     try:
         return usecase.execute(request)
     except ValueError as e:
