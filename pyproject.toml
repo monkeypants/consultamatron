@@ -1,5 +1,5 @@
 [project]
 name = "consultamatron"
-version = "0.1.0"
+version = "0.0.1"
 requires-python = ">=3.12"
-dependencies = ["jinja2>=3.1", "markdown>=3.5"]
+dependencies = ["jinja2>=3.1", "markdown>=3.5", "pydantic>=2.0"]
