@@ -7,7 +7,7 @@ entities discovered from manifests at runtime, not hardcoded enums.
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
 from enum import Enum
 
 from pydantic import BaseModel
@@ -107,12 +107,14 @@ class DecisionEntry(BaseModel):
     """A timestamped decision recorded during a project.
 
     Immutable — created once, never updated or deleted.
+    The date field is for human display; timestamp is for ordering.
     """
 
     id: str
     client: str
     project_slug: str
     date: date
+    timestamp: datetime
     title: str
     fields: dict[str, str]
 
@@ -121,11 +123,13 @@ class EngagementEntry(BaseModel):
     """A timestamped entry in the client engagement log.
 
     Immutable — created once, never updated or deleted.
+    The date field is for human display; timestamp is for ordering.
     """
 
     id: str
     client: str
     date: date
+    timestamp: datetime
     title: str
     fields: dict[str, str]
 

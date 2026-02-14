@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import uuid
-from datetime import date
+from datetime import date, datetime, timezone
 
 import pytest
 
@@ -100,6 +100,7 @@ def tour_repo(request, tmp_config):
 DEFAULT_CLIENT = "holloway-group"
 DEFAULT_PROJECT = "maps-1"
 DEFAULT_DATE = date(2025, 6, 1)
+DEFAULT_TIMESTAMP = datetime(2025, 6, 1, 12, 0, 0, tzinfo=timezone.utc)
 
 
 def make_skillset(**overrides) -> Skillset:
@@ -138,6 +139,7 @@ def make_decision(**overrides) -> DecisionEntry:
         client=DEFAULT_CLIENT,
         project_slug=DEFAULT_PROJECT,
         date=DEFAULT_DATE,
+        timestamp=DEFAULT_TIMESTAMP,
         title="Stage 1: Research and brief agreed",
         fields={"Scope": "Freight operations"},
     )
@@ -149,6 +151,7 @@ def make_engagement(**overrides) -> EngagementEntry:
         id=str(uuid.uuid4()),
         client=DEFAULT_CLIENT,
         date=DEFAULT_DATE,
+        timestamp=DEFAULT_TIMESTAMP,
         title="Client onboarded",
         fields={},
     )
