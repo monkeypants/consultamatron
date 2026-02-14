@@ -17,7 +17,15 @@ import markdown
 from jinja2 import Environment, FileSystemLoader
 from markupsafe import Markup
 
-from bin.cli.entities import Project, ResearchTopic, TourManifest
+from bin.cli.entities import (
+    Figure,
+    Project,
+    ProjectContribution,
+    ProjectSection,
+    ResearchTopic,
+    TourManifest,
+    TourPageContent,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -1467,3 +1475,391 @@ class JinjaSiteRenderer:
                 content=Markup(_md_to_html(_read_md(project_dir / "decisions.md"))),
             )
             print("    decisions.html")
+
+    # -- Contribution-based rendering (new path) --------------------------
+
+    def _figure_to_html(self, figure: Figure) -> str:
+        """Convert a Figure entity to <figure> HTML."""
+        svg = figure.svg_content.replace(
+            "<svg ", '<svg style="max-width:100%;height:auto" ', 1
+        )
+        parts = ["<figure>", svg]
+        if figure.caption:
+            parts.append(f"<figcaption>{figure.caption}</figcaption>")
+        parts.append("</figure>")
+        return "\n".join(parts)
+
+    def _render_project_from_contribution(
+        self,
+        contrib: ProjectContribution,
+        site_dir,
+        org_name: str,
+        env,
+    ) -> None:
+        """Render a project from a ProjectContribution entity."""
+        site_dir = Path(site_dir)
+        project_name = contrib.slug
+
+        has_presentations = any(s.slug == "presentations" for s in contrib.sections)
+        has_atlas = any(s.slug == "atlas" for s in contrib.sections)
+        has_analysis = any(s.slug == "analysis" for s in contrib.sections)
+
+        nav_args = dict(
+            has_presentations=has_presentations,
+            has_atlas=has_atlas,
+            has_analysis=has_analysis,
+        )
+
+        def project_breadcrumb(section_label=None, depth=0):
+            if depth == 0:
+                return _build_breadcrumb(
+                    (org_name, "../index.html"),
+                    (project_name,),
+                )
+            crumbs = [
+                (org_name, "../../index.html"),
+                (project_name, "../index.html"),
+            ]
+            if section_label:
+                crumbs.append((section_label,))
+            return _build_breadcrumb(*crumbs)
+
+        for section in contrib.sections:
+            if section.tours:
+                self._render_section_tours(
+                    env,
+                    section,
+                    site_dir,
+                    org_name,
+                    project_name,
+                    nav_args,
+                    project_breadcrumb,
+                )
+            elif section.groups:
+                self._render_section_groups(
+                    env,
+                    section,
+                    site_dir,
+                    org_name,
+                    project_name,
+                    nav_args,
+                    project_breadcrumb,
+                )
+            else:
+                self._render_section_pages(
+                    env,
+                    section,
+                    site_dir,
+                    org_name,
+                    project_name,
+                    nav_args,
+                    project_breadcrumb,
+                )
+
+        # Project index
+        content = ""
+        if contrib.hero_figure:
+            content += self._figure_to_html(contrib.hero_figure)
+
+        if contrib.overview_md:
+            content += _md_to_html(contrib.overview_md)
+
+        section_descriptions = {
+            "presentations": (
+                "Curated tours of the strategy map for different audiences"
+            ),
+            "atlas": ("Analytical views derived from the comprehensive strategy map"),
+            "analysis": "Pipeline stages from brief through strategy",
+        }
+
+        if any(s.slug in section_descriptions for s in contrib.sections):
+            content += '<ul class="section-list">'
+            for section in contrib.sections:
+                desc = section.description or section_descriptions.get(section.slug, "")
+                content += (
+                    f'<li><a href="{section.slug}/index.html">{section.label}</a>'
+                    f'<span class="desc">{desc}</span></li>'
+                )
+            content += "</ul>"
+
+        _render_page(
+            env,
+            "base.html",
+            site_dir / "index.html",
+            title=f"Overview — {project_name} — {org_name}",
+            org_name=org_name,
+            heading="Overview",
+            css_path="../style.css",
+            breadcrumb=project_breadcrumb(depth=0),
+            nav=_build_project_nav("index", 0, **nav_args),
+            toc=None,
+            content=Markup(content),
+        )
+        print("    index.html")
+
+    def _render_section_pages(
+        self,
+        env,
+        section: ProjectSection,
+        site_dir,
+        org_name,
+        project_name,
+        nav_args,
+        project_breadcrumb,
+    ) -> None:
+        """Render a section with flat pages (e.g. Analysis)."""
+        section_dir = Path(site_dir) / section.slug
+        section_dir.mkdir(parents=True, exist_ok=True)
+
+        def section_toc(active_slug=None):
+            return [
+                {
+                    "label": p.title,
+                    "url": f"{p.slug}.html",
+                    "active": p.slug == active_slug,
+                }
+                for p in section.pages
+            ]
+
+        # Section index
+        _render_page(
+            env,
+            "base.html",
+            section_dir / "index.html",
+            title=f"{section.label} — {project_name} — {org_name}",
+            org_name=org_name,
+            heading=section.label,
+            css_path="../../style.css",
+            breadcrumb=project_breadcrumb(section.label, 1),
+            nav=_build_project_nav(section.slug, 1, **nav_args),
+            toc=section_toc(),
+            content=Markup(""),
+        )
+        print(f"    {section.slug}/index.html")
+
+        shared = dict(
+            org_name=org_name,
+            css_path="../../style.css",
+            breadcrumb=project_breadcrumb(section.label, 1),
+            nav=_build_project_nav(section.slug, 1, **nav_args),
+        )
+
+        for page in section.pages:
+            content = ""
+            for fig in page.figures:
+                content += self._figure_to_html(fig)
+            content += _md_to_html(page.body_md)
+
+            _render_page(
+                env,
+                "base.html",
+                section_dir / f"{page.slug}.html",
+                title=f"{page.title} — {project_name} — {org_name}",
+                heading=page.title,
+                toc=section_toc(page.slug),
+                content=Markup(content),
+                **shared,
+            )
+            print(f"    {section.slug}/{page.slug}.html")
+
+    def _render_section_tours(
+        self,
+        env,
+        section: ProjectSection,
+        site_dir,
+        org_name,
+        project_name,
+        nav_args,
+        project_breadcrumb,
+    ) -> None:
+        """Render a Presentations section with tour pages."""
+        section_dir = Path(site_dir) / section.slug
+        section_dir.mkdir(parents=True, exist_ok=True)
+
+        tour_infos = [
+            {
+                "name": t.slug,
+                "url": f"{t.slug}.html",
+                "title": t.title,
+                "description": t.description,
+            }
+            for t in section.tours
+        ]
+
+        def presentations_toc(active_name=None):
+            return [
+                {
+                    "label": t["title"],
+                    "url": t["url"],
+                    "active": t["name"] == active_name,
+                }
+                for t in tour_infos
+            ]
+
+        # Presentations index
+        _render_page(
+            env,
+            "presentations_index.html",
+            section_dir / "index.html",
+            title=f"Presentations — {project_name} — {org_name}",
+            org_name=org_name,
+            heading="Presentations",
+            css_path="../../style.css",
+            breadcrumb=project_breadcrumb("Presentations", 1),
+            nav=_build_project_nav("presentations", 1, **nav_args),
+            toc=None,
+            tours=tour_infos,
+        )
+        print("    presentations/index.html")
+
+        for tour in section.tours:
+            self._render_tour_from_content(
+                env,
+                tour,
+                section_dir / f"{tour.slug}.html",
+                org_name,
+                project_name,
+                _build_project_nav("presentations", 1, **nav_args),
+                project_breadcrumb("Presentations", 1),
+                presentations_toc(tour.slug),
+            )
+
+    def _render_tour_from_content(
+        self,
+        env,
+        tour: TourPageContent,
+        output_file,
+        org_name,
+        project_name,
+        nav,
+        breadcrumb,
+        toc,
+    ) -> None:
+        """Render a single tour from TourPageContent."""
+        opening_html = _md_to_html(tour.opening_md) if tour.opening_md else ""
+
+        template_groups = []
+        for group in tour.groups:
+            rendered_rows = []
+            for stop in group.stops:
+                svgs_html = ""
+                for fig in stop.figures:
+                    svgs_html += self._figure_to_html(fig)
+
+                analysis_html = ""
+                if stop.analysis_md:
+                    analysis_html = _md_to_html(stop.analysis_md)
+
+                rendered_rows.append(
+                    {
+                        "level": stop.level,
+                        "title": stop.title,
+                        "is_header": stop.is_header,
+                        "svgs_html": Markup(svgs_html),
+                        "analysis_html": Markup(analysis_html),
+                    }
+                )
+
+            transition_html = ""
+            if group.transition_md:
+                transition_html = _md_to_html(group.transition_md)
+
+            template_groups.append(
+                {
+                    "rows": rendered_rows,
+                    "transition_html": Markup(transition_html),
+                }
+            )
+
+        _render_page(
+            env,
+            "tour.html",
+            output_file,
+            title=f"{tour.title} — {project_name} — {org_name}",
+            org_name=org_name,
+            heading=tour.title,
+            css_path="../../style.css",
+            breadcrumb=breadcrumb,
+            nav=nav,
+            toc=toc,
+            opening_html=Markup(opening_html),
+            groups=template_groups,
+        )
+        print(f"    presentations/{tour.slug}.html")
+
+    def _render_section_groups(
+        self,
+        env,
+        section: ProjectSection,
+        site_dir,
+        org_name,
+        project_name,
+        nav_args,
+        project_breadcrumb,
+    ) -> None:
+        """Render an Atlas section with categorized groups."""
+        section_dir = Path(site_dir) / section.slug
+        section_dir.mkdir(parents=True, exist_ok=True)
+
+        # Flatten all pages for TOC
+        all_pages = [p for g in section.groups for p in g.pages]
+
+        categories = [
+            {
+                "name": g.slug,
+                "label": g.label,
+                "views": [{"name": p.title, "url": f"{p.slug}.html"} for p in g.pages],
+            }
+            for g in section.groups
+        ]
+
+        def atlas_toc(active_slug=None):
+            return [
+                {
+                    "label": p.title,
+                    "url": f"{p.slug}.html",
+                    "active": p.slug == active_slug,
+                }
+                for p in all_pages
+            ]
+
+        # Atlas index
+        _render_page(
+            env,
+            "atlas_index.html",
+            section_dir / "index.html",
+            title=f"Atlas — {project_name} — {org_name}",
+            org_name=org_name,
+            heading="Atlas",
+            css_path="../../style.css",
+            breadcrumb=project_breadcrumb("Atlas", 1),
+            nav=_build_project_nav("atlas", 1, **nav_args),
+            toc=None,
+            categories=categories,
+        )
+        print("    atlas/index.html")
+
+        shared = dict(
+            org_name=org_name,
+            css_path="../../style.css",
+            breadcrumb=project_breadcrumb("Atlas", 1),
+            nav=_build_project_nav("atlas", 1, **nav_args),
+        )
+
+        for page in all_pages:
+            content = ""
+            for fig in page.figures:
+                content += self._figure_to_html(fig)
+            content += _md_to_html(page.body_md)
+
+            _render_page(
+                env,
+                "base.html",
+                section_dir / f"{page.slug}.html",
+                title=f"{page.title} — {project_name} — {org_name}",
+                heading=page.title,
+                toc=atlas_toc(page.slug),
+                content=Markup(content),
+                **shared,
+            )
+            print(f"    atlas/{page.slug}.html")
