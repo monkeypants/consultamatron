@@ -21,6 +21,7 @@ from bin.cli.entities import (
     DecisionEntry,
     EngagementEntry,
     Project,
+    ProjectContribution,
     ProjectStatus,
     ResearchTopic,
     Skillset,
@@ -237,6 +238,27 @@ class TourManifestRepository(Protocol):
     def save(self, manifest: TourManifest) -> None:
         """Save a tour manifest (creates or replaces)."""
         ...
+
+
+# ---------------------------------------------------------------------------
+# Project presenter — assembles workspace artifacts into deliverable content
+# ---------------------------------------------------------------------------
+
+
+@runtime_checkable
+class ProjectPresenter(Protocol):
+    """Assembles a project's workspace artifacts into structured content.
+
+    Reads workspace files (markdown, SVGs, manifests) for a specific
+    skillset and produces a ProjectContribution that any renderer can
+    consume without knowing the skillset.
+    """
+
+    def present(
+        self,
+        project: Project,
+        tours: list[TourManifest],
+    ) -> ProjectContribution: ...
 
 
 # ---------------------------------------------------------------------------
