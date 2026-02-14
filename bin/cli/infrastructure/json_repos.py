@@ -28,6 +28,9 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Generic, TypeVar
+
+from pydantic import BaseModel
 
 from bin.cli.entities import (
     DecisionEntry,
@@ -38,6 +41,8 @@ from bin.cli.entities import (
     Skillset,
     TourManifest,
 )
+
+T = TypeVar("T", bound=BaseModel)
 
 
 # ---------------------------------------------------------------------------
@@ -78,6 +83,52 @@ def _write_json_object(path: Path, data: dict) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Generic JSON array store
+# ---------------------------------------------------------------------------
+
+
+class JsonArrayStore(Generic[T]):
+    """Reusable load/persist/find/upsert/append for Pydantic models in a JSON array.
+
+    Four of the six repositories share this pattern.  Each repo composes
+    with a store instance, keeping its own path resolution and Protocol
+    interface while delegating the JSON mechanics here.
+    """
+
+    def __init__(self, model: type[T], key_field: str) -> None:
+        self._model = model
+        self._key_field = key_field
+
+    def load(self, path: Path) -> list[T]:
+        return [self._model.model_validate(item) for item in _read_json_array(path)]
+
+    def persist(self, path: Path, items: list[T]) -> None:
+        _write_json_array(path, [item.model_dump(mode="json") for item in items])
+
+    def find(self, items: list[T], key_value: str) -> T | None:
+        for item in items:
+            if getattr(item, self._key_field) == key_value:
+                return item
+        return None
+
+    def upsert(self, path: Path, item: T) -> None:
+        items = self.load(path)
+        key_value = getattr(item, self._key_field)
+        for i, existing in enumerate(items):
+            if getattr(existing, self._key_field) == key_value:
+                items[i] = item
+                self.persist(path, items)
+                return
+        items.append(item)
+        self.persist(path, items)
+
+    def append(self, path: Path, item: T) -> None:
+        raw = _read_json_array(path)
+        raw.append(item.model_dump(mode="json"))
+        _write_json_array(path, raw)
+
+
+# ---------------------------------------------------------------------------
 # Skillset
 # ---------------------------------------------------------------------------
 
@@ -86,19 +137,14 @@ class JsonSkillsetRepository:
     """Read-only skillset repository backed by a single JSON file."""
 
     def __init__(self, skillsets_root: Path) -> None:
+        self._store: JsonArrayStore[Skillset] = JsonArrayStore(Skillset, "name")
         self._file = skillsets_root / "index.json"
 
-    def _load(self) -> list[Skillset]:
-        return [Skillset.model_validate(item) for item in _read_json_array(self._file)]
-
     def get(self, name: str) -> Skillset | None:
-        for s in self._load():
-            if s.name == name:
-                return s
-        return None
+        return self._store.find(self._store.load(self._file), name)
 
     def list_all(self) -> list[Skillset]:
-        return self._load()
+        return self._store.load(self._file)
 
 
 # ---------------------------------------------------------------------------
@@ -111,30 +157,16 @@ class JsonProjectRepository:
 
     def __init__(self, workspace_root: Path) -> None:
         self._root = workspace_root
+        self._store: JsonArrayStore[Project] = JsonArrayStore(Project, "slug")
 
     def _file(self, client: str) -> Path:
         return self._root / client / "projects" / "index.json"
 
-    def _load(self, client: str) -> list[Project]:
-        return [
-            Project.model_validate(item)
-            for item in _read_json_array(self._file(client))
-        ]
-
-    def _persist(self, client: str, projects: list[Project]) -> None:
-        _write_json_array(
-            self._file(client),
-            [p.model_dump(mode="json") for p in projects],
-        )
-
     def get(self, client: str, slug: str) -> Project | None:
-        for p in self._load(client):
-            if p.slug == slug:
-                return p
-        return None
+        return self._store.find(self._store.load(self._file(client)), slug)
 
     def list_all(self, client: str) -> list[Project]:
-        return self._load(client)
+        return self._store.load(self._file(client))
 
     def list_filtered(
         self,
@@ -142,7 +174,7 @@ class JsonProjectRepository:
         skillset: str | None = None,
         status: ProjectStatus | None = None,
     ) -> list[Project]:
-        projects = self._load(client)
+        projects = self._store.load(self._file(client))
         if skillset is not None:
             projects = [p for p in projects if p.skillset == skillset]
         if status is not None:
@@ -150,21 +182,15 @@ class JsonProjectRepository:
         return projects
 
     def save(self, project: Project) -> None:
-        projects = self._load(project.client)
-        for i, p in enumerate(projects):
-            if p.slug == project.slug:
-                projects[i] = project
-                self._persist(project.client, projects)
-                return
-        projects.append(project)
-        self._persist(project.client, projects)
+        self._store.upsert(self._file(project.client), project)
 
     def delete(self, client: str, slug: str) -> bool:
-        projects = self._load(client)
-        filtered = [p for p in projects if p.slug != slug]
-        if len(filtered) == len(projects):
+        path = self._file(client)
+        items = self._store.load(path)
+        filtered = [p for p in items if p.slug != slug]
+        if len(filtered) == len(items):
             return False
-        self._persist(client, filtered)
+        self._store.persist(path, filtered)
         return True
 
     def client_exists(self, client: str) -> bool:
@@ -181,24 +207,16 @@ class JsonDecisionRepository:
 
     def __init__(self, workspace_root: Path) -> None:
         self._root = workspace_root
+        self._store: JsonArrayStore[DecisionEntry] = JsonArrayStore(DecisionEntry, "id")
 
     def _file(self, client: str, project_slug: str) -> Path:
         return self._root / client / "projects" / project_slug / "decisions.json"
 
-    def _load(self, client: str, project_slug: str) -> list[DecisionEntry]:
-        return [
-            DecisionEntry.model_validate(item)
-            for item in _read_json_array(self._file(client, project_slug))
-        ]
-
     def get(self, client: str, project_slug: str, id: str) -> DecisionEntry | None:
-        for d in self._load(client, project_slug):
-            if d.id == id:
-                return d
-        return None
+        return self._store.find(self._store.load(self._file(client, project_slug)), id)
 
     def list_all(self, client: str, project_slug: str) -> list[DecisionEntry]:
-        return self._load(client, project_slug)
+        return self._store.load(self._file(client, project_slug))
 
     def list_filtered(
         self,
@@ -206,16 +224,13 @@ class JsonDecisionRepository:
         project_slug: str,
         title: str | None = None,
     ) -> list[DecisionEntry]:
-        entries = self._load(client, project_slug)
+        entries = self._store.load(self._file(client, project_slug))
         if title is not None:
             entries = [e for e in entries if e.title == title]
         return entries
 
     def save(self, entry: DecisionEntry) -> None:
-        path = self._file(entry.client, entry.project_slug)
-        entries = _read_json_array(path)
-        entries.append(entry.model_dump(mode="json"))
-        _write_json_array(path, entries)
+        self._store.append(self._file(entry.client, entry.project_slug), entry)
 
 
 # ---------------------------------------------------------------------------
@@ -228,30 +243,21 @@ class JsonEngagementRepository:
 
     def __init__(self, workspace_root: Path) -> None:
         self._root = workspace_root
+        self._store: JsonArrayStore[EngagementEntry] = JsonArrayStore(
+            EngagementEntry, "id"
+        )
 
     def _file(self, client: str) -> Path:
         return self._root / client / "engagement.json"
 
-    def _load(self, client: str) -> list[EngagementEntry]:
-        return [
-            EngagementEntry.model_validate(item)
-            for item in _read_json_array(self._file(client))
-        ]
-
     def get(self, client: str, id: str) -> EngagementEntry | None:
-        for e in self._load(client):
-            if e.id == id:
-                return e
-        return None
+        return self._store.find(self._store.load(self._file(client)), id)
 
     def list_all(self, client: str) -> list[EngagementEntry]:
-        return self._load(client)
+        return self._store.load(self._file(client))
 
     def save(self, entry: EngagementEntry) -> None:
-        path = self._file(entry.client)
-        entries = _read_json_array(path)
-        entries.append(entry.model_dump(mode="json"))
-        _write_json_array(path, entries)
+        self._store.append(self._file(entry.client), entry)
 
 
 # ---------------------------------------------------------------------------
@@ -264,43 +270,24 @@ class JsonResearchTopicRepository:
 
     def __init__(self, workspace_root: Path) -> None:
         self._root = workspace_root
+        self._store: JsonArrayStore[ResearchTopic] = JsonArrayStore(
+            ResearchTopic, "filename"
+        )
 
     def _file(self, client: str) -> Path:
         return self._root / client / "resources" / "index.json"
 
-    def _load(self, client: str) -> list[ResearchTopic]:
-        return [
-            ResearchTopic.model_validate(item)
-            for item in _read_json_array(self._file(client))
-        ]
-
-    def _persist(self, client: str, topics: list[ResearchTopic]) -> None:
-        _write_json_array(
-            self._file(client),
-            [t.model_dump(mode="json") for t in topics],
-        )
-
     def get(self, client: str, filename: str) -> ResearchTopic | None:
-        for t in self._load(client):
-            if t.filename == filename:
-                return t
-        return None
+        return self._store.find(self._store.load(self._file(client)), filename)
 
     def list_all(self, client: str) -> list[ResearchTopic]:
-        return self._load(client)
+        return self._store.load(self._file(client))
 
     def save(self, topic: ResearchTopic) -> None:
-        topics = self._load(topic.client)
-        for i, t in enumerate(topics):
-            if t.filename == topic.filename:
-                topics[i] = topic
-                self._persist(topic.client, topics)
-                return
-        topics.append(topic)
-        self._persist(topic.client, topics)
+        self._store.upsert(self._file(topic.client), topic)
 
     def exists(self, client: str, filename: str) -> bool:
-        return any(t.filename == filename for t in self._load(client))
+        return self.get(client, filename) is not None
 
 
 # ---------------------------------------------------------------------------
