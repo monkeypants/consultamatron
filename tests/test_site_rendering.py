@@ -150,9 +150,10 @@ def _build_engagement(ws: Path) -> None:
 # ---------------------------------------------------------------------------
 
 
-@pytest.fixture
-def rendered_site(tmp_path):
+@pytest.fixture(scope="module")
+def rendered_site(tmp_path_factory):
     """Build a synthetic workspace and render the site. Returns the site path."""
+    tmp_path = tmp_path_factory.mktemp("site")
     config = Config(
         repo_root=Path(__file__).resolve().parent.parent,
         workspace_root=tmp_path / "clients",
