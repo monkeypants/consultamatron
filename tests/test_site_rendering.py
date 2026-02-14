@@ -291,9 +291,9 @@ class TestSiteStructure:
         assert (rendered_site / "bmc-1" / "index.html").is_file()
 
     def test_bmc_pages(self, rendered_site):
-        bmc = rendered_site / "bmc-1"
+        bmc = rendered_site / "bmc-1" / "analysis"
         for page in ("canvas.html", "segments.html", "brief.html", "decisions.html"):
-            assert (bmc / page).is_file(), f"Missing bmc-1/{page}"
+            assert (bmc / page).is_file(), f"Missing bmc-1/analysis/{page}"
 
 
 class TestContentPresence:
@@ -329,7 +329,7 @@ class TestContentPresence:
         assert "<svg" in html
 
     def test_bmc_canvas_content(self, rendered_site):
-        html = (rendered_site / "bmc-1" / "canvas.html").read_text()
+        html = (rendered_site / "bmc-1" / "analysis" / "canvas.html").read_text()
         assert "Value Propositions" in html
 
     def test_supply_chain_content(self, rendered_site):

@@ -19,11 +19,9 @@ from markupsafe import Markup
 
 from bin.cli.entities import (
     Figure,
-    Project,
     ProjectContribution,
     ProjectSection,
     ResearchTopic,
-    TourManifest,
     TourPageContent,
 )
 
@@ -296,8 +294,7 @@ class JinjaSiteRenderer:
     def render(
         self,
         client: str,
-        projects: list[Project],
-        tours: dict[str, list[TourManifest]],
+        contributions: list[ProjectContribution],
         research_topics: list[ResearchTopic],
     ) -> Path:
         ws = self._ws_root / client
@@ -321,23 +318,14 @@ class JinjaSiteRenderer:
 
         self._render_client_pages(ws, site, env, org_name, research_topics)
 
-        for project in projects:
-            proj_dir = ws / "projects" / project.slug
-            site_proj_dir = site / project.slug
+        for contrib in contributions:
+            site_proj_dir = site / contrib.slug
             site_proj_dir.mkdir(parents=True, exist_ok=True)
 
-            project_tours = tours.get(project.slug, [])
-
-            print(f"\nProject: {project.slug}")
-
-            if project.skillset == "wardley-mapping":
-                self._render_wardley_project(
-                    proj_dir, site_proj_dir, org_name, env, project_tours
-                )
-            elif project.skillset == "business-model-canvas":
-                self._render_bmc_project(proj_dir, site_proj_dir, org_name, env)
-            else:
-                print(f"    Unknown skillset '{project.skillset}', skipping")
+            print(f"\nProject: {contrib.slug}")
+            self._render_project_from_contribution(
+                contrib, site_proj_dir, org_name, env
+            )
 
         print(f"\nSite generated: {site}/")
         return site

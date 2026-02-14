@@ -11,6 +11,7 @@ import uuid
 from datetime import date
 
 from bin.cli.config import Config
+from bin.cli.infrastructure.bmc_presenter import BmcProjectPresenter
 from bin.cli.infrastructure.jinja_renderer import JinjaSiteRenderer
 from bin.cli.infrastructure.json_repos import (
     JsonDecisionRepository,
@@ -20,11 +21,13 @@ from bin.cli.infrastructure.json_repos import (
     JsonSkillsetRepository,
     JsonTourManifestRepository,
 )
+from bin.cli.infrastructure.wardley_presenter import WardleyProjectPresenter
 from bin.cli.repositories import (
     Clock,
     DecisionRepository,
     EngagementRepository,
     IdGenerator,
+    ProjectPresenter,
     ProjectRepository,
     ResearchTopicRepository,
     SiteRenderer,
@@ -110,6 +113,17 @@ class Container:
             repo_root=config.repo_root,
         )
 
+        # -- Project presenters ------------------------------------------------
+        self.presenters: dict[str, ProjectPresenter] = {
+            "wardley-mapping": WardleyProjectPresenter(
+                workspace_root=config.workspace_root,
+                ensure_owm_script=config.repo_root / "bin" / "ensure-owm.sh",
+            ),
+            "business-model-canvas": BmcProjectPresenter(
+                workspace_root=config.workspace_root,
+            ),
+        }
+
         # -- Write usecases ------------------------------------------------
         self.initialize_workspace_usecase = InitializeWorkspaceUseCase(
             projects=self.projects,
@@ -174,4 +188,5 @@ class Container:
             tours=self.tours,
             research=self.research,
             renderer=self.site_renderer,
+            presenters=self.presenters,
         )

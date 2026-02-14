@@ -270,16 +270,16 @@ class ProjectPresenter(Protocol):
 class SiteRenderer(Protocol):
     """Infrastructure port for generating static HTML sites.
 
-    The usecase gathers structured data from repositories and passes
-    it here. The implementation handles content transformation
-    (markdown, SVG, templates) and file I/O.
+    Receives pre-assembled ProjectContribution entities from the usecase.
+    The renderer handles content transformation (markdown→HTML, SVG
+    embedding, templates) and file I/O, but does not decide what to
+    present — that decision belongs to ProjectPresenters.
     """
 
     def render(
         self,
         client: str,
-        projects: list[Project],
-        tours: dict[str, list[TourManifest]],
+        contributions: list[ProjectContribution],
         research_topics: list[ResearchTopic],
     ) -> Path:
         """Render a static site for a client. Returns the output directory."""
