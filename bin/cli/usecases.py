@@ -76,14 +76,6 @@ class UseCase(Protocol[TRequest, TResponse]):
     def execute(self, request: TRequest) -> TResponse: ...
 
 
-_STATUS_ORDER = [
-    ProjectStatus.PLANNED,
-    ProjectStatus.ACTIVE,
-    ProjectStatus.COMPLETE,
-    ProjectStatus.REVIEWED,
-]
-
-
 # ---------------------------------------------------------------------------
 # Write usecases
 # ---------------------------------------------------------------------------
@@ -206,9 +198,7 @@ class UpdateProjectStatusUseCase:
             )
 
         new_status = ProjectStatus(request.status)
-        current_idx = _STATUS_ORDER.index(project.status)
-        new_idx = _STATUS_ORDER.index(new_status)
-        if new_idx != current_idx + 1:
+        if new_status != project.status.next():
             raise InvalidTransitionError(
                 f"Invalid transition: {project.status.value} -> {new_status.value}"
             )

@@ -67,10 +67,22 @@ class Skillset(BaseModel):
 
 
 class ProjectStatus(str, Enum):
+    """Lifecycle phase of a consulting project.
+
+    The lifecycle is linear: planned → active → complete → reviewed.
+    This is the envelope the work lives in, not the work graph itself.
+    """
+
     PLANNED = "planned"
     ACTIVE = "active"
     COMPLETE = "complete"
     REVIEWED = "reviewed"
+
+    def next(self) -> ProjectStatus | None:
+        """Return the next lifecycle phase, or None if terminal."""
+        members = list(ProjectStatus)
+        idx = members.index(self)
+        return members[idx + 1] if idx + 1 < len(members) else None
 
 
 class Confidence(str, Enum):
