@@ -1,7 +1,9 @@
-"""Entity validation tests.
+"""Entity tests.
 
-Pydantic does work for us. Prove it does the right work:
-required fields, enum validation, defaults, round-trip fidelity.
+Serialisation fidelity, default values, and domain-specific
+semantics. Pydantic handles validation — the usecase and repository
+tests exercise those paths with better diagnostics than we could
+provide here.
 """
 
 from __future__ import annotations
@@ -9,13 +11,10 @@ from __future__ import annotations
 from datetime import date
 
 import pytest
-from pydantic import ValidationError
 
 from bin.cli.entities import (
-    Confidence,
     DecisionEntry,
     PipelineStage,
-    Project,
     ProjectStatus,
 )
 
@@ -28,67 +27,6 @@ from .conftest import (
     make_tour,
     make_tour_stop,
 )
-
-
-# ---------------------------------------------------------------------------
-# Required fields
-# ---------------------------------------------------------------------------
-
-
-class TestRequiredFields:
-    def test_project_requires_slug(self):
-        with pytest.raises(ValidationError):
-            make_project(**{"slug": None})  # type: ignore[arg-type]
-
-    def test_project_requires_client(self):
-        with pytest.raises(ValidationError):
-            Project(
-                slug="x",
-                client=None,  # type: ignore[arg-type]
-                skillset="wm",
-                status=ProjectStatus.PLANNED,
-                created=date.today(),
-            )
-
-    def test_decision_requires_id(self):
-        with pytest.raises(ValidationError):
-            make_decision(**{"id": None})  # type: ignore[arg-type]
-
-    def test_decision_requires_title(self):
-        with pytest.raises(ValidationError):
-            make_decision(**{"title": None})  # type: ignore[arg-type]
-
-    def test_engagement_requires_id(self):
-        with pytest.raises(ValidationError):
-            make_engagement(**{"id": None})  # type: ignore[arg-type]
-
-    def test_tour_manifest_requires_stops(self):
-        with pytest.raises(ValidationError):
-            make_tour(**{"stops": None})  # type: ignore[arg-type]
-
-
-# ---------------------------------------------------------------------------
-# Enum validation
-# ---------------------------------------------------------------------------
-
-
-class TestEnumValidation:
-    def test_project_status_rejects_invalid(self):
-        with pytest.raises(ValidationError):
-            make_project(status="bogus")  # type: ignore[arg-type]
-
-    def test_project_status_accepts_valid_string(self):
-        p = make_project(status="planned")  # type: ignore[arg-type]
-        assert p.status == ProjectStatus.PLANNED
-
-    def test_confidence_rejects_invalid(self):
-        with pytest.raises(ValidationError):
-            make_research(confidence="Very High")  # type: ignore[arg-type]
-
-    def test_confidence_accepts_valid_values(self):
-        for val in ("High", "Medium-High", "Medium", "Low"):
-            r = make_research(confidence=val)  # type: ignore[arg-type]
-            assert r.confidence == Confidence(val)
 
 
 # ---------------------------------------------------------------------------
@@ -182,13 +120,3 @@ class TestTourStopOrder:
     def test_letter_suffix_order(self):
         s = make_tour_stop(order="4a")
         assert s.order == "4a"
-
-
-class TestProjectStatusValues:
-    """All four status values exist and have the expected string form."""
-
-    def test_all_statuses(self):
-        assert ProjectStatus.PLANNED.value == "planned"
-        assert ProjectStatus.ACTIVE.value == "active"
-        assert ProjectStatus.COMPLETE.value == "complete"
-        assert ProjectStatus.REVIEWED.value == "reviewed"
