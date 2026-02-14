@@ -8,14 +8,15 @@ Invocation: uv run consultamatron <group> <command> [options]
 
 from __future__ import annotations
 
+import functools
 import json
 from pathlib import Path
+from typing import Any, Callable
 
 import click
 
 from bin.cli.config import Config
 from bin.cli.di import Container
-from bin.cli.usecases import TRequest, TResponse, UseCase
 from bin.cli.dtos import (
     AddEngagementEntryRequest,
     GetProjectProgressRequest,
@@ -32,6 +33,24 @@ from bin.cli.dtos import (
     TourStopInput,
     UpdateProjectStatusRequest,
 )
+from bin.cli.usecases import (
+    AddEngagementEntryUseCase,
+    GetProjectProgressUseCase,
+    GetProjectUseCase,
+    InitializeWorkspaceUseCase,
+    ListDecisionsUseCase,
+    ListProjectsUseCase,
+    ListResearchTopicsUseCase,
+    RecordDecisionUseCase,
+    RegisterProjectUseCase,
+    RegisterResearchTopicUseCase,
+    RegisterTourUseCase,
+    RenderSiteUseCase,
+    TRequest,
+    TResponse,
+    UpdateProjectStatusUseCase,
+    UseCase,
+)
 
 
 def _parse_fields(raw: tuple[str, ...]) -> dict[str, str]:
@@ -43,6 +62,25 @@ def _parse_fields(raw: tuple[str, ...]) -> dict[str, str]:
             raise click.BadParameter(f"Field must be Key=Value, got: {item}")
         fields[key] = value
     return fields
+
+
+def _inject(attr: str) -> Callable[..., Any]:
+    """Replace @click.pass_obj so the handler receives one usecase, not the container.
+
+    Each command declares which usecase it needs by name. The container
+    remains the composition root but is no longer a service locator that
+    every handler can rummage through.
+    """
+
+    def decorator(fn: Callable[..., Any]) -> Callable[..., Any]:
+        @click.pass_obj
+        @functools.wraps(fn)
+        def wrapper(di: Container, *args: Any, **kwargs: Any) -> Any:
+            return fn(getattr(di, attr), *args, **kwargs)
+
+        return wrapper
+
+    return decorator
 
 
 def _run(usecase: UseCase[TRequest, TResponse], request: TRequest) -> TResponse:
@@ -78,15 +116,15 @@ def project() -> None:
 
 @project.command("init")
 @click.option("--client", required=True, help="Client slug.")
-@click.pass_obj
-def project_init(di: Container, client: str) -> None:
+@_inject("initialize_workspace_usecase")
+def project_init(usecase: InitializeWorkspaceUseCase, client: str) -> None:
     """Initialize a new client workspace.
 
     Creates empty project registry, engagement log, and research
     manifest. Logs a "Client onboarded" engagement entry.
     """
     req = InitializeWorkspaceRequest(client=client)
-    resp = _run(di.initialize_workspace_usecase, req)
+    resp = _run(usecase, req)
     click.echo(f"Initialized workspace for '{resp.client}'")
 
 
@@ -100,9 +138,9 @@ def project_init(di: Container, client: str) -> None:
 )
 @click.option("--scope", required=True, help="Project scope description.")
 @click.option("--notes", default="", help="Additional notes.")
-@click.pass_obj
+@_inject("register_project_usecase")
 def project_register(
-    di: Container,
+    usecase: RegisterProjectUseCase,
     client: str,
     slug: str,
     skillset: str,
@@ -121,7 +159,7 @@ def project_register(
         scope=scope,
         notes=notes,
     )
-    resp = _run(di.register_project_usecase, req)
+    resp = _run(usecase, req)
     click.echo(
         f"Registered project '{resp.slug}' ({resp.skillset}) for '{resp.client}'"
     )
@@ -136,9 +174,9 @@ def project_register(
     type=click.Choice(["planned", "active", "complete", "reviewed"]),
     help="New status.",
 )
-@click.pass_obj
+@_inject("update_project_status_usecase")
 def project_update_status(
-    di: Container, client: str, project_slug: str, status: str
+    usecase: UpdateProjectStatusUseCase, client: str, project_slug: str, status: str
 ) -> None:
     """Update a project's status.
 
@@ -148,7 +186,7 @@ def project_update_status(
     req = UpdateProjectStatusRequest(
         client=client, project_slug=project_slug, status=status
     )
-    resp = _run(di.update_project_status_usecase, req)
+    resp = _run(usecase, req)
     click.echo(f"Updated '{resp.project_slug}' status to '{resp.status}'")
 
 
@@ -161,16 +199,16 @@ def project_update_status(
     type=click.Choice(["planned", "active", "complete", "reviewed"]),
     help="Filter by status.",
 )
-@click.pass_obj
+@_inject("list_projects_usecase")
 def project_list(
-    di: Container,
+    usecase: ListProjectsUseCase,
     client: str,
     skillset: str | None,
     status: str | None,
 ) -> None:
     """List projects for a client."""
     req = ListProjectsRequest(client=client, skillset=skillset, status=status)
-    resp = _run(di.list_projects_usecase, req)
+    resp = _run(usecase, req)
     if not resp.projects:
         click.echo("No projects found.")
         return
@@ -181,11 +219,11 @@ def project_list(
 @project.command("get")
 @click.option("--client", required=True, help="Client slug.")
 @click.option("--slug", required=True, help="Project slug.")
-@click.pass_obj
-def project_get(di: Container, client: str, slug: str) -> None:
+@_inject("get_project_usecase")
+def project_get(usecase: GetProjectUseCase, client: str, slug: str) -> None:
     """Get details for a specific project."""
     req = GetProjectRequest(client=client, slug=slug)
-    resp = _run(di.get_project_usecase, req)
+    resp = _run(usecase, req)
     if resp.project is None:
         raise click.ClickException(f"Project '{slug}' not found.")
     p = resp.project
@@ -200,8 +238,10 @@ def project_get(di: Container, client: str, slug: str) -> None:
 @project.command("progress")
 @click.option("--client", required=True, help="Client slug.")
 @click.option("--project", "project_slug", required=True, help="Project slug.")
-@click.pass_obj
-def project_progress(di: Container, client: str, project_slug: str) -> None:
+@_inject("get_project_progress_usecase")
+def project_progress(
+    usecase: GetProjectProgressUseCase, client: str, project_slug: str
+) -> None:
     """Show pipeline progress for a project.
 
     Loads the skillset definition, matches decision log entries against
@@ -209,7 +249,7 @@ def project_progress(di: Container, client: str, project_slug: str) -> None:
     next prerequisite.
     """
     req = GetProjectProgressRequest(client=client, project_slug=project_slug)
-    resp = _run(di.get_project_progress_usecase, req)
+    resp = _run(usecase, req)
     if not resp.stages:
         click.echo("No pipeline stages found.")
         return
@@ -237,9 +277,9 @@ def decision() -> None:
 @click.option("--project", "project_slug", required=True, help="Project slug.")
 @click.option("--title", required=True, help="Decision title.")
 @click.option("--field", multiple=True, help="Key=Value pair (repeatable).")
-@click.pass_obj
+@_inject("record_decision_usecase")
 def decision_record(
-    di: Container,
+    usecase: RecordDecisionUseCase,
     client: str,
     project_slug: str,
     title: str,
@@ -256,7 +296,7 @@ def decision_record(
         title=title,
         fields=_parse_fields(field),
     )
-    resp = _run(di.record_decision_usecase, req)
+    resp = _run(usecase, req)
     click.echo(
         f"Recorded decision '{title}' for "
         f"'{resp.client}/{resp.project_slug}' ({resp.decision_id})"
@@ -266,11 +306,13 @@ def decision_record(
 @decision.command("list")
 @click.option("--client", required=True, help="Client slug.")
 @click.option("--project", "project_slug", required=True, help="Project slug.")
-@click.pass_obj
-def decision_list(di: Container, client: str, project_slug: str) -> None:
+@_inject("list_decisions_usecase")
+def decision_list(
+    usecase: ListDecisionsUseCase, client: str, project_slug: str
+) -> None:
     """List decisions for a project in chronological order."""
     req = ListDecisionsRequest(client=client, project_slug=project_slug)
-    resp = _run(di.list_decisions_usecase, req)
+    resp = _run(usecase, req)
     if not resp.decisions:
         click.echo("No decisions recorded.")
         return
@@ -294,9 +336,9 @@ def engagement() -> None:
 @click.option("--client", required=True, help="Client slug.")
 @click.option("--title", required=True, help="Entry title.")
 @click.option("--field", multiple=True, help="Key=Value pair (repeatable).")
-@click.pass_obj
+@_inject("add_engagement_entry_usecase")
 def engagement_add(
-    di: Container, client: str, title: str, field: tuple[str, ...]
+    usecase: AddEngagementEntryUseCase, client: str, title: str, field: tuple[str, ...]
 ) -> None:
     """Add an entry to the engagement log.
 
@@ -305,7 +347,7 @@ def engagement_add(
     req = AddEngagementEntryRequest(
         client=client, title=title, fields=_parse_fields(field)
     )
-    resp = _run(di.add_engagement_entry_usecase, req)
+    resp = _run(usecase, req)
     click.echo(
         f"Added engagement entry '{title}' for '{resp.client}' ({resp.entry_id})"
     )
@@ -331,9 +373,9 @@ def research() -> None:
     type=click.Choice(["High", "Medium-High", "Medium", "Low"]),
     help="Confidence level.",
 )
-@click.pass_obj
+@_inject("register_research_topic_usecase")
 def research_add(
-    di: Container,
+    usecase: RegisterResearchTopicUseCase,
     client: str,
     topic: str,
     filename: str,
@@ -349,17 +391,17 @@ def research_add(
         filename=filename,
         confidence=confidence,
     )
-    resp = _run(di.register_research_topic_usecase, req)
+    resp = _run(usecase, req)
     click.echo(f"Registered topic '{topic}' as '{resp.filename}' for '{resp.client}'")
 
 
 @research.command("list")
 @click.option("--client", required=True, help="Client slug.")
-@click.pass_obj
-def research_list(di: Container, client: str) -> None:
+@_inject("list_research_topics_usecase")
+def research_list(usecase: ListResearchTopicsUseCase, client: str) -> None:
     """List research topics for a client."""
     req = ListResearchTopicsRequest(client=client)
-    resp = _run(di.list_research_topics_usecase, req)
+    resp = _run(usecase, req)
     if not resp.topics:
         click.echo("No research topics found.")
         return
@@ -383,9 +425,9 @@ def tour() -> None:
 @click.option("--name", required=True, help="Tour name (e.g. investor).")
 @click.option("--title", required=True, help="Tour display title.")
 @click.option("--stops", required=True, help="JSON array of tour stops.")
-@click.pass_obj
+@_inject("register_tour_usecase")
 def tour_register(
-    di: Container,
+    usecase: RegisterTourUseCase,
     client: str,
     project_slug: str,
     name: str,
@@ -408,7 +450,7 @@ def tour_register(
         title=title,
         stops=[TourStopInput(**s) for s in stops_data],
     )
-    resp = _run(di.register_tour_usecase, req)
+    resp = _run(usecase, req)
     click.echo(
         f"Registered tour '{resp.name}' with {resp.stop_count} stops "
         f"for '{resp.client}/{resp.project_slug}'"
@@ -427,15 +469,15 @@ def site() -> None:
 
 @site.command("render")
 @click.argument("client")
-@click.pass_obj
-def site_render(di: Container, client: str) -> None:
+@_inject("render_site_usecase")
+def site_render(usecase: RenderSiteUseCase, client: str) -> None:
     """Render a static HTML site for a client workspace.
 
     Gathers structured data from the project registry, tour manifests,
     and research manifest, then delegates to the site renderer.
     """
     req = RenderSiteRequest(client=client)
-    resp = _run(di.render_site_usecase, req)
+    resp = _run(usecase, req)
     click.echo(f"Open: {resp.site_path}/index.html")
     click.echo(f"({resp.page_count} pages)")
 
