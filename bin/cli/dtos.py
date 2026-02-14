@@ -8,8 +8,12 @@ These are pure data structures with no behaviour.
 from __future__ import annotations
 
 from datetime import date
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
+
+if TYPE_CHECKING:
+    from bin.cli.entities import DecisionEntry, Project, ResearchTopic
 
 
 # ---------------------------------------------------------------------------
@@ -36,6 +40,16 @@ class ProjectInfo(BaseModel):
     created: date
     notes: str
 
+    @classmethod
+    def from_entity(cls, p: Project) -> ProjectInfo:
+        return cls(
+            slug=p.slug,
+            skillset=p.skillset,
+            status=p.status.value,
+            created=p.created,
+            notes=p.notes,
+        )
+
 
 class DecisionInfo(BaseModel):
     """Decision entry returned by list queries."""
@@ -45,6 +59,10 @@ class DecisionInfo(BaseModel):
     title: str
     fields: dict[str, str]
 
+    @classmethod
+    def from_entity(cls, d: DecisionEntry) -> DecisionInfo:
+        return cls(id=d.id, date=d.date, title=d.title, fields=d.fields)
+
 
 class ResearchTopicInfo(BaseModel):
     """Research topic returned by list queries."""
@@ -53,6 +71,15 @@ class ResearchTopicInfo(BaseModel):
     topic: str
     date: date
     confidence: str
+
+    @classmethod
+    def from_entity(cls, t: ResearchTopic) -> ResearchTopicInfo:
+        return cls(
+            filename=t.filename,
+            topic=t.topic,
+            date=t.date,
+            confidence=t.confidence.value,
+        )
 
 
 class StageProgress(BaseModel):

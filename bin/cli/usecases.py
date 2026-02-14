@@ -379,16 +379,7 @@ class ListProjectsUseCase:
         )
         return ListProjectsResponse(
             client=request.client,
-            projects=[
-                ProjectInfo(
-                    slug=p.slug,
-                    skillset=p.skillset,
-                    status=p.status.value,
-                    created=p.created,
-                    notes=p.notes,
-                )
-                for p in projects
-            ],
+            projects=[ProjectInfo.from_entity(p) for p in projects],
         )
 
 
@@ -404,13 +395,7 @@ class GetProjectUseCase:
             return GetProjectResponse(client=request.client, project=None)
         return GetProjectResponse(
             client=request.client,
-            project=ProjectInfo(
-                slug=project.slug,
-                skillset=project.skillset,
-                status=project.status.value,
-                created=project.created,
-                notes=project.notes,
-            ),
+            project=ProjectInfo.from_entity(project),
         )
 
 
@@ -480,15 +465,7 @@ class ListDecisionsUseCase:
         return ListDecisionsResponse(
             client=request.client,
             project_slug=request.project_slug,
-            decisions=[
-                DecisionInfo(
-                    id=d.id,
-                    date=d.date,
-                    title=d.title,
-                    fields=d.fields,
-                )
-                for d in decisions
-            ],
+            decisions=[DecisionInfo.from_entity(d) for d in decisions],
         )
 
 
@@ -502,15 +479,7 @@ class ListResearchTopicsUseCase:
         topics = self._research.list_all(request.client)
         return ListResearchTopicsResponse(
             client=request.client,
-            topics=[
-                ResearchTopicInfo(
-                    filename=t.filename,
-                    topic=t.topic,
-                    date=t.date,
-                    confidence=t.confidence.value,
-                )
-                for t in topics
-            ],
+            topics=[ResearchTopicInfo.from_entity(t) for t in topics],
         )
 
 
