@@ -161,13 +161,11 @@ Based on client feedback:
 
 When the client agrees:
 1. Copy to `segments/segments.agreed.md`
-2. Append to `decisions.md`:
-   ```markdown
-   ## {Date} — Stage 2: Customer segments agreed
-
-   **Agreed**: Customer segments and value propositions signed off.
-   **Segments**: {list of agreed segments}
-   **Scope**: {any scope notes}
+2. Record the agreement:
+   ```
+   bmc-segments/scripts/record-agreement.sh --client {org} --project {slug} \
+     --field "Segments={list of agreed segments}" \
+     --field "Scope={any scope notes}"
    ```
 
 ## Important notes

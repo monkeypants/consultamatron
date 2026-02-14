@@ -186,9 +186,15 @@ maps and analyses.
 
 When the user confirms all prose:
 1. Write final versions to `presentations/operations/`.
-2. Regenerate the deliverable site:
+2. Register the tour manifest:
    ```
-   bin/render-site.sh clients/{org}/projects/{slug}/
+   wm-tour-operations/scripts/register-tour.sh --client {org} --project {slug} \
+     --title "{tour display title}" \
+     --stops '[{"order":"1","title":"What to build and what to buy","atlas_source":"atlas/sourcing/"},...]'
    ```
-3. Tell the user the operations tour is assembled and available in the
+3. Regenerate the deliverable site:
+   ```
+   bin/render-site.sh clients/{org}/
+   ```
+4. Tell the user the operations tour is assembled and available in the
    site output.

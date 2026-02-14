@@ -92,17 +92,11 @@ When the client agrees:
        └── drafts/
    ```
 2. Write `brief.agreed.md` with the agreed scope
-3. Initialise `decisions.md`:
-   ```markdown
-   # Decisions — {Project Name}
-
-   ## {Date} — Project brief agreed
-
-   **Agreed**: Business Model Canvas project scope signed off by client.
-   **Scope**: {agreed scope}
-   **Focus areas**: {list}
+3. Record the brief agreement and activate the project:
    ```
-4. Update `projects/index.md` with status `active`
+   bmc-research/scripts/record-brief-agreed.sh --client {org} --project {slug} \
+     --field "Scope={agreed scope}" --field "Focus areas={list}"
+   ```
 
 ## Step 4: Initial hypotheses
 

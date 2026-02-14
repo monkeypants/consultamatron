@@ -5,11 +5,14 @@
 # Usage:
 #   bin/render-site.sh clients/{org-slug}/
 #
-# Thin wrapper around the Python renderer.
+# Thin wrapper: extracts the client slug and calls the CLI.
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-exec uv run --project "$REPO_DIR" python "$SCRIPT_DIR/render_site.py" "$@"
+# Extract client slug from path like "clients/duckitandrun/"
+CLIENT="$(basename "${1%/}")"
+
+exec uv run --project "$REPO_DIR" consultamatron site render "$CLIENT"

@@ -196,9 +196,15 @@ maps and analyses.
 
 When the user confirms all prose:
 1. Write final versions to `presentations/competitive/`.
-2. Regenerate the deliverable site:
+2. Register the tour manifest:
    ```
-   bin/render-site.sh clients/{org}/projects/{slug}/
+   wm-tour-competitive/scripts/register-tour.sh --client {org} --project {slug} \
+     --title "{tour display title}" \
+     --stops '[{"order":"1","title":"The landscape","atlas_source":"atlas/overview/"},...]'
    ```
-3. Tell the user the competitive tour is assembled and available in the
+3. Regenerate the deliverable site:
+   ```
+   bin/render-site.sh clients/{org}/
+   ```
+4. Tell the user the competitive tour is assembled and available in the
    site output.

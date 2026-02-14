@@ -178,9 +178,15 @@ maps and analyses.
 
 When the user confirms all prose:
 1. Write final versions to `presentations/technical/`.
-2. Regenerate the deliverable site:
+2. Register the tour manifest:
    ```
-   bin/render-site.sh clients/{org}/projects/{slug}/
+   wm-tour-technical/scripts/register-tour.sh --client {org} --project {slug} \
+     --title "{tour display title}" \
+     --stops '[{"order":"1","title":"Architecture at a glance","atlas_source":"atlas/overview/"},...]'
    ```
-3. Tell the user the technical leadership tour is assembled and
+3. Regenerate the deliverable site:
+   ```
+   bin/render-site.sh clients/{org}/
+   ```
+4. Tell the user the technical leadership tour is assembled and
    available in the site output.

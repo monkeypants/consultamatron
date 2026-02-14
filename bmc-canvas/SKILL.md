@@ -142,14 +142,12 @@ Based on client feedback:
 
 When the client agrees:
 1. Copy to `canvas.agreed.md`
-2. Append to `decisions.md`:
-   ```markdown
-   ## {Date} — Stage 3: Business Model Canvas agreed
-
-   **Agreed**: Full nine-block canvas signed off by client.
-   **Segments**: {count} customer segments
-   **Key tensions**: {any notable tensions or uncertainties}
-   **Notes**: {any caveats}
+2. Record the agreement:
+   ```
+   bmc-canvas/scripts/record-agreement.sh --client {org} --project {slug} \
+     --field "Segments={count} customer segments" \
+     --field "Key tensions={any notable tensions or uncertainties}" \
+     --field "Notes={any caveats}"
    ```
 
 ## Important notes

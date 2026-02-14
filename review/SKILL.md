@@ -219,21 +219,19 @@ Apply `post-review` to all issues plus a category label:
 
 ## Step 6: Close
 
-1. **Update `engagement.md`** with a review completion entry:
-   ```markdown
-   ## {Date} — Post-implementation review
-
-   **Projects reviewed**: {list}
-   **Issues raised**: {count new} new, {count comments} comments on existing
-   **Key findings**: {brief summary of top findings}
+1. **Record the review** for each reviewed project:
    ```
+   review/scripts/record-review.sh --client {org} --project {slug} \
+     --field "Projects reviewed={list}" \
+     --field "Issues raised={count new} new, {count comments} comments on existing" \
+     --field "Key findings={brief summary of top findings}"
+   ```
+   This logs the review in the engagement history and marks the project
+   as reviewed.
 
 2. **If multiple projects were reviewed**, write an engagement-level
    synthesis to `clients/{org}/review.md` covering cross-project
    patterns, engagement-wide observations, and aggregate recommendations.
-
-3. **Update `projects/index.md`** — mark reviewed projects with
-   "reviewed" status notation.
 
 ## Important notes
 

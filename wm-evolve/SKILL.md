@@ -191,14 +191,12 @@ Based on client feedback:
 
 When the client agrees:
 1. Copy to `evolve/map.agreed.owm`
-2. Append to `decisions.md`:
-   ```markdown
-   ## {Date} — Stage 4: Evolution map agreed
-
-   **Agreed**: Wardley Map with evolution positioning signed off.
-   **Components**: {count} components mapped
-   **Key inertia points**: {list}
-   **Caveats**: {any components with uncertain positioning}
+2. Record the agreement:
+   ```
+   wm-evolve/scripts/record-agreement.sh --client {org} --project {slug} \
+     --field "Components={count} components mapped" \
+     --field "Key inertia points={list}" \
+     --field "Caveats={any components with uncertain positioning}"
    ```
 
 ## Common pitfalls

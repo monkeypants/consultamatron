@@ -159,14 +159,12 @@ Based on client feedback:
 
 When the client agrees:
 1. Copy to `chain/supply-chain.agreed.md`
-2. Append to `decisions.md`:
-   ```markdown
-   ## {Date} — Stage 3: Supply chain agreed
-
-   **Agreed**: Supply chain document signed off by client.
-   **Components**: {total count} unique components identified
-   **Shared components**: {list of key shared components}
-   **Scope notes**: {any caveats}
+2. Record the agreement:
+   ```
+   wm-chain/scripts/record-agreement.sh --client {org} --project {slug} \
+     --field "Components={total count} unique components identified" \
+     --field "Shared components={list of key shared components}" \
+     --field "Scope notes={any caveats}"
    ```
 
 ## Important notes

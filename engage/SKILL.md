@@ -91,28 +91,16 @@ Iterate until the client confirms the plan.
 For each agreed project:
 
 1. Read the skillset manifest to determine the project directory structure
-2. Create the project directory under `projects/{project-slug}/`
-3. Initialise `decisions.md`:
-   ```markdown
-   # Decisions — {Project Name}
-
-   ## {Date} — Project created
-
-   **Action**: Project directory created via engage skill.
-   **Skillset**: {skillset name}
-   **Scope**: {agreed scope from engagement plan}
+2. Register the project (creates registry entry, decision log, and
+   engagement entry):
    ```
+   engage/scripts/register-project.sh --client {org} --slug {slug} \
+     --skillset "{skillset}" --scope "{scope}" --notes "{notes}"
+   ```
+3. Create the project subdirectory structure as defined by the skillset
+   manifest
 4. Do NOT create `brief.agreed.md`. That is the first skill's job after
    negotiation with the client.
-
-Update `projects/index.md`:
-```markdown
-| Project | Skillset | Status | Created | Notes |
-|---------|----------|--------|---------|-------|
-| {slug} | {skillset} | planned | {date} | {scope note} |
-```
-
-Update `engagement.md` with the planning decisions.
 
 ## Step 6: Direct the client
 

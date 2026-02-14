@@ -167,7 +167,12 @@ an SVG alongside the OWM file. Show the SVG to the client.
 1. Write the updated map (to the same file, or a new version if the
    user prefers)
 2. If the change is significant enough to warrant client sign-off,
-   produce a new `.agreed.owm` and log in `decisions.md`
+   produce a new `.agreed.owm` and record the update:
+   ```
+   wm-iterate/scripts/record-update.sh --client {org} --project {slug} \
+     --title "{description of what changed}" \
+     --field "Changes={summary}" --field "Reason={why}"
+   ```
 3. Summarise what changed and why
 
 ## Common iteration patterns
