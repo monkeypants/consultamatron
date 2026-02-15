@@ -17,11 +17,11 @@ from datetime import date, datetime, tzinfo
 from pathlib import Path
 from typing import Protocol, runtime_checkable
 
+from bin.cli.content import ProjectContribution
 from bin.cli.entities import (
     DecisionEntry,
     EngagementEntry,
     Project,
-    ProjectContribution,
     ProjectStatus,
     ResearchTopic,
     Skillset,

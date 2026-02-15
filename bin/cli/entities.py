@@ -3,6 +3,9 @@
 Entities carry identity and scoping context so that repository
 save(entity) calls are self-contained. Skillsets are first-class
 entities discovered from manifests at runtime, not hardcoded enums.
+
+Domain exceptions live in bin.cli.exceptions.
+Deliverable content entities live in bin.cli.content.
 """
 
 from __future__ import annotations
@@ -11,27 +14,6 @@ from datetime import date, datetime
 from enum import Enum
 
 from pydantic import BaseModel
-
-
-# ---------------------------------------------------------------------------
-# Domain exceptions
-# ---------------------------------------------------------------------------
-
-
-class DomainError(Exception):
-    """Base for all domain-level errors raised by usecases."""
-
-
-class NotFoundError(DomainError):
-    """A required entity does not exist."""
-
-
-class DuplicateError(DomainError):
-    """An entity with the same identity already exists."""
-
-
-class InvalidTransitionError(DomainError):
-    """A requested state transition violates domain rules."""
 
 
 # ---------------------------------------------------------------------------
@@ -164,88 +146,3 @@ class TourManifest(BaseModel):
     project_slug: str
     title: str
     stops: list[TourStop]
-
-
-# ---------------------------------------------------------------------------
-# Deliverable content entities — structure of what gets delivered,
-# independent of rendering format.
-# ---------------------------------------------------------------------------
-
-
-class Figure(BaseModel):
-    """A visual artifact (SVG content) with optional caption."""
-
-    caption: str
-    svg_content: str
-
-
-class ContentPage(BaseModel):
-    """A single page of prose content with optional figures."""
-
-    title: str
-    slug: str
-    body_md: str
-    figures: list[Figure] = []
-
-
-class PageGroup(BaseModel):
-    """A labeled collection of pages (e.g. atlas category)."""
-
-    label: str
-    slug: str
-    pages: list[ContentPage]
-
-
-class TourStopContent(BaseModel):
-    """One assembled tour stop with figures and analysis."""
-
-    title: str
-    level: str
-    is_header: bool
-    figures: list[Figure]
-    analysis_md: str
-
-
-class TourGroupContent(BaseModel):
-    """A group of related stops plus transition prose."""
-
-    stops: list[TourStopContent]
-    transition_md: str
-
-
-class TourPageContent(BaseModel):
-    """A complete tour presentation, assembled from workspace files."""
-
-    title: str
-    slug: str
-    description: str
-    opening_md: str
-    groups: list[TourGroupContent]
-
-
-class ProjectSection(BaseModel):
-    """A major section within a project."""
-
-    label: str
-    slug: str
-    description: str = ""
-    pages: list[ContentPage] = []
-    groups: list[PageGroup] = []
-    tours: list[TourPageContent] = []
-
-
-class ProjectContribution(BaseModel):
-    """Everything a project contributes to the client deliverable.
-
-    Assembled by a ProjectPresenter from workspace files. Contains
-    enough structure for any renderer to produce output without
-    knowing the skillset.
-    """
-
-    slug: str
-    title: str
-    skillset: str
-    status: str
-    hero_figure: Figure | None = None
-    overview_md: str
-    sections: list[ProjectSection] = []

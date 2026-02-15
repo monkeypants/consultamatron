@@ -9,13 +9,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from bin.cli.entities import (
-    ContentPage,
-    Project,
-    ProjectContribution,
-    ProjectSection,
-    TourManifest,
-)
+from bin.cli.content import ContentPage, ProjectContribution, ProjectSection
+from bin.cli.entities import Project, TourManifest
 
 
 def _read_md(path: Path) -> str:
