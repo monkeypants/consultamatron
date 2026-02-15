@@ -250,6 +250,7 @@ class RecordDecisionUseCase:
             client=request.client,
             project_slug=request.project_slug,
             decision_id=entry_id,
+            title=request.title,
         )
 
 
@@ -287,6 +288,7 @@ class AddEngagementEntryUseCase:
         return AddEngagementEntryResponse(
             client=request.client,
             entry_id=entry_id,
+            title=request.title,
         )
 
 
