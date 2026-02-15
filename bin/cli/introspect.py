@@ -20,20 +20,25 @@ from pydantic.fields import FieldInfo
 from bin.cli.exceptions import DomainError
 
 
+def _extra_dict(field_info: FieldInfo) -> dict[str, Any]:
+    """Return json_schema_extra as a dict, or empty dict."""
+    extra = field_info.json_schema_extra
+    return extra if isinstance(extra, dict) else {}
+
+
 def _click_type(field_info: FieldInfo) -> click.ParamType | None:
     """Derive a Click parameter type from Pydantic field metadata.
 
     Returns click.Choice for fields annotated with choices in
     json_schema_extra, or None to use Click's default string type.
     """
-    extra = field_info.json_schema_extra
-    if isinstance(extra, dict):
-        choices = extra.get("choices")
-        if choices is not None:
-            if isinstance(choices, type) and issubclass(choices, enum.Enum):
-                return click.Choice([m.value for m in choices])
-            if isinstance(choices, (list, tuple)):
-                return click.Choice(list(choices))
+    extra = _extra_dict(field_info)
+    choices = extra.get("choices")
+    if choices is not None:
+        if isinstance(choices, type) and issubclass(choices, enum.Enum):
+            return click.Choice([m.value for m in choices])
+        if isinstance(choices, (list, tuple)):
+            return click.Choice(list(choices))
     return None
 
 
@@ -66,10 +71,19 @@ def generate_command(
         help from the usecase docstring.
     """
     params: list[click.Parameter] = []
+    # Maps Click param name -> DTO field name when they differ.
+    name_map: dict[str, str] = {}
 
     for field_name, field_info in request_model.model_fields.items():
         required = field_info.is_required()
-        option_name = f"--{field_name.replace('_', '-')}"
+        extra = _extra_dict(field_info)
+
+        cli_name = extra.get("cli_name", field_name)
+        option_name = f"--{cli_name.replace('_', '-')}"
+
+        if cli_name != field_name:
+            click_param = cli_name.replace("-", "_")
+            name_map[click_param] = field_name
 
         kwargs: dict[str, Any] = {
             "required": required,
@@ -88,6 +102,11 @@ def generate_command(
     def callback(**kwargs: Any) -> None:
         di = click.get_current_context().obj
         usecase = getattr(di, usecase_attr)
+
+        for click_param, dto_field in name_map.items():
+            if click_param in kwargs:
+                kwargs[dto_field] = kwargs.pop(click_param)
+
         try:
             resp = usecase.execute(request_model(**kwargs))
         except DomainError as e:

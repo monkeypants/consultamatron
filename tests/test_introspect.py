@@ -247,3 +247,29 @@ class TestOptionNaming:
         result = _run(cli, ["--project-slug", "maps-1"])
         assert result.exit_code == 0
         assert uc.last_request.project_slug == "maps-1"
+
+    def test_cli_name_overrides_option(self):
+        class AliasedRequest(BaseModel):
+            project_slug: str = Field(
+                description="The slug.",
+                json_schema_extra={"cli_name": "project"},
+            )
+
+        uc = FakeUseCase()
+        cli = _build_cli(uc, AliasedRequest)
+        result = _run(cli, ["--project", "maps-1"])
+        assert result.exit_code == 0
+        assert uc.last_request.project_slug == "maps-1"
+
+    def test_cli_name_original_option_rejected(self):
+        class AliasedRequest(BaseModel):
+            project_slug: str = Field(
+                description="The slug.",
+                json_schema_extra={"cli_name": "project"},
+            )
+
+        uc = FakeUseCase()
+        cli = _build_cli(uc, AliasedRequest)
+        result = _run(cli, ["--project-slug", "maps-1"])
+        assert result.exit_code != 0
+        assert uc.last_request is None

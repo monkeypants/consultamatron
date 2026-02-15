@@ -322,6 +322,7 @@ class RegisterResearchTopicUseCase:
         return RegisterResearchTopicResponse(
             client=request.client,
             filename=request.filename,
+            topic=request.topic,
         )
 
 
@@ -393,9 +394,12 @@ class GetProjectUseCase:
     def execute(self, request: GetProjectRequest) -> GetProjectResponse:
         project = self._projects.get(request.client, request.slug)
         if project is None:
-            return GetProjectResponse(client=request.client, project=None)
+            return GetProjectResponse(
+                client=request.client, slug=request.slug, project=None
+            )
         return GetProjectResponse(
             client=request.client,
+            slug=request.slug,
             project=ProjectInfo.from_entity(project),
         )
 

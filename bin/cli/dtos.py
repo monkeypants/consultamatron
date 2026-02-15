@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, Field
 
-from bin.cli.entities import ProjectStatus
+from bin.cli.entities import Confidence, ProjectStatus
 from bin.cli.wm_types import TourStop
 
 if TYPE_CHECKING:
@@ -90,7 +90,7 @@ class StageProgress(BaseModel):
 
 
 class InitializeWorkspaceRequest(BaseModel):
-    client: str
+    client: str = Field(description="Client slug.")
 
 
 class InitializeWorkspaceResponse(BaseModel):
@@ -122,9 +122,15 @@ class RegisterProjectResponse(BaseModel):
 
 
 class UpdateProjectStatusRequest(BaseModel):
-    client: str
-    project_slug: str
-    status: str
+    client: str = Field(description="Client slug.")
+    project_slug: str = Field(
+        description="Project slug.",
+        json_schema_extra={"cli_name": "project"},
+    )
+    status: str = Field(
+        description="New status.",
+        json_schema_extra={"choices": ProjectStatus},
+    )
 
 
 class UpdateProjectStatusResponse(BaseModel):
@@ -173,15 +179,19 @@ class AddEngagementEntryResponse(BaseModel):
 
 
 class RegisterResearchTopicRequest(BaseModel):
-    client: str
-    topic: str
-    filename: str
-    confidence: str
+    client: str = Field(description="Client slug.")
+    topic: str = Field(description="Topic name.")
+    filename: str = Field(description="Research file name.")
+    confidence: str = Field(
+        description="Confidence level.",
+        json_schema_extra={"choices": Confidence},
+    )
 
 
 class RegisterResearchTopicResponse(BaseModel):
     client: str
     filename: str
+    topic: str
 
 
 # ---------------------------------------------------------------------------
@@ -230,12 +240,13 @@ class ListProjectsResponse(BaseModel):
 
 
 class GetProjectRequest(BaseModel):
-    client: str
-    slug: str
+    client: str = Field(description="Client slug.")
+    slug: str = Field(description="Project slug.")
 
 
 class GetProjectResponse(BaseModel):
     client: str
+    slug: str
     project: ProjectInfo | None
 
 
@@ -245,8 +256,11 @@ class GetProjectResponse(BaseModel):
 
 
 class GetProjectProgressRequest(BaseModel):
-    client: str
-    project_slug: str
+    client: str = Field(description="Client slug.")
+    project_slug: str = Field(
+        description="Project slug.",
+        json_schema_extra={"cli_name": "project"},
+    )
 
 
 class GetProjectProgressResponse(BaseModel):
@@ -264,8 +278,11 @@ class GetProjectProgressResponse(BaseModel):
 
 
 class ListDecisionsRequest(BaseModel):
-    client: str
-    project_slug: str
+    client: str = Field(description="Client slug.")
+    project_slug: str = Field(
+        description="Project slug.",
+        json_schema_extra={"cli_name": "project"},
+    )
 
 
 class ListDecisionsResponse(BaseModel):
@@ -280,7 +297,7 @@ class ListDecisionsResponse(BaseModel):
 
 
 class ListResearchTopicsRequest(BaseModel):
-    client: str
+    client: str = Field(description="Client slug.")
 
 
 class ListResearchTopicsResponse(BaseModel):
