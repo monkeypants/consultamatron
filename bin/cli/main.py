@@ -9,7 +9,6 @@ Invocation: uv run consultamatron <group> <command> [options]
 from __future__ import annotations
 
 import functools
-import json
 from pathlib import Path
 from typing import Any, Callable
 
@@ -17,7 +16,6 @@ import click
 
 from bin.cli.config import Config
 from bin.cli.di import Container
-from bin.cli.wm_types import TourStop
 from bin.cli.exceptions import DomainError
 from bin.cli.dtos import (
     AddEngagementEntryRequest,
@@ -53,17 +51,6 @@ from bin.cli.usecases import (
     UpdateProjectStatusUseCase,
     UseCase,
 )
-
-
-def _parse_fields(raw: tuple[str, ...]) -> dict[str, str]:
-    """Parse Key=Value pairs from repeatable --field options."""
-    fields: dict[str, str] = {}
-    for item in raw:
-        key, sep, value = item.partition("=")
-        if not sep:
-            raise click.BadParameter(f"Field must be Key=Value, got: {item}")
-        fields[key] = value
-    return fields
 
 
 def _inject(attr: str) -> Callable[..., Any]:
@@ -239,35 +226,22 @@ def decision() -> None:
     """Manage project decisions."""
 
 
-@decision.command("record")
-@click.option("--client", required=True, help="Client slug.")
-@click.option("--project", "project_slug", required=True, help="Project slug.")
-@click.option("--title", required=True, help="Decision title.")
-@click.option("--field", multiple=True, help="Key=Value pair (repeatable).")
-@_inject("record_decision_usecase")
-def decision_record(
-    usecase: RecordDecisionUseCase,
-    client: str,
-    project_slug: str,
-    title: str,
-    field: tuple[str, ...],
-) -> None:
-    """Record a decision for a project.
-
-    Appends a timestamped decision entry to the project's decision log.
-    Fields are key=value pairs specific to the decision.
-    """
-    req = RecordDecisionRequest(
-        client=client,
-        project_slug=project_slug,
-        title=title,
-        fields=_parse_fields(field),
-    )
-    resp = _run(usecase, req)
+def _format_decision_record(resp: Any) -> None:
     click.echo(
-        f"Recorded decision '{title}' for "
+        f"Recorded decision '{resp.title}' for "
         f"'{resp.client}/{resp.project_slug}' ({resp.decision_id})"
     )
+
+
+decision.add_command(
+    generate_command(
+        name="record",
+        request_model=RecordDecisionRequest,
+        usecase_attr="record_decision_usecase",
+        format_output=_format_decision_record,
+        help_text=RecordDecisionUseCase.__doc__,
+    )
+)
 
 
 def _format_decision_list(resp: Any) -> None:
@@ -301,25 +275,21 @@ def engagement() -> None:
     """Manage client engagement history."""
 
 
-@engagement.command("add")
-@click.option("--client", required=True, help="Client slug.")
-@click.option("--title", required=True, help="Entry title.")
-@click.option("--field", multiple=True, help="Key=Value pair (repeatable).")
-@_inject("add_engagement_entry_usecase")
-def engagement_add(
-    usecase: AddEngagementEntryUseCase, client: str, title: str, field: tuple[str, ...]
-) -> None:
-    """Add an entry to the engagement log.
-
-    Appends a timestamped entry to the client's engagement history.
-    """
-    req = AddEngagementEntryRequest(
-        client=client, title=title, fields=_parse_fields(field)
-    )
-    resp = _run(usecase, req)
+def _format_engagement_add(resp: Any) -> None:
     click.echo(
-        f"Added engagement entry '{title}' for '{resp.client}' ({resp.entry_id})"
+        f"Added engagement entry '{resp.title}' for '{resp.client}' ({resp.entry_id})"
     )
+
+
+engagement.add_command(
+    generate_command(
+        name="add",
+        request_model=AddEngagementEntryRequest,
+        usecase_attr="add_engagement_entry_usecase",
+        format_output=_format_engagement_add,
+        help_text=AddEngagementEntryUseCase.__doc__,
+    )
+)
 
 
 # ---------------------------------------------------------------------------
@@ -378,42 +348,22 @@ def tour() -> None:
     """Manage presentation tours."""
 
 
-@tour.command("register")
-@click.option("--client", required=True, help="Client slug.")
-@click.option("--project", "project_slug", required=True, help="Project slug.")
-@click.option("--name", required=True, help="Tour name (e.g. investor).")
-@click.option("--title", required=True, help="Tour display title.")
-@click.option("--stops", required=True, help="JSON array of tour stops.")
-@_inject("register_tour_usecase")
-def tour_register(
-    usecase: RegisterTourUseCase,
-    client: str,
-    project_slug: str,
-    name: str,
-    title: str,
-    stops: str,
-) -> None:
-    """Register or replace a tour manifest.
-
-    Replaces the entire manifest for the named tour. Each stop must
-    have order, title, and atlas_source fields.
-    """
-    try:
-        stops_data = json.loads(stops)
-    except json.JSONDecodeError as e:
-        raise click.BadParameter(f"Invalid JSON for --stops: {e}") from e
-    req = RegisterTourRequest(
-        client=client,
-        project_slug=project_slug,
-        name=name,
-        title=title,
-        stops=[TourStop(**s) for s in stops_data],
-    )
-    resp = _run(usecase, req)
+def _format_tour_register(resp: Any) -> None:
     click.echo(
         f"Registered tour '{resp.name}' with {resp.stop_count} stops "
         f"for '{resp.client}/{resp.project_slug}'"
     )
+
+
+tour.add_command(
+    generate_command(
+        name="register",
+        request_model=RegisterTourRequest,
+        usecase_attr="register_tour_usecase",
+        format_output=_format_tour_register,
+        help_text=RegisterTourUseCase.__doc__,
+    )
+)
 
 
 # ---------------------------------------------------------------------------

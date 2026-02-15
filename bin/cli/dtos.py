@@ -145,16 +145,24 @@ class UpdateProjectStatusResponse(BaseModel):
 
 
 class RecordDecisionRequest(BaseModel):
-    client: str
-    project_slug: str
-    title: str
-    fields: dict[str, str]
+    client: str = Field(description="Client slug.")
+    project_slug: str = Field(
+        description="Project slug.",
+        json_schema_extra={"cli_name": "project"},
+    )
+    title: str = Field(description="Decision title.")
+    fields: dict[str, str] = Field(
+        default_factory=dict,
+        description="Key=Value pair (repeatable).",
+        json_schema_extra={"cli_name": "field"},
+    )
 
 
 class RecordDecisionResponse(BaseModel):
     client: str
     project_slug: str
     decision_id: str
+    title: str
 
 
 # ---------------------------------------------------------------------------
@@ -163,14 +171,19 @@ class RecordDecisionResponse(BaseModel):
 
 
 class AddEngagementEntryRequest(BaseModel):
-    client: str
-    title: str
-    fields: dict[str, str] = {}
+    client: str = Field(description="Client slug.")
+    title: str = Field(description="Entry title.")
+    fields: dict[str, str] = Field(
+        default_factory=dict,
+        description="Key=Value pair (repeatable).",
+        json_schema_extra={"cli_name": "field"},
+    )
 
 
 class AddEngagementEntryResponse(BaseModel):
     client: str
     entry_id: str
+    title: str
 
 
 # ---------------------------------------------------------------------------
@@ -200,11 +213,14 @@ class RegisterResearchTopicResponse(BaseModel):
 
 
 class RegisterTourRequest(BaseModel):
-    client: str
-    project_slug: str
-    name: str
-    title: str
-    stops: list[TourStop]
+    client: str = Field(description="Client slug.")
+    project_slug: str = Field(
+        description="Project slug.",
+        json_schema_extra={"cli_name": "project"},
+    )
+    name: str = Field(description="Tour name (e.g. investor).")
+    title: str = Field(description="Tour display title.")
+    stops: list[TourStop] = Field(description="JSON array of tour stops.")
 
 
 class RegisterTourResponse(BaseModel):
