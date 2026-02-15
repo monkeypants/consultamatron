@@ -22,6 +22,7 @@ from bin.cli.content import (
     TourStopContent,
 )
 from bin.cli.entities import Project, TourManifest
+from bin.cli.repositories import TourManifestRepository
 
 
 def _atlas_category(name: str) -> str:
@@ -83,18 +84,25 @@ def _extract_second_paragraph(text: str) -> str:
 class WardleyProjectPresenter:
     """Assembles Wardley Mapping workspace artifacts into structured content."""
 
-    def __init__(self, workspace_root: Path, ensure_owm_script: Path) -> None:
+    def __init__(
+        self,
+        workspace_root: Path,
+        ensure_owm_script: Path,
+        tours: TourManifestRepository,
+    ) -> None:
         self._ws_root = workspace_root
         self._ensure_owm = ensure_owm_script
+        self._tours = tours
 
     def present(
         self,
         project: Project,
-        tours: list[TourManifest],
     ) -> ProjectContribution:
         proj_dir = self._ws_root / project.client / "projects" / project.slug
 
         self._ensure_owm_svgs(proj_dir)
+
+        tours = self._tours.list_all(project.client, project.slug)
 
         has_brief = (proj_dir / "brief.agreed.md").is_file()
         has_needs = (proj_dir / "needs" / "needs.agreed.md").is_file()

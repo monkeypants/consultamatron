@@ -59,29 +59,29 @@ class TestFullWorkspace:
 
     def test_has_analysis_section(self, full_workspace):
         presenter = BmcProjectPresenter(workspace_root=full_workspace)
-        contrib = presenter.present(_make_project(), [])
+        contrib = presenter.present(_make_project())
         assert len(contrib.sections) == 1
         assert contrib.sections[0].label == "Analysis"
 
     def test_all_pages_present(self, full_workspace):
         presenter = BmcProjectPresenter(workspace_root=full_workspace)
-        contrib = presenter.present(_make_project(), [])
+        contrib = presenter.present(_make_project())
         slugs = [p.slug for p in contrib.sections[0].pages]
         assert slugs == ["canvas", "segments", "brief", "decisions"]
 
     def test_overview_is_canvas(self, full_workspace):
         presenter = BmcProjectPresenter(workspace_root=full_workspace)
-        contrib = presenter.present(_make_project(), [])
+        contrib = presenter.present(_make_project())
         assert "Value Propositions" in contrib.overview_md
 
     def test_no_hero_figure(self, full_workspace):
         presenter = BmcProjectPresenter(workspace_root=full_workspace)
-        contrib = presenter.present(_make_project(), [])
+        contrib = presenter.present(_make_project())
         assert contrib.hero_figure is None
 
     def test_canvas_content(self, full_workspace):
         presenter = BmcProjectPresenter(workspace_root=full_workspace)
-        contrib = presenter.present(_make_project(), [])
+        contrib = presenter.present(_make_project())
         canvas_page = contrib.sections[0].pages[0]
         assert "Freight visibility" in canvas_page.body_md
 
@@ -95,7 +95,7 @@ class TestMinimalWorkspace:
         _write(proj / "brief.agreed.md", "# Brief\n\nMinimal.")
 
         presenter = BmcProjectPresenter(workspace_root=tmp_path)
-        contrib = presenter.present(_make_project(), [])
+        contrib = presenter.present(_make_project())
         assert len(contrib.sections) == 1
         assert len(contrib.sections[0].pages) == 1
         assert contrib.sections[0].pages[0].slug == "brief"
@@ -106,7 +106,7 @@ class TestMinimalWorkspace:
         _write(proj / "brief.agreed.md", "# Brief\n\nMinimal.")
 
         presenter = BmcProjectPresenter(workspace_root=tmp_path)
-        contrib = presenter.present(_make_project(), [])
+        contrib = presenter.present(_make_project())
         assert contrib.overview_md == ""
 
 
@@ -119,5 +119,5 @@ class TestEmptyWorkspace:
         proj.mkdir(parents=True)
 
         presenter = BmcProjectPresenter(workspace_root=tmp_path)
-        contrib = presenter.present(_make_project(), [])
+        contrib = presenter.present(_make_project())
         assert contrib.sections == []

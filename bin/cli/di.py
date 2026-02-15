@@ -126,6 +126,7 @@ class Container:
             "wardley-mapping": WardleyProjectPresenter(
                 workspace_root=config.workspace_root,
                 ensure_owm_script=config.repo_root / "bin" / "ensure-owm.sh",
+                tours=self.tours,
             ),
             "business-model-canvas": BmcProjectPresenter(
                 workspace_root=config.workspace_root,
@@ -193,7 +194,6 @@ class Container:
         )
         self.render_site_usecase = RenderSiteUseCase(
             projects=self.projects,
-            tours=self.tours,
             research=self.research,
             renderer=self.site_renderer,
             presenters=self.presenters,

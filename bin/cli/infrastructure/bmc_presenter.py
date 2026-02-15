@@ -10,7 +10,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from bin.cli.content import ContentPage, ProjectContribution, ProjectSection
-from bin.cli.entities import Project, TourManifest
+from bin.cli.entities import Project
 
 
 def _read_md(path: Path) -> str:
@@ -29,7 +29,6 @@ class BmcProjectPresenter:
     def present(
         self,
         project: Project,
-        tours: list[TourManifest],
     ) -> ProjectContribution:
         proj_dir = self._ws_root / project.client / "projects" / project.slug
 

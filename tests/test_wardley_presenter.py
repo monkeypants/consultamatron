@@ -13,6 +13,7 @@ from pathlib import Path
 import pytest
 
 from bin.cli.entities import Project, ProjectStatus, TourManifest, TourStop
+from bin.cli.infrastructure.json_repos import JsonTourManifestRepository
 from bin.cli.infrastructure.wardley_presenter import WardleyProjectPresenter
 
 CLIENT = "test-corp"
@@ -61,12 +62,22 @@ def _make_presenter(ws_root: Path) -> WardleyProjectPresenter:
     return WardleyProjectPresenter(
         workspace_root=ws_root,
         ensure_owm_script=script,
+        tours=JsonTourManifestRepository(ws_root),
     )
 
 
 # ---------------------------------------------------------------------------
 # Fully equipped workspace
 # ---------------------------------------------------------------------------
+
+
+def _write_tour_manifest(proj: Path, manifest: TourManifest) -> None:
+    """Write a tour manifest JSON to the expected location."""
+    import json
+
+    manifest_path = proj / "presentations" / manifest.name / "manifest.json"
+    manifest_path.parent.mkdir(parents=True, exist_ok=True)
+    manifest_path.write_text(json.dumps(manifest.model_dump(mode="json"), indent=2))
 
 
 @pytest.fixture
@@ -114,7 +125,27 @@ def full_workspace(tmp_path):
             f"# {view.title()}\n\nAnalysis.",
         )
 
-    # Tour opening + transitions
+    # Tour manifest + opening + transitions
+    tour_manifest = TourManifest(
+        name="investor",
+        client=CLIENT,
+        project_slug=SLUG,
+        title="Investor Briefing",
+        stops=[
+            TourStop(
+                order="1",
+                title="Overview",
+                atlas_source="atlas/overview/",
+            ),
+            TourStop(
+                order="2",
+                title="Bottlenecks",
+                atlas_source="atlas/bottlenecks/",
+            ),
+        ],
+    )
+    _write_tour_manifest(proj, tour_manifest)
+
     tour_dir = proj / "presentations" / "investor"
     _write(
         tour_dir / "opening.md",
@@ -128,89 +159,65 @@ def full_workspace(tmp_path):
     return tmp_path
 
 
-@pytest.fixture
-def full_tours():
-    return [
-        TourManifest(
-            name="investor",
-            client=CLIENT,
-            project_slug=SLUG,
-            title="Investor Briefing",
-            stops=[
-                TourStop(
-                    order="1",
-                    title="Overview",
-                    atlas_source="atlas/overview/",
-                ),
-                TourStop(
-                    order="2",
-                    title="Bottlenecks",
-                    atlas_source="atlas/bottlenecks/",
-                ),
-            ],
-        )
-    ]
-
-
 class TestFullWorkspace:
     """Fully equipped Wardley project produces all three sections."""
 
-    def test_has_three_sections(self, full_workspace, full_tours):
+    def test_has_three_sections(self, full_workspace):
         presenter = _make_presenter(full_workspace)
-        contrib = presenter.present(_make_project(), full_tours)
+        contrib = presenter.present(_make_project())
         labels = [s.label for s in contrib.sections]
         assert labels == ["Presentations", "Atlas", "Analysis"]
 
-    def test_hero_is_strategy(self, full_workspace, full_tours):
+    def test_hero_is_strategy(self, full_workspace):
         presenter = _make_presenter(full_workspace)
-        contrib = presenter.present(_make_project(), full_tours)
+        contrib = presenter.present(_make_project())
         assert contrib.hero_figure is not None
         assert contrib.hero_figure.caption == "Strategy map"
 
-    def test_presentations_section_has_tour(self, full_workspace, full_tours):
+    def test_presentations_section_has_tour(self, full_workspace):
         presenter = _make_presenter(full_workspace)
-        contrib = presenter.present(_make_project(), full_tours)
+        contrib = presenter.present(_make_project())
         pres = contrib.sections[0]
         assert len(pres.tours) == 1
         assert pres.tours[0].title == "Investor Briefing"
 
-    def test_tour_has_groups_and_stops(self, full_workspace, full_tours):
+    def test_tour_has_groups_and_stops(self, full_workspace):
         presenter = _make_presenter(full_workspace)
-        contrib = presenter.present(_make_project(), full_tours)
+        contrib = presenter.present(_make_project())
         tour = contrib.sections[0].tours[0]
         assert len(tour.groups) == 2
         assert tour.groups[0].stops[0].title == "Overview"
 
-    def test_tour_opening(self, full_workspace, full_tours):
+    def test_tour_opening(self, full_workspace):
         presenter = _make_presenter(full_workspace)
-        contrib = presenter.present(_make_project(), full_tours)
+        contrib = presenter.present(_make_project())
         tour = contrib.sections[0].tours[0]
         assert "First paragraph" in tour.opening_md
 
-    def test_tour_description_from_second_paragraph(self, full_workspace, full_tours):
+    def test_tour_description_from_second_paragraph(self, full_workspace):
         presenter = _make_presenter(full_workspace)
-        contrib = presenter.present(_make_project(), full_tours)
+        contrib = presenter.present(_make_project())
         tour = contrib.sections[0].tours[0]
         assert "Second paragraph description" in tour.description
 
-    def test_tour_transition(self, full_workspace, full_tours):
+    def test_tour_transition(self, full_workspace):
         presenter = _make_presenter(full_workspace)
-        contrib = presenter.present(_make_project(), full_tours)
+        contrib = presenter.present(_make_project())
         tour = contrib.sections[0].tours[0]
         assert "From overview to bottlenecks" in tour.groups[0].transition_md
 
-    def test_atlas_has_categorized_groups(self, full_workspace, full_tours):
+    def test_atlas_has_categorized_groups(self, full_workspace):
         presenter = _make_presenter(full_workspace)
-        contrib = presenter.present(_make_project(), full_tours)
+        contrib = presenter.present(_make_project())
         atlas = contrib.sections[1]
         group_labels = [g.label for g in atlas.groups]
         assert "Structural" in group_labels
         assert "Connectivity" in group_labels
         assert "Dynamic" in group_labels
 
-    def test_analysis_has_all_pages(self, full_workspace, full_tours):
+    def test_analysis_has_all_pages(self, full_workspace):
         presenter = _make_presenter(full_workspace)
-        contrib = presenter.present(_make_project(), full_tours)
+        contrib = presenter.present(_make_project())
         analysis = contrib.sections[2]
         slugs = [p.slug for p in analysis.pages]
         assert slugs == [
@@ -222,9 +229,9 @@ class TestFullWorkspace:
             "decisions",
         ]
 
-    def test_strategy_page_has_figure(self, full_workspace, full_tours):
+    def test_strategy_page_has_figure(self, full_workspace):
         presenter = _make_presenter(full_workspace)
-        contrib = presenter.present(_make_project(), full_tours)
+        contrib = presenter.present(_make_project())
         analysis = contrib.sections[2]
         strategy_page = analysis.pages[0]
         assert len(strategy_page.figures) == 1
@@ -245,7 +252,7 @@ class TestMinimalWorkspace:
         _write(proj / "brief.agreed.md", "# Brief\n\nMinimal project.")
 
         presenter = _make_presenter(tmp_path)
-        contrib = presenter.present(_make_project(), [])
+        contrib = presenter.present(_make_project())
         assert len(contrib.sections) == 1
         assert contrib.sections[0].label == "Analysis"
         assert len(contrib.sections[0].pages) == 1
@@ -257,7 +264,7 @@ class TestMinimalWorkspace:
         _write(proj / "brief.agreed.md", "# Brief\n\nMinimal.")
 
         presenter = _make_presenter(tmp_path)
-        contrib = presenter.present(_make_project(), [])
+        contrib = presenter.present(_make_project())
         assert contrib.hero_figure is None
 
 
@@ -278,7 +285,7 @@ class TestHeroPriority:
         )
 
         presenter = _make_presenter(tmp_path)
-        contrib = presenter.present(_make_project(), [])
+        contrib = presenter.present(_make_project())
         assert contrib.hero_figure is not None
         assert contrib.hero_figure.caption == "Evolution map"
 
@@ -289,7 +296,7 @@ class TestHeroPriority:
         _write(proj / "landscape.svg", MINIMAL_SVG)
 
         presenter = _make_presenter(tmp_path)
-        contrib = presenter.present(_make_project(), [])
+        contrib = presenter.present(_make_project())
         assert contrib.hero_figure is not None
         assert "approximate" in contrib.hero_figure.caption
 
@@ -311,7 +318,7 @@ class TestAtlasCategorization:
             _write(proj / "atlas" / view / "map.svg", MINIMAL_SVG)
 
         presenter = _make_presenter(tmp_path)
-        contrib = presenter.present(_make_project(), [])
+        contrib = presenter.present(_make_project())
 
         atlas = next(s for s in contrib.sections if s.label == "Atlas")
         cat_map = {g.slug: [p.slug for p in g.pages] for g in atlas.groups}
@@ -340,34 +347,27 @@ class TestTourStopGrouping:
         tour_dir = proj / "presentations" / "exec"
         _write(tour_dir / "opening.md", "# Exec\n\nOpening.")
 
-        tours = [
-            TourManifest(
-                name="exec",
-                client=CLIENT,
-                project_slug=SLUG,
-                title="Executive Tour",
-                stops=[
-                    TourStop(
-                        order="1", title="Overview", atlas_source="atlas/overview/"
-                    ),
-                    TourStop(order="2", title="Risk Section", atlas_source=""),
-                    TourStop(
-                        order="2a", title="Risk Detail", atlas_source="atlas/risk/"
-                    ),
-                    TourStop(
-                        order="2b",
-                        title="Bottleneck Detail",
-                        atlas_source="atlas/bottlenecks/",
-                    ),
-                    TourStop(
-                        order="3", title="Summary", atlas_source="atlas/overview/"
-                    ),
-                ],
-            )
-        ]
+        manifest = TourManifest(
+            name="exec",
+            client=CLIENT,
+            project_slug=SLUG,
+            title="Executive Tour",
+            stops=[
+                TourStop(order="1", title="Overview", atlas_source="atlas/overview/"),
+                TourStop(order="2", title="Risk Section", atlas_source=""),
+                TourStop(order="2a", title="Risk Detail", atlas_source="atlas/risk/"),
+                TourStop(
+                    order="2b",
+                    title="Bottleneck Detail",
+                    atlas_source="atlas/bottlenecks/",
+                ),
+                TourStop(order="3", title="Summary", atlas_source="atlas/overview/"),
+            ],
+        )
+        _write_tour_manifest(proj, manifest)
 
         presenter = _make_presenter(tmp_path)
-        contrib = presenter.present(_make_project(), tours)
+        contrib = presenter.present(_make_project())
         tour = contrib.sections[0].tours[0]
 
         assert len(tour.groups) == 3

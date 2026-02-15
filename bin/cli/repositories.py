@@ -257,7 +257,6 @@ class ProjectPresenter(Protocol):
     def present(
         self,
         project: Project,
-        tours: list[TourManifest],
     ) -> ProjectContribution: ...
 
 
