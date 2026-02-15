@@ -28,14 +28,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from bin.cli.entities import (
-    DecisionEntry,
-    EngagementEntry,
-    Project,
-    ProjectStatus,
-    ResearchTopic,
-    Skillset,
-)
+from bin.cli.entities import DecisionEntry, EngagementEntry
+from practice.entities import Project, ProjectStatus, ResearchTopic, Skillset
 from bin.cli.wm_types import TourManifest
 from bin.cli.infrastructure.json_store import (
     JsonArrayStore,

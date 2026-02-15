@@ -39,14 +39,8 @@ from bin.cli.dtos import (
     UpdateProjectStatusRequest,
     UpdateProjectStatusResponse,
 )
-from bin.cli.entities import (
-    Confidence,
-    DecisionEntry,
-    EngagementEntry,
-    Project,
-    ProjectStatus,
-    ResearchTopic,
-)
+from bin.cli.entities import DecisionEntry, EngagementEntry
+from practice.entities import Confidence, Project, ProjectStatus, ResearchTopic
 from bin.cli.wm_types import TourManifest, TourManifestRepository
 from practice.exceptions import DuplicateError, InvalidTransitionError, NotFoundError
 from practice.repositories import Clock, IdGenerator, ProjectPresenter, SiteRenderer

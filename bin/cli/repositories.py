@@ -18,14 +18,8 @@ from __future__ import annotations
 
 from typing import Protocol, runtime_checkable
 
-from bin.cli.entities import (
-    DecisionEntry,
-    EngagementEntry,
-    Project,
-    ProjectStatus,
-    ResearchTopic,
-    Skillset,
-)
+from bin.cli.entities import DecisionEntry, EngagementEntry
+from practice.entities import Project, ProjectStatus, ResearchTopic, Skillset
 
 
 # ---------------------------------------------------------------------------

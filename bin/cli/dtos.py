@@ -12,11 +12,12 @@ from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, Field
 
-from bin.cli.entities import Confidence, ProjectStatus
 from bin.cli.wm_types import TourStop
+from practice.entities import Confidence, ProjectStatus
 
 if TYPE_CHECKING:
-    from bin.cli.entities import DecisionEntry, Project, ResearchTopic
+    from bin.cli.entities import DecisionEntry
+    from practice.entities import Project, ResearchTopic
 
 
 # ---------------------------------------------------------------------------

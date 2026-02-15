@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from bin.cli.entities import Project, ProjectStatus
+from practice.entities import Project, ProjectStatus
 from bin.cli.infrastructure.bmc_presenter import BmcProjectPresenter
 
 CLIENT = "test-corp"

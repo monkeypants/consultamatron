@@ -2,6 +2,6 @@
 
 This package defines the contract surface that bounded contexts depend on:
 protocols for persistence, presentation, rendering, and infrastructure
-services, plus the content entities and domain exceptions shared across
-all skillsets.
+services, plus the shared domain entities, content entities, and domain
+exceptions used across all skillsets.
 """

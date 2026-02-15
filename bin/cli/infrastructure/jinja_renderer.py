@@ -17,7 +17,7 @@ from jinja2 import Environment, FileSystemLoader
 from markupsafe import Markup
 
 from practice.content import Figure, NarrativePage, ProjectContribution, ProjectSection
-from bin.cli.entities import ResearchTopic
+from practice.entities import ResearchTopic
 
 
 # ---------------------------------------------------------------------------

@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import json
 
-from bin.cli.entities import Confidence, ProjectStatus
+from practice.entities import Confidence, ProjectStatus
 
 from .conftest import (
     make_decision,
