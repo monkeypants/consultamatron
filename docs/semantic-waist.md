@@ -47,7 +47,7 @@ chain," "this is the strategy."
   /      \  WAIST /      \  WAIST /      \  WAIST /      \
  /        \/     /        \/     /        \/     /        \
 
- research   needs    chain    evolve   strategy   atlas/tours
+ research   needs    chain    evolve   strategy   deliverable
 ```
 
 The `===` marks are the semantic waist: narrow points where diffuse
@@ -62,7 +62,7 @@ architecture:
 
 ```
 entities.py      Domain objects: Project, DecisionEntry, EngagementEntry,
-                 ResearchTopic, TourManifest, Skillset, PipelineStage
+                 ResearchTopic, Skillset, PipelineStage
 
 repositories.py  Protocols: how entities are stored and retrieved
                  (no implementation details, just contracts)
@@ -137,9 +137,11 @@ stage, completed stages, and next prerequisite. This is the concentrated
 output of potentially weeks of engagement work, available in
 milliseconds.
 
-When the site renderer builds the deliverable site, it reads projects,
-tours, and research topics through repository queries. It does not parse
-a single markdown artifact to determine project structure.
+When the site renderer builds the deliverable site, it reads projects
+and research topics through repository queries, then delegates to
+per-skillset presenters that assemble workspace artifacts into generic
+content entities. It does not parse markdown artifacts to determine
+project structure.
 
 When the `review` skill inventories what happened during an engagement,
 it reads the decision log and engagement log — complete audit trails in
@@ -211,9 +213,11 @@ it means the operation costs zero tokens.
 
 Because the waist is the single source of truth for engagement state,
 skills that have never heard of each other can compose. A future
-business plan skill can read the project registry, decision logs,
-and tour manifests to understand what analytical work has been done —
-without knowing anything about Wardley Mapping or BMC internals.
+business plan skill can read the project registry and decision logs to
+understand what analytical work has been done — without knowing anything
+about Wardley Mapping or BMC internals. Skillset-specific content
+(atlas views, tour presentations, canvas blocks) stays behind
+per-skillset presenter boundaries.
 
 The waist is the API between skills. Each skill writes its convergent
 conclusions into it. Each skill reads its preconditions from it.

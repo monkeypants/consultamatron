@@ -20,15 +20,18 @@ ProjectContribution
 ├── overview_md: str
 └── sections: list[ProjectSection]
     ├── pages: list[ContentPage]        # flat pages (e.g. Analysis)
-    ├── groups: list[PageGroup]         # categorised index (e.g. Atlas)
-    └── tours: list[TourPageContent]    # curated presentations
+    └── groups: list[PageGroup]         # categorised index (e.g. Atlas)
 ```
 
 Every project produces sections. A project with just a brief gets
 `sections=[ProjectSection(label="Analysis", pages=[brief_page])]`. A
-project with everything gets three sections (Presentations, Atlas,
-Analysis). There is no flat vs three-tier mode detection — just "show
-what exists."
+project with everything gets multiple sections. There is no flat vs
+multi-section mode detection — just "show what exists."
+
+How a skillset organises its sections is its own concern. The WM
+presenter produces Presentations, Atlas, and Analysis sections. The
+BMC presenter produces an Analysis section. The generic layer sees
+only `ProjectSection` containing pages and groups.
 
 ### Key entities
 
@@ -36,14 +39,13 @@ what exists."
 |--------|---------|
 | `Figure` | SVG content with optional caption |
 | `ContentPage` | A single page of prose + optional figures |
-| `PageGroup` | A labelled collection of pages (atlas category) |
-| `TourStopContent` | One assembled tour stop with figures and analysis |
-| `TourGroupContent` | Related stops plus transition prose |
-| `TourPageContent` | Complete tour: opening, groups, metadata |
+| `PageGroup` | A labelled collection of pages |
 | `ProjectSection` | A major section within a project |
 | `ProjectContribution` | Everything a project contributes to the deliverable |
 
-All entities are defined in `bin/cli/entities.py`.
+Generic content entities are defined in `bin/cli/content.py`.
+Skillset-specific content types (e.g. WM tour assembly structures)
+live behind the relevant presenter.
 
 ## Protocol boundary
 
@@ -61,9 +63,13 @@ class ProjectPresenter(Protocol):
     def present(
         self,
         project: Project,
-        tours: list[TourManifest],
+        research_topics: list[ResearchTopic],
     ) -> ProjectContribution: ...
 ```
+
+Each presenter fetches whatever skillset-specific data it needs from
+its own repositories. The generic protocol passes only lifecycle data
+that any presenter might use.
 
 ### SiteRenderer
 
@@ -114,7 +120,7 @@ class NewSkillsetPresenter:
     def present(
         self,
         project: Project,
-        tours: list[TourManifest],
+        research_topics: list[ResearchTopic],
     ) -> ProjectContribution:
         proj_dir = self._ws_root / project.client / "projects" / project.slug
         # Read workspace files, assemble sections
