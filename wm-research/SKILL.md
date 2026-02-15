@@ -56,17 +56,40 @@ Present a project brief to the client:
 {What this map will cover: the whole enterprise, a specific division,
 a specific product/service, or a specific strategic question}
 
+### Scope boundaries
+
+- **Included**: {explicit list of what is in scope}
+- **Excluded**: {explicit list of what is out of scope}
+- **Boundary ambiguities**: {areas where the scope boundary is unclear
+  and may need revisiting — name them now rather than discovering them
+  mid-engagement}
+
+## Trade-off questions
+
+These shape the character of the map. Discuss with the client:
+
+- **Breadth vs depth**: broad enterprise landscape or deep dive into
+  one area?
+- **Current vs future**: map the organisation as it is, or as it is
+  becoming?
+- **Single vs multi-stakeholder**: one user perspective or multiple
+  competing perspectives?
+- **Operational vs strategic**: how the organisation runs today, or
+  where it should move?
+
 ## Primary user classes (initial)
 
 {Proposed anchors for the map, from research}
 
+## Strategic questions
+
+{What questions should the finished map answer? These are success
+criteria — if the map cannot address these questions, it has not
+delivered value.}
+
 ## Key areas of interest
 
 {What the research suggests are the most interesting things to map}
-
-## Out of scope
-
-{What this project will not cover}
 
 ## Cross-project references
 
