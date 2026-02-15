@@ -48,8 +48,8 @@ from bin.cli.entities import (
     Project,
     ProjectStatus,
     ResearchTopic,
-    TourManifest,
 )
+from bin.cli.wm_types import TourManifest, TourManifestRepository
 from bin.cli.exceptions import DuplicateError, InvalidTransitionError, NotFoundError
 from bin.cli.repositories import (
     Clock,
@@ -61,7 +61,6 @@ from bin.cli.repositories import (
     ResearchTopicRepository,
     SiteRenderer,
     SkillsetRepository,
-    TourManifestRepository,
 )
 
 TRequest = TypeVar("TRequest", contravariant=True)

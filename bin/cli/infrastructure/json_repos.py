@@ -35,8 +35,8 @@ from bin.cli.entities import (
     ProjectStatus,
     ResearchTopic,
     Skillset,
-    TourManifest,
 )
+from bin.cli.wm_types import TourManifest
 from bin.cli.infrastructure.json_store import (
     JsonArrayStore,
     read_json_object,

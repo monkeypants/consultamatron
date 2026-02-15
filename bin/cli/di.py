@@ -32,8 +32,8 @@ from bin.cli.repositories import (
     ResearchTopicRepository,
     SiteRenderer,
     SkillsetRepository,
-    TourManifestRepository,
 )
+from bin.cli.wm_types import TourManifestRepository
 from bin.cli.usecases import (
     AddEngagementEntryUseCase,
     GetProjectProgressUseCase,

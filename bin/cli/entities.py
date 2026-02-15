@@ -126,23 +126,3 @@ class ResearchTopic(BaseModel):
     topic: str
     date: date
     confidence: Confidence
-
-
-class TourStop(BaseModel):
-    """One stop in a curated presentation tour."""
-
-    order: str
-    title: str
-    atlas_source: str
-    map_file: str = "map.svg"
-    analysis_file: str = "analysis.md"
-
-
-class TourManifest(BaseModel):
-    """A complete tour definition for a specific audience."""
-
-    name: str
-    client: str
-    project_slug: str
-    title: str
-    stops: list[TourStop]

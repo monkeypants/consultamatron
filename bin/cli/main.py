@@ -17,7 +17,7 @@ import click
 
 from bin.cli.config import Config
 from bin.cli.di import Container
-from bin.cli.entities import TourStop
+from bin.cli.wm_types import TourStop
 from bin.cli.exceptions import DomainError
 from bin.cli.dtos import (
     AddEngagementEntryRequest,

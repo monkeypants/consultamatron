@@ -19,7 +19,7 @@ from bin.cli.dtos import (
     RegisterTourRequest,
     RenderSiteRequest,
 )
-from bin.cli.entities import TourStop
+from bin.cli.wm_types import TourStop
 
 from .conftest import seed_all_skillsets
 

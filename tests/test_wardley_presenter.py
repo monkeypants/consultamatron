@@ -12,7 +12,8 @@ from pathlib import Path
 
 import pytest
 
-from bin.cli.entities import Project, ProjectStatus, TourManifest, TourStop
+from bin.cli.entities import Project, ProjectStatus
+from bin.cli.wm_types import TourManifest, TourStop
 from bin.cli.infrastructure.json_repos import JsonTourManifestRepository
 from bin.cli.infrastructure.wardley_presenter import WardleyProjectPresenter
 
