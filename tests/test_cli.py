@@ -441,6 +441,30 @@ class TestResearchList:
 # ---------------------------------------------------------------------------
 
 
+# ---------------------------------------------------------------------------
+# site render
+# ---------------------------------------------------------------------------
+
+
+class TestSiteRender:
+    """Render a client site from the command line."""
+
+    def test_nonexistent_client_error(self, run):
+        result = run("site", "render", "--client", "nonexistent")
+        assert result.exit_code == 1
+        assert "Client not found" in result.output
+
+    def test_uses_option_not_argument(self, run):
+        """--client is an option, not a positional argument."""
+        result = run("site", "render", CLIENT)
+        assert result.exit_code != 0
+
+
+# ---------------------------------------------------------------------------
+# tour register
+# ---------------------------------------------------------------------------
+
+
 class TestTourRegister:
     """Register presentation tours from the command line."""
 

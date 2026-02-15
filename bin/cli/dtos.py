@@ -327,7 +327,7 @@ class ListResearchTopicsResponse(BaseModel):
 
 
 class RenderSiteRequest(BaseModel):
-    client: str
+    client: str = Field(description="Client slug.")
 
 
 class RenderSiteResponse(BaseModel):

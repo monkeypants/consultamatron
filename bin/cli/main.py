@@ -8,15 +8,13 @@ Invocation: uv run consultamatron <group> <command> [options]
 
 from __future__ import annotations
 
-import functools
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 import click
 
 from bin.cli.config import Config
 from bin.cli.di import Container
-from bin.cli.exceptions import DomainError
 from bin.cli.dtos import (
     AddEngagementEntryRequest,
     GetProjectProgressRequest,
@@ -46,44 +44,8 @@ from bin.cli.usecases import (
     RegisterResearchTopicUseCase,
     RegisterTourUseCase,
     RenderSiteUseCase,
-    TRequest,
-    TResponse,
     UpdateProjectStatusUseCase,
-    UseCase,
 )
-
-
-def _inject(attr: str) -> Callable[..., Any]:
-    """Replace @click.pass_obj so the handler receives one usecase, not the container.
-
-    Each command declares which usecase it needs by name. The container
-    remains the composition root but is no longer a service locator that
-    every handler can rummage through.
-    """
-
-    def decorator(fn: Callable[..., Any]) -> Callable[..., Any]:
-        @click.pass_obj
-        @functools.wraps(fn)
-        def wrapper(di: Container, *args: Any, **kwargs: Any) -> Any:
-            return fn(getattr(di, attr), *args, **kwargs)
-
-        return wrapper
-
-    return decorator
-
-
-def _run(usecase: UseCase[TRequest, TResponse], request: TRequest) -> TResponse:
-    """Execute a usecase, converting DomainError to a clean CLI error.
-
-    The TypeVars are unbound at module scope, but mypy/pyright infer the
-    concrete types at each call site.  If this stops being sufficient
-    (e.g. the function grows overloads), replace with an explicit Generic
-    wrapper class.
-    """
-    try:
-        return usecase.execute(request)
-    except DomainError as e:
-        raise click.ClickException(str(e))
 
 
 @click.group()
@@ -376,19 +338,20 @@ def site() -> None:
     """Site generation."""
 
 
-@site.command("render")
-@click.argument("client")
-@_inject("render_site_usecase")
-def site_render(usecase: RenderSiteUseCase, client: str) -> None:
-    """Render a static HTML site for a client workspace.
-
-    Gathers structured data from the project registry, tour manifests,
-    and research manifest, then delegates to the site renderer.
-    """
-    req = RenderSiteRequest(client=client)
-    resp = _run(usecase, req)
+def _format_site_render(resp: Any) -> None:
     click.echo(f"Open: {resp.site_path}/index.html")
     click.echo(f"({resp.page_count} pages)")
+
+
+site.add_command(
+    generate_command(
+        name="render",
+        request_model=RenderSiteRequest,
+        usecase_attr="render_site_usecase",
+        format_output=_format_site_render,
+        help_text=RenderSiteUseCase.__doc__,
+    )
+)
 
 
 if __name__ == "__main__":
