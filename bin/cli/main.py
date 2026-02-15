@@ -31,21 +31,6 @@ from bin.cli.dtos import (
     UpdateProjectStatusRequest,
 )
 from bin.cli.introspect import generate_command
-from bin.cli.usecases import (
-    AddEngagementEntryUseCase,
-    GetProjectProgressUseCase,
-    GetProjectUseCase,
-    InitializeWorkspaceUseCase,
-    ListDecisionsUseCase,
-    ListProjectsUseCase,
-    ListResearchTopicsUseCase,
-    RecordDecisionUseCase,
-    RegisterProjectUseCase,
-    RegisterResearchTopicUseCase,
-    RegisterTourUseCase,
-    RenderSiteUseCase,
-    UpdateProjectStatusUseCase,
-)
 
 
 @click.group()
@@ -75,7 +60,6 @@ project.add_command(
         request_model=InitializeWorkspaceRequest,
         usecase_attr="initialize_workspace_usecase",
         format_output=_format_init_workspace,
-        help_text=InitializeWorkspaceUseCase.__doc__,
     )
 )
 
@@ -92,7 +76,6 @@ project.add_command(
         request_model=RegisterProjectRequest,
         usecase_attr="register_project_usecase",
         format_output=_format_register_project,
-        help_text=RegisterProjectUseCase.__doc__,
     )
 )
 
@@ -107,7 +90,6 @@ project.add_command(
         request_model=UpdateProjectStatusRequest,
         usecase_attr="update_project_status_usecase",
         format_output=_format_update_status,
-        help_text=UpdateProjectStatusUseCase.__doc__,
     )
 )
 
@@ -126,7 +108,6 @@ project.add_command(
         request_model=ListProjectsRequest,
         usecase_attr="list_projects_usecase",
         format_output=_format_list_projects,
-        help_text=ListProjectsUseCase.__doc__,
     )
 )
 
@@ -149,7 +130,6 @@ project.add_command(
         request_model=GetProjectRequest,
         usecase_attr="get_project_usecase",
         format_output=_format_get_project,
-        help_text=GetProjectUseCase.__doc__,
     )
 )
 
@@ -173,7 +153,6 @@ project.add_command(
         request_model=GetProjectProgressRequest,
         usecase_attr="get_project_progress_usecase",
         format_output=_format_project_progress,
-        help_text=GetProjectProgressUseCase.__doc__,
     )
 )
 
@@ -201,7 +180,6 @@ decision.add_command(
         request_model=RecordDecisionRequest,
         usecase_attr="record_decision_usecase",
         format_output=_format_decision_record,
-        help_text=RecordDecisionUseCase.__doc__,
     )
 )
 
@@ -222,7 +200,6 @@ decision.add_command(
         request_model=ListDecisionsRequest,
         usecase_attr="list_decisions_usecase",
         format_output=_format_decision_list,
-        help_text=ListDecisionsUseCase.__doc__,
     )
 )
 
@@ -249,7 +226,6 @@ engagement.add_command(
         request_model=AddEngagementEntryRequest,
         usecase_attr="add_engagement_entry_usecase",
         format_output=_format_engagement_add,
-        help_text=AddEngagementEntryUseCase.__doc__,
     )
 )
 
@@ -276,7 +252,6 @@ research.add_command(
         request_model=RegisterResearchTopicRequest,
         usecase_attr="register_research_topic_usecase",
         format_output=_format_research_add,
-        help_text=RegisterResearchTopicUseCase.__doc__,
     )
 )
 
@@ -295,7 +270,6 @@ research.add_command(
         request_model=ListResearchTopicsRequest,
         usecase_attr="list_research_topics_usecase",
         format_output=_format_research_list,
-        help_text=ListResearchTopicsUseCase.__doc__,
     )
 )
 
@@ -323,7 +297,6 @@ tour.add_command(
         request_model=RegisterTourRequest,
         usecase_attr="register_tour_usecase",
         format_output=_format_tour_register,
-        help_text=RegisterTourUseCase.__doc__,
     )
 )
 
@@ -349,7 +322,6 @@ site.add_command(
         request_model=RenderSiteRequest,
         usecase_attr="render_site_usecase",
         format_output=_format_site_render,
-        help_text=RenderSiteUseCase.__doc__,
     )
 )
 

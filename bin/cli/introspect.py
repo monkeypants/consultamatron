@@ -98,8 +98,8 @@ def generate_command(
     format_output:
         Callback receiving the response for terminal output.
     help_text:
-        Command --help text. Pass ``UseCase.__doc__`` to derive
-        help from the usecase docstring.
+        Override for --help text. Defaults to request_model's
+        class docstring when not provided.
     """
     params: list[click.Parameter] = []
     # Maps Click param name -> DTO field name when they differ.
@@ -176,5 +176,5 @@ def generate_command(
         name=name,
         params=params,
         callback=callback,
-        help=help_text,
+        help=help_text or request_model.__doc__,
     )

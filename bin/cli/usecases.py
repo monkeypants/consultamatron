@@ -79,7 +79,11 @@ class UseCase(Protocol[TRequest, TResponse]):
 
 
 class InitializeWorkspaceUseCase:
-    """Create a new client workspace with empty registries."""
+    """Coordinate workspace bootstrapping across registries.
+
+    Rejects duplicate clients. Seeds a "Client onboarded" engagement
+    entry via the engagement repository.
+    """
 
     def __init__(
         self,
@@ -114,7 +118,13 @@ class InitializeWorkspaceUseCase:
 
 
 class RegisterProjectUseCase:
-    """Register a new project, its decision log, and engagement entry."""
+    """Coordinate project creation across three repositories.
+
+    Validates the skillset exists and the slug is unique, then creates
+    the project, seeds the decision log with a "Project created" entry
+    using the scope as its field set, and records an engagement entry.
+    All three writes must succeed together.
+    """
 
     def __init__(
         self,
@@ -183,7 +193,11 @@ class RegisterProjectUseCase:
 
 
 class UpdateProjectStatusUseCase:
-    """Transition a project's status with validation."""
+    """Enforce linear status transitions.
+
+    Validates that the requested status is the next step in the
+    lifecycle sequence; rejects skipped or backward transitions.
+    """
 
     def __init__(self, projects: ProjectRepository) -> None:
         self._projects = projects
@@ -213,7 +227,10 @@ class UpdateProjectStatusUseCase:
 
 
 class RecordDecisionUseCase:
-    """Append a timestamped decision to a project's log."""
+    """Validate project existence then persist a decision entry.
+
+    Generates a unique ID and delegates timestamp to the clock.
+    """
 
     def __init__(
         self,
@@ -255,7 +272,10 @@ class RecordDecisionUseCase:
 
 
 class AddEngagementEntryUseCase:
-    """Append a timestamped entry to the engagement log."""
+    """Validate client existence then persist an engagement entry.
+
+    Generates a unique ID and delegates timestamp to the clock.
+    """
 
     def __init__(
         self,
@@ -293,7 +313,10 @@ class AddEngagementEntryUseCase:
 
 
 class RegisterResearchTopicUseCase:
-    """Register a research topic in the client manifest."""
+    """Validate filename uniqueness then persist a research topic.
+
+    Converts the confidence string to the Confidence enum.
+    """
 
     def __init__(
         self,
@@ -329,7 +352,10 @@ class RegisterResearchTopicUseCase:
 
 
 class RegisterTourUseCase:
-    """Register or replace a tour manifest."""
+    """Validate project existence then persist a tour manifest.
+
+    Replaces any existing tour with the same name (upsert semantics).
+    """
 
     def __init__(
         self,
@@ -369,7 +395,10 @@ class RegisterTourUseCase:
 
 
 class ListProjectsUseCase:
-    """Query projects with optional filters."""
+    """Query with optional skillset and status filters.
+
+    Converts the status string to ProjectStatus enum when present.
+    """
 
     def __init__(self, projects: ProjectRepository) -> None:
         self._projects = projects
@@ -388,7 +417,11 @@ class ListProjectsUseCase:
 
 
 class GetProjectUseCase:
-    """Retrieve a single project by slug."""
+    """Look up a single project.
+
+    Returns a response with project=None when not found rather than
+    raising — the caller decides how to handle absence.
+    """
 
     def __init__(self, projects: ProjectRepository) -> None:
         self._projects = projects
@@ -407,7 +440,12 @@ class GetProjectUseCase:
 
 
 class GetProjectProgressUseCase:
-    """Match decision log against skillset pipeline to report progress."""
+    """Join decision titles against pipeline stage descriptions.
+
+    Relies on string equality between DecisionEntry.title and
+    PipelineStage.description — a fragile but intentional coupling
+    documented in the conformance tests.
+    """
 
     def __init__(
         self,
@@ -462,7 +500,10 @@ class GetProjectProgressUseCase:
 
 
 class ListDecisionsUseCase:
-    """List all decisions for a project in chronological order."""
+    """Retrieve and sort decisions by timestamp.
+
+    Returns the complete chronological log with no filtering.
+    """
 
     def __init__(self, decisions: DecisionRepository) -> None:
         self._decisions = decisions
@@ -478,7 +519,7 @@ class ListDecisionsUseCase:
 
 
 class ListResearchTopicsUseCase:
-    """List all research topics for a client."""
+    """Retrieve all research topics for a client with no filtering."""
 
     def __init__(self, research: ResearchTopicRepository) -> None:
         self._research = research
@@ -492,7 +533,12 @@ class ListResearchTopicsUseCase:
 
 
 class RenderSiteUseCase:
-    """Gather structured data, assemble contributions, and render."""
+    """Coordinate site rendering across project presenters.
+
+    Iterates all projects, dispatches to the presenter matching each
+    project's skillset, collects contributions, and delegates to the
+    SiteRenderer. Skips projects with unknown skillsets.
+    """
 
     def __init__(
         self,

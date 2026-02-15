@@ -90,6 +90,8 @@ class StageProgress(BaseModel):
 
 
 class InitializeWorkspaceRequest(BaseModel):
+    """Create a new client workspace with empty registries."""
+
     client: str = Field(description="Client slug.")
 
 
@@ -103,6 +105,12 @@ class InitializeWorkspaceResponse(BaseModel):
 
 
 class RegisterProjectRequest(BaseModel):
+    """Register a new project, its decision log, and engagement entry.
+
+    Creates the project in the registry, seeds a "Project created"
+    decision, and logs an engagement entry.
+    """
+
     client: str = Field(description="Client slug.")
     slug: str = Field(description="Project slug (e.g. maps-1).")
     skillset: str = Field(description="Skillset name (must match a manifest).")
@@ -122,6 +130,8 @@ class RegisterProjectResponse(BaseModel):
 
 
 class UpdateProjectStatusRequest(BaseModel):
+    """Transition a project to the next lifecycle status."""
+
     client: str = Field(description="Client slug.")
     project_slug: str = Field(
         description="Project slug.",
@@ -145,6 +155,8 @@ class UpdateProjectStatusResponse(BaseModel):
 
 
 class RecordDecisionRequest(BaseModel):
+    """Record a timestamped decision against a project."""
+
     client: str = Field(description="Client slug.")
     project_slug: str = Field(
         description="Project slug.",
@@ -171,6 +183,8 @@ class RecordDecisionResponse(BaseModel):
 
 
 class AddEngagementEntryRequest(BaseModel):
+    """Add a timestamped entry to the client engagement log."""
+
     client: str = Field(description="Client slug.")
     title: str = Field(description="Entry title.")
     fields: dict[str, str] = Field(
@@ -192,6 +206,8 @@ class AddEngagementEntryResponse(BaseModel):
 
 
 class RegisterResearchTopicRequest(BaseModel):
+    """Register a research topic in the client manifest."""
+
     client: str = Field(description="Client slug.")
     topic: str = Field(description="Topic name.")
     filename: str = Field(description="Research file name.")
@@ -213,6 +229,8 @@ class RegisterResearchTopicResponse(BaseModel):
 
 
 class RegisterTourRequest(BaseModel):
+    """Register or replace a presentation tour for a project."""
+
     client: str = Field(description="Client slug.")
     project_slug: str = Field(
         description="Project slug.",
@@ -236,6 +254,8 @@ class RegisterTourResponse(BaseModel):
 
 
 class ListProjectsRequest(BaseModel):
+    """List projects for a client, with optional filters."""
+
     client: str = Field(description="Client slug.")
     skillset: str | None = Field(default=None, description="Filter by skillset.")
     status: str | None = Field(
@@ -256,6 +276,8 @@ class ListProjectsResponse(BaseModel):
 
 
 class GetProjectRequest(BaseModel):
+    """Retrieve a single project by client and slug."""
+
     client: str = Field(description="Client slug.")
     slug: str = Field(description="Project slug.")
 
@@ -272,6 +294,8 @@ class GetProjectResponse(BaseModel):
 
 
 class GetProjectProgressRequest(BaseModel):
+    """Show pipeline progress for a project."""
+
     client: str = Field(description="Client slug.")
     project_slug: str = Field(
         description="Project slug.",
@@ -294,6 +318,8 @@ class GetProjectProgressResponse(BaseModel):
 
 
 class ListDecisionsRequest(BaseModel):
+    """List all decisions recorded for a project."""
+
     client: str = Field(description="Client slug.")
     project_slug: str = Field(
         description="Project slug.",
@@ -313,6 +339,8 @@ class ListDecisionsResponse(BaseModel):
 
 
 class ListResearchTopicsRequest(BaseModel):
+    """List all research topics for a client."""
+
     client: str = Field(description="Client slug.")
 
 
@@ -327,6 +355,8 @@ class ListResearchTopicsResponse(BaseModel):
 
 
 class RenderSiteRequest(BaseModel):
+    """Render the deliverable site for a client."""
+
     client: str = Field(description="Client slug.")
 
 

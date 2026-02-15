@@ -22,6 +22,8 @@ In `bin/cli/dtos.py` (or in your bounded context's DTO module):
 
 ```python
 class DoThingRequest(BaseModel):
+    """Do the thing for a client."""
+
     client: str = Field(description="Client slug.")
     name: str = Field(description="Thing name.")
 
@@ -30,8 +32,12 @@ class DoThingResponse(BaseModel):
     name: str
 ```
 
+The class docstring becomes the command's `--help` text.
 Every field needs `Field(description=...)` — the description becomes
 the `--help` text for that option.
+
+See `docs/docstring-conventions.md` for what belongs in each layer's
+docstring.
 
 ### 2. Write the usecase
 
@@ -39,7 +45,10 @@ In your usecases module, implement the `UseCase` protocol:
 
 ```python
 class DoThingUseCase:
-    """Do the thing."""  # This docstring becomes --help for the command.
+    """Coordinate the thing across repositories.
+
+    Validates preconditions, then writes to projects and decisions.
+    """
 
     def __init__(self, projects: ProjectRepository) -> None:
         self._projects = projects
@@ -47,6 +56,10 @@ class DoThingUseCase:
     def execute(self, request: DoThingRequest) -> DoThingResponse:
         ...
 ```
+
+The usecase docstring describes invariants, coordination, and
+validation for maintainers — not the operation summary (that's on
+the DTO).
 
 ### 3. Wire into the DI container
 
@@ -66,7 +79,6 @@ some_group.add_command(
         request_model=DoThingRequest,
         usecase_attr="do_thing_usecase",
         format_output=_format_do_thing,
-        help_text=DoThingUseCase.__doc__,
     )
 )
 ```
