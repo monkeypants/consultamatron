@@ -129,7 +129,15 @@ Write `chain/supply-chain.md` using the consolidated template in
    - Surprisingly deep dependency chains
    - Missing capabilities (things that should exist but weren't found)
    - Clusters of related components
-5. **Open questions** — for client review
+5. **Chain-to-need validation** — before presenting output, verify
+   correspondence between chain files and agreed needs:
+   - Every chain file in `chain/chains/` must map to at least one
+     agreed need in `needs/needs.agreed.md`
+   - Every agreed need must have a corresponding chain file
+   - Produce an explicit mapping table showing need → chain file(s)
+   - Flag orphan chains (no corresponding need) and uncovered needs
+     (no corresponding chain) as errors to resolve before proceeding
+6. **Open questions** — for client review
 
 ## Step 5: Present to client
 
