@@ -107,7 +107,15 @@ This is a negotiation. The client may:
 Iterate until the client confirms.
 
 When the client agrees:
-1. Create the project directory:
+1. If the project is not yet registered (i.e. `engage` was not run
+   first), register it now:
+   ```
+   engage/scripts/register-project.sh --client {org} --slug {slug} \
+     --skillset "wardley-mapping" --scope "{agreed scope}"
+   ```
+   If the project already exists in the registry (engage created it),
+   skip this step.
+2. Create the project directory (if not already created by engage):
    ```
    projects/{slug}/
    ├── needs/
@@ -119,8 +127,8 @@ When the client agrees:
    └── strategy/
        └── plays/
    ```
-2. Write `brief.agreed.md` with the agreed scope
-3. Record the brief agreement and activate the project:
+3. Write `brief.agreed.md` with the agreed scope
+4. Record the brief agreement and activate the project:
    ```
    wm-research/scripts/record-brief-agreed.sh --client {org} --project {slug} \
      --field "Scope={agreed scope}" --field "Primary users={list}"
