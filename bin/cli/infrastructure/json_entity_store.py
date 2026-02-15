@@ -110,7 +110,7 @@ def _matches(entity: BaseModel, filters: dict[str, str]) -> bool:
 def _string_fields(entity: BaseModel) -> dict[str, str]:
     """Extract string-valued fields from an entity for path resolution."""
     result: dict[str, str] = {}
-    for field_name in entity.model_fields:
+    for field_name in type(entity).model_fields:
         val = getattr(entity, field_name)
         if isinstance(val, str):
             result[field_name] = val
