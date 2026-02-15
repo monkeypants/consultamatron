@@ -10,8 +10,9 @@ from __future__ import annotations
 from datetime import date
 from typing import TYPE_CHECKING
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
+from bin.cli.entities import ProjectStatus
 from bin.cli.wm_types import TourStop
 
 if TYPE_CHECKING:
@@ -102,11 +103,11 @@ class InitializeWorkspaceResponse(BaseModel):
 
 
 class RegisterProjectRequest(BaseModel):
-    client: str
-    slug: str
-    skillset: str
-    scope: str
-    notes: str = ""
+    client: str = Field(description="Client slug.")
+    slug: str = Field(description="Project slug (e.g. maps-1).")
+    skillset: str = Field(description="Skillset name (must match a manifest).")
+    scope: str = Field(description="Project scope description.")
+    notes: str = Field(default="", description="Additional notes.")
 
 
 class RegisterProjectResponse(BaseModel):
@@ -209,9 +210,13 @@ class RegisterTourResponse(BaseModel):
 
 
 class ListProjectsRequest(BaseModel):
-    client: str
-    skillset: str | None = None
-    status: str | None = None
+    client: str = Field(description="Client slug.")
+    skillset: str | None = Field(default=None, description="Filter by skillset.")
+    status: str | None = Field(
+        default=None,
+        description="Filter by status.",
+        json_schema_extra={"choices": ProjectStatus},
+    )
 
 
 class ListProjectsResponse(BaseModel):

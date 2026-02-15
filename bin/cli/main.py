@@ -34,6 +34,7 @@ from bin.cli.dtos import (
     RenderSiteRequest,
     UpdateProjectStatusRequest,
 )
+from bin.cli.introspect import generate_command
 from bin.cli.usecases import (
     AddEngagementEntryUseCase,
     GetProjectProgressUseCase,
@@ -129,41 +130,21 @@ def project_init(usecase: InitializeWorkspaceUseCase, client: str) -> None:
     click.echo(f"Initialized workspace for '{resp.client}'")
 
 
-@project.command("register")
-@click.option("--client", required=True, help="Client slug.")
-@click.option("--slug", required=True, help="Project slug (e.g. maps-1).")
-@click.option(
-    "--skillset",
-    required=True,
-    help="Skillset name (must match a manifest).",
-)
-@click.option("--scope", required=True, help="Project scope description.")
-@click.option("--notes", default="", help="Additional notes.")
-@_inject("register_project_usecase")
-def project_register(
-    usecase: RegisterProjectUseCase,
-    client: str,
-    slug: str,
-    skillset: str,
-    scope: str,
-    notes: str,
-) -> None:
-    """Register a new project for a client.
-
-    Adds the project to the registry, creates its decision log with a
-    "Project created" entry, and logs an engagement entry.
-    """
-    req = RegisterProjectRequest(
-        client=client,
-        slug=slug,
-        skillset=skillset,
-        scope=scope,
-        notes=notes,
-    )
-    resp = _run(usecase, req)
+def _format_register_project(resp: Any) -> None:
     click.echo(
         f"Registered project '{resp.slug}' ({resp.skillset}) for '{resp.client}'"
     )
+
+
+project.add_command(
+    generate_command(
+        name="register",
+        request_model=RegisterProjectRequest,
+        usecase_attr="register_project_usecase",
+        format_output=_format_register_project,
+        help_text=RegisterProjectUseCase.__doc__,
+    )
+)
 
 
 @project.command("update-status")
@@ -193,32 +174,23 @@ def project_update_status(
     click.echo(f"Updated '{resp.project_slug}' status to '{resp.status}'")
 
 
-@project.command("list")
-@click.option("--client", required=True, help="Client slug.")
-@click.option("--skillset", default=None, help="Filter by skillset.")
-@click.option(
-    "--status",
-    default=None,
-    type=click.Choice(
-        ["planning", "elaboration", "implementation", "review", "closed"]
-    ),
-    help="Filter by status.",
-)
-@_inject("list_projects_usecase")
-def project_list(
-    usecase: ListProjectsUseCase,
-    client: str,
-    skillset: str | None,
-    status: str | None,
-) -> None:
-    """List projects for a client."""
-    req = ListProjectsRequest(client=client, skillset=skillset, status=status)
-    resp = _run(usecase, req)
+def _format_list_projects(resp: Any) -> None:
     if not resp.projects:
         click.echo("No projects found.")
         return
     for p in resp.projects:
         click.echo(f"  {p.slug}  {p.skillset}  {p.status}  {p.created}")
+
+
+project.add_command(
+    generate_command(
+        name="list",
+        request_model=ListProjectsRequest,
+        usecase_attr="list_projects_usecase",
+        format_output=_format_list_projects,
+        help_text=ListProjectsUseCase.__doc__,
+    )
+)
 
 
 @project.command("get")
