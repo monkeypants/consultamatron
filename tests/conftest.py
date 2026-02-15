@@ -21,6 +21,7 @@ from bin.cli.entities import (
     Skillset,
 )
 from bin.cli.wm_types import TourManifest, TourStop
+from bin.cli.infrastructure.json_entity_store import JsonEntityStore
 from bin.cli.infrastructure.json_repos import (
     JsonDecisionRepository,
     JsonEngagementRepository,
@@ -90,6 +91,36 @@ def research_repo(request, tmp_config):
 def tour_repo(request, tmp_config):
     if request.param == "json":
         return JsonTourManifestRepository(tmp_config.workspace_root)
+
+
+@pytest.fixture(params=["json"])
+def project_store(request, tmp_path):
+    if request.param == "json":
+        return JsonEntityStore(
+            model=Project,
+            key_field="slug",
+            path_resolver=lambda f: (
+                tmp_path / "clients" / f["client"] / "projects" / "index.json"
+            ),
+        )
+
+
+@pytest.fixture(params=["json"])
+def decision_store(request, tmp_path):
+    if request.param == "json":
+        return JsonEntityStore(
+            model=DecisionEntry,
+            key_field="id",
+            path_resolver=lambda f: (
+                tmp_path
+                / "clients"
+                / f["client"]
+                / "projects"
+                / f["project_slug"]
+                / "decisions.json"
+            ),
+            append_only=True,
+        )
 
 
 # ---------------------------------------------------------------------------
