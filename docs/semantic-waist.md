@@ -216,8 +216,8 @@ skills that have never heard of each other can compose. A future
 business plan skill can read the project registry and decision logs to
 understand what analytical work has been done — without knowing anything
 about Wardley Mapping or BMC internals. Skillset-specific content
-(atlas views, tour presentations, canvas blocks) stays behind
-per-skillset presenter boundaries.
+(WM atlas views and narrative presentations, BMC canvas blocks) stays
+behind per-skillset presenter boundaries.
 
 The waist is the API between skills. Each skill writes its convergent
 conclusions into it. Each skill reads its preconditions from it.

@@ -217,11 +217,11 @@ finding regardless of who reads it. Style is audience-dependent —
 the same finding needs different affordances for a board member, an
 engineer, and an operations manager.
 
-This is why Consultamatron has six tour audiences (executive,
-investor, technical, operations, onboarding, competitive) but one
-atlas. The atlas is the semantic content. The tours are the style
-layer, each tuned to activate the right cognitive context for its
-audience.
+The Wardley Mapping skillset illustrates this: it has six narrative
+presentations (executive, investor, technical, operations, onboarding,
+competitive) but one atlas of analytical views. The atlas is the
+semantic content. The presentations are the style layer, each tuned
+to activate the right cognitive context for its audience.
 
 ## Implications for skill design
 
