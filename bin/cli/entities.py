@@ -39,8 +39,6 @@ class Skillset(BaseModel):
     description: str
     pipeline: list[PipelineStage]
     slug_pattern: str
-    atlas_skills: list[str] = []
-    tour_skills: list[str] = []
 
 
 # ---------------------------------------------------------------------------

@@ -40,33 +40,6 @@
         "produces_gate": "strategy/map.agreed.owm",
         "description": "Stage 5: Strategy map agreed"
       }
-    ],
-    "atlas_skills": [
-      "wm-atlas-overview",
-      "wm-atlas-anchor-chains",
-      "wm-atlas-need-traces",
-      "wm-atlas-bottlenecks",
-      "wm-atlas-shared-components",
-      "wm-atlas-layers",
-      "wm-atlas-plays",
-      "wm-atlas-sourcing",
-      "wm-atlas-movement",
-      "wm-atlas-inertia",
-      "wm-atlas-flows",
-      "wm-atlas-forces",
-      "wm-atlas-doctrine",
-      "wm-atlas-risk",
-      "wm-atlas-teams",
-      "wm-atlas-pipelines",
-      "wm-atlas-evolution-mismatch"
-    ],
-    "tour_skills": [
-      "wm-tour-investor",
-      "wm-tour-technical",
-      "wm-tour-executive",
-      "wm-tour-operations",
-      "wm-tour-onboarding",
-      "wm-tour-competitive"
     ]
   },
   {
@@ -96,8 +69,6 @@
         "produces_gate": "canvas.agreed.md",
         "description": "Stage 3: Business Model Canvas agreed"
       }
-    ],
-    "atlas_skills": [],
-    "tour_skills": []
+    ]
   }
 ]

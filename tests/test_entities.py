@@ -47,14 +47,6 @@ class TestDefaults:
         s = make_tour_stop()
         assert s.analysis_file == "analysis.md"
 
-    def test_skillset_atlas_skills_defaults_empty(self):
-        s = make_skillset()
-        assert s.atlas_skills == []
-
-    def test_skillset_tour_skills_defaults_empty(self):
-        s = make_skillset()
-        assert s.tour_skills == []
-
 
 # ---------------------------------------------------------------------------
 # Round-trip fidelity (model_dump -> model_validate)
