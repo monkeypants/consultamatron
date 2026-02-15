@@ -20,6 +20,8 @@ from pydantic import BaseModel, Field
 from bin.cli.exceptions import DomainError
 from bin.cli.introspect import generate_command
 
+import json
+
 
 # ---------------------------------------------------------------------------
 # Test models — small, purpose-built, not domain entities
@@ -273,3 +275,87 @@ class TestOptionNaming:
         result = _run(cli, ["--project-slug", "maps-1"])
         assert result.exit_code != 0
         assert uc.last_request is None
+
+
+# ---------------------------------------------------------------------------
+# Dict fields (repeatable Key=Value options)
+# ---------------------------------------------------------------------------
+
+
+class DictFieldRequest(BaseModel):
+    name: str = Field(description="Name.")
+    tags: dict[str, str] = Field(
+        default_factory=dict,
+        description="Key=Value tags.",
+        json_schema_extra={"cli_name": "tag"},
+    )
+
+
+class TestDictFields:
+    def test_repeatable_key_value_pairs(self):
+        uc = FakeUseCase()
+        cli = _build_cli(uc, DictFieldRequest)
+        result = _run(cli, ["--name", "foo", "--tag", "A=1", "--tag", "B=2"])
+        assert result.exit_code == 0
+        assert uc.last_request.tags == {"A": "1", "B": "2"}
+
+    def test_omitted_dict_defaults_to_empty(self):
+        uc = FakeUseCase()
+        cli = _build_cli(uc, DictFieldRequest)
+        result = _run(cli, ["--name", "foo"])
+        assert result.exit_code == 0
+        assert uc.last_request.tags == {}
+
+    def test_bad_key_value_rejected(self):
+        uc = FakeUseCase()
+        cli = _build_cli(uc, DictFieldRequest)
+        result = _run(cli, ["--name", "foo", "--tag", "no-equals-sign"])
+        assert result.exit_code != 0
+        assert uc.last_request is None
+
+
+# ---------------------------------------------------------------------------
+# List[BaseModel] fields (JSON string options)
+# ---------------------------------------------------------------------------
+
+
+class Item(BaseModel):
+    order: str
+    label: str
+
+
+class ListFieldRequest(BaseModel):
+    name: str = Field(description="Name.")
+    items: list[Item] = Field(description="JSON array of items.")
+
+
+class TestListModelFields:
+    def test_valid_json_parsed(self):
+        uc = FakeUseCase()
+        cli = _build_cli(uc, ListFieldRequest)
+        data = json.dumps([{"order": "1", "label": "first"}])
+        result = _run(cli, ["--name", "foo", "--items", data])
+        assert result.exit_code == 0
+        assert len(uc.last_request.items) == 1
+        assert uc.last_request.items[0].label == "first"
+
+    def test_invalid_json_rejected(self):
+        uc = FakeUseCase()
+        cli = _build_cli(uc, ListFieldRequest)
+        result = _run(cli, ["--name", "foo", "--items", "not json"])
+        assert result.exit_code != 0
+        assert "Invalid" in result.output
+        assert "JSON" in result.output
+
+    def test_multiple_items(self):
+        uc = FakeUseCase()
+        cli = _build_cli(uc, ListFieldRequest)
+        data = json.dumps(
+            [
+                {"order": "1", "label": "a"},
+                {"order": "2", "label": "b"},
+            ]
+        )
+        result = _run(cli, ["--name", "foo", "--items", data])
+        assert result.exit_code == 0
+        assert len(uc.last_request.items) == 2
