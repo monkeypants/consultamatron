@@ -14,7 +14,7 @@ from bin.cli.infrastructure.json_repos import (
     JsonResearchTopicRepository,
     JsonTourManifestRepository,
 )
-from bin.cli.infrastructure.json_repos import _read_json_array, _read_json_object
+from bin.cli.infrastructure.json_store import read_json_array, read_json_object
 
 from .conftest import make_project, make_research, make_tour
 
@@ -158,12 +158,12 @@ class TestJsonFormat:
 
 
 class TestMissingFileResilience:
-    def test_read_json_array_missing_file(self, tmp_path):
-        result = _read_json_array(tmp_path / "does-not-exist.json")
+    def testread_json_array_missing_file(self, tmp_path):
+        result = read_json_array(tmp_path / "does-not-exist.json")
         assert result == []
 
-    def test_read_json_object_missing_file(self, tmp_path):
-        result = _read_json_object(tmp_path / "does-not-exist.json")
+    def testread_json_object_missing_file(self, tmp_path):
+        result = read_json_object(tmp_path / "does-not-exist.json")
         assert result is None
 
     def test_mkdir_p_on_deep_save(self, tmp_config):
