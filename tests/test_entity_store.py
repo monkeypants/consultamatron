@@ -7,10 +7,14 @@ runs against every implementation backend.
 
 from __future__ import annotations
 
+import pytest
+
 from bin.cli.entities import ProjectStatus
 from practice.store import EntityStore
 
 from .conftest import make_decision, make_project
+
+pytestmark = pytest.mark.doctrine
 
 
 # ---------------------------------------------------------------------------
