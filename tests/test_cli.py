@@ -255,6 +255,16 @@ class TestProjectGet:
         assert "Skillset: wardley-mapping" in result.output
         assert "Status:   planning" in result.output
 
+    def test_not_found_reports_error(self, run):
+        _init(run)
+        result = run("project", "get", "--client", CLIENT, "--slug", "nonexistent")
+        assert result.exit_code == 1
+        assert "not found" in result.output.lower()
+
+    def test_missing_slug_rejected(self, run):
+        result = run("project", "get", "--client", CLIENT)
+        assert result.exit_code != 0
+
 
 # ---------------------------------------------------------------------------
 # project progress
@@ -279,6 +289,18 @@ class TestProjectProgress:
         assert "[ ] 1." in result.output
         assert "(wm-research)" in result.output
         assert "Current: wm-research" in result.output
+
+    def test_not_found_project_error(self, run):
+        _init(run)
+        result = run(
+            "project", "progress", "--client", CLIENT, "--project", "nonexistent"
+        )
+        assert result.exit_code == 1
+        assert "not found" in result.output.lower()
+
+    def test_missing_project_rejected(self, run):
+        result = run("project", "progress", "--client", CLIENT)
+        assert result.exit_code != 0
 
     def test_completed_stage_shows_checkmark(self, run):
         _init(run)
@@ -335,6 +357,43 @@ class TestDecisionRecord:
         assert "Stage 2: User needs agreed" in result.output
         assert "holloway-group/maps-1" in result.output
 
+    def test_fields_default_to_empty(self, run):
+        _init(run)
+        _register(run)
+        result = run(
+            "decision",
+            "record",
+            "--client",
+            CLIENT,
+            "--project",
+            "maps-1",
+            "--title",
+            "No fields provided",
+        )
+        assert result.exit_code == 0
+        assert "No fields provided" in result.output
+
+    def test_missing_title_rejected(self, run):
+        _init(run)
+        _register(run)
+        result = run("decision", "record", "--client", CLIENT, "--project", "maps-1")
+        assert result.exit_code != 0
+
+    def test_not_found_project_error(self, run):
+        _init(run)
+        result = run(
+            "decision",
+            "record",
+            "--client",
+            CLIENT,
+            "--project",
+            "nonexistent",
+            "--title",
+            "Test",
+        )
+        assert result.exit_code == 1
+        assert "not found" in result.output.lower()
+
 
 # ---------------------------------------------------------------------------
 # decision list
@@ -355,6 +414,19 @@ class TestDecisionList:
             "--project",
             "maps-1",
         )
+        assert result.exit_code == 0
+        assert "Project created" in result.output
+
+    def test_missing_project_rejected(self, run):
+        result = run("decision", "list", "--client", CLIENT)
+        assert result.exit_code != 0
+
+    def test_empty_decision_log(self, run):
+        """A project with no decisions shows the seeded 'Project created' entry."""
+        _init(run)
+        _register(run)
+        result = run("decision", "list", "--client", CLIENT, "--project", "maps-1")
+        # RegisterProject seeds one decision automatically
         assert result.exit_code == 0
         assert "Project created" in result.output
 
@@ -381,6 +453,21 @@ class TestEngagementAdd:
         )
         assert result.exit_code == 0
         assert "Strategy workshop scheduled" in result.output
+
+    def test_fields_default_to_empty(self, run):
+        _init(run)
+        result = run("engagement", "add", "--client", CLIENT, "--title", "Quick note")
+        assert result.exit_code == 0
+        assert "Quick note" in result.output
+
+    def test_not_found_client_error(self, run):
+        result = run("engagement", "add", "--client", "nonexistent", "--title", "Test")
+        assert result.exit_code == 1
+        assert "not found" in result.output.lower()
+
+    def test_missing_title_rejected(self, run):
+        result = run("engagement", "add", "--client", CLIENT)
+        assert result.exit_code != 0
 
 
 # ---------------------------------------------------------------------------
@@ -435,10 +522,24 @@ class TestResearchList:
         assert result.exit_code == 0
         assert "No research topics found" in result.output
 
-
-# ---------------------------------------------------------------------------
-# tour register
-# ---------------------------------------------------------------------------
+    def test_topic_appears_after_add(self, run):
+        _init(run)
+        run(
+            "research",
+            "add",
+            "--client",
+            CLIENT,
+            "--topic",
+            "Fleet logistics tech",
+            "--filename",
+            "fleet-tech.md",
+            "--confidence",
+            "Medium",
+        )
+        result = run("research", "list", "--client", CLIENT)
+        assert result.exit_code == 0
+        assert "fleet-tech.md" in result.output
+        assert "Fleet logistics tech" in result.output
 
 
 # ---------------------------------------------------------------------------
@@ -457,6 +558,10 @@ class TestSiteRender:
     def test_uses_option_not_argument(self, run):
         """--client is an option, not a positional argument."""
         result = run("site", "render", CLIENT)
+        assert result.exit_code != 0
+
+    def test_missing_client_rejected(self, run):
+        result = run("site", "render")
         assert result.exit_code != 0
 
 
