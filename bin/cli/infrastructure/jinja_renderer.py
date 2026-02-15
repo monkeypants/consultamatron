@@ -161,7 +161,7 @@ def _build_client_nav(active, has_engagement=True):
     return items
 
 
-def _build_project_nav(active, depth, has_presentations, has_atlas, has_analysis):
+def _build_project_nav(active, depth, sections):
     """Build project-level nav items with depth-aware paths."""
     prefix = "../" if depth == 1 else ""
     items = [
@@ -171,28 +171,12 @@ def _build_project_nav(active, depth, has_presentations, has_atlas, has_analysis
             "active": active == "index",
         },
     ]
-    if has_presentations:
+    for section in sections:
         items.append(
             {
-                "label": "Presentations",
-                "url": f"{prefix}presentations/index.html",
-                "active": active == "presentations",
-            }
-        )
-    if has_atlas:
-        items.append(
-            {
-                "label": "Atlas",
-                "url": f"{prefix}atlas/index.html",
-                "active": active == "atlas",
-            }
-        )
-    if has_analysis:
-        items.append(
-            {
-                "label": "Analysis",
-                "url": f"{prefix}analysis/index.html",
-                "active": active == "analysis",
+                "label": section.label,
+                "url": f"{prefix}{section.slug}/index.html",
+                "active": active == section.slug,
             }
         )
     return items
@@ -470,15 +454,7 @@ class JinjaSiteRenderer:
         site_dir = Path(site_dir)
         project_name = contrib.slug
 
-        has_presentations = any(s.slug == "presentations" for s in contrib.sections)
-        has_atlas = any(s.slug == "atlas" for s in contrib.sections)
-        has_analysis = any(s.slug == "analysis" for s in contrib.sections)
-
-        nav_args = dict(
-            has_presentations=has_presentations,
-            has_atlas=has_atlas,
-            has_analysis=has_analysis,
-        )
+        sections = contrib.sections
 
         def project_breadcrumb(section_label=None, depth=0):
             if depth == 0:
@@ -494,7 +470,7 @@ class JinjaSiteRenderer:
                 crumbs.append((section_label,))
             return _build_breadcrumb(*crumbs)
 
-        for section in contrib.sections:
+        for section in sections:
             if section.narratives:
                 self._render_section_narratives(
                     env,
@@ -502,7 +478,7 @@ class JinjaSiteRenderer:
                     site_dir,
                     org_name,
                     project_name,
-                    nav_args,
+                    sections,
                     project_breadcrumb,
                 )
             elif section.groups:
@@ -512,7 +488,7 @@ class JinjaSiteRenderer:
                     site_dir,
                     org_name,
                     project_name,
-                    nav_args,
+                    sections,
                     project_breadcrumb,
                 )
             else:
@@ -522,7 +498,7 @@ class JinjaSiteRenderer:
                     site_dir,
                     org_name,
                     project_name,
-                    nav_args,
+                    sections,
                     project_breadcrumb,
                 )
 
@@ -534,21 +510,12 @@ class JinjaSiteRenderer:
         if contrib.overview_md:
             content += _md_to_html(contrib.overview_md)
 
-        section_descriptions = {
-            "presentations": (
-                "Curated tours of the strategy map for different audiences"
-            ),
-            "atlas": ("Analytical views derived from the comprehensive strategy map"),
-            "analysis": "Pipeline stages from brief through strategy",
-        }
-
-        if any(s.slug in section_descriptions for s in contrib.sections):
+        if sections:
             content += '<ul class="section-list">'
-            for section in contrib.sections:
-                desc = section.description or section_descriptions.get(section.slug, "")
+            for section in sections:
                 content += (
                     f'<li><a href="{section.slug}/index.html">{section.label}</a>'
-                    f'<span class="desc">{desc}</span></li>'
+                    f'<span class="desc">{section.description}</span></li>'
                 )
             content += "</ul>"
 
@@ -561,7 +528,7 @@ class JinjaSiteRenderer:
             heading="Overview",
             css_path="../style.css",
             breadcrumb=project_breadcrumb(depth=0),
-            nav=_build_project_nav("index", 0, **nav_args),
+            nav=_build_project_nav("index", 0, sections),
             toc=None,
             content=Markup(content),
         )
@@ -574,7 +541,7 @@ class JinjaSiteRenderer:
         site_dir,
         org_name,
         project_name,
-        nav_args,
+        sections,
         project_breadcrumb,
     ) -> None:
         """Render a section with flat pages (e.g. Analysis)."""
@@ -601,7 +568,7 @@ class JinjaSiteRenderer:
             heading=section.label,
             css_path="../../style.css",
             breadcrumb=project_breadcrumb(section.label, 1),
-            nav=_build_project_nav(section.slug, 1, **nav_args),
+            nav=_build_project_nav(section.slug, 1, sections),
             toc=section_toc(),
             content=Markup(""),
         )
@@ -611,7 +578,7 @@ class JinjaSiteRenderer:
             org_name=org_name,
             css_path="../../style.css",
             breadcrumb=project_breadcrumb(section.label, 1),
-            nav=_build_project_nav(section.slug, 1, **nav_args),
+            nav=_build_project_nav(section.slug, 1, sections),
         )
 
         for page in section.pages:
@@ -639,7 +606,7 @@ class JinjaSiteRenderer:
         site_dir,
         org_name,
         project_name,
-        nav_args,
+        sections,
         project_breadcrumb,
     ) -> None:
         """Render a section with narrative pages."""
@@ -666,21 +633,21 @@ class JinjaSiteRenderer:
                 for t in narrative_infos
             ]
 
-        # Presentations index
+        # Section index
         _render_page(
             env,
             "presentations_index.html",
             section_dir / "index.html",
-            title=f"Presentations — {project_name} — {org_name}",
+            title=f"{section.label} — {project_name} — {org_name}",
             org_name=org_name,
-            heading="Presentations",
+            heading=section.label,
             css_path="../../style.css",
-            breadcrumb=project_breadcrumb("Presentations", 1),
-            nav=_build_project_nav("presentations", 1, **nav_args),
+            breadcrumb=project_breadcrumb(section.label, 1),
+            nav=_build_project_nav(section.slug, 1, sections),
             toc=None,
             tours=narrative_infos,
         )
-        print("    presentations/index.html")
+        print(f"    {section.slug}/index.html")
 
         for narrative in section.narratives:
             self._render_narrative_page(
@@ -689,8 +656,8 @@ class JinjaSiteRenderer:
                 section_dir / f"{narrative.slug}.html",
                 org_name,
                 project_name,
-                _build_project_nav("presentations", 1, **nav_args),
-                project_breadcrumb("Presentations", 1),
+                _build_project_nav(section.slug, 1, sections),
+                project_breadcrumb(section.label, 1),
                 narratives_toc(narrative.slug),
             )
 
@@ -764,10 +731,10 @@ class JinjaSiteRenderer:
         site_dir,
         org_name,
         project_name,
-        nav_args,
+        sections,
         project_breadcrumb,
     ) -> None:
-        """Render an Atlas section with categorized groups."""
+        """Render a section with categorized groups."""
         section_dir = Path(site_dir) / section.slug
         section_dir.mkdir(parents=True, exist_ok=True)
 
@@ -783,7 +750,7 @@ class JinjaSiteRenderer:
             for g in section.groups
         ]
 
-        def atlas_toc(active_slug=None):
+        def groups_toc(active_slug=None):
             return [
                 {
                     "label": p.title,
@@ -798,22 +765,22 @@ class JinjaSiteRenderer:
             env,
             "groups_index.html",
             section_dir / "index.html",
-            title=f"Atlas — {project_name} — {org_name}",
+            title=f"{section.label} — {project_name} — {org_name}",
             org_name=org_name,
-            heading="Atlas",
+            heading=section.label,
             css_path="../../style.css",
-            breadcrumb=project_breadcrumb("Atlas", 1),
-            nav=_build_project_nav("atlas", 1, **nav_args),
+            breadcrumb=project_breadcrumb(section.label, 1),
+            nav=_build_project_nav(section.slug, 1, sections),
             toc=None,
             categories=categories,
         )
-        print("    atlas/index.html")
+        print(f"    {section.slug}/index.html")
 
         shared = dict(
             org_name=org_name,
             css_path="../../style.css",
-            breadcrumb=project_breadcrumb("Atlas", 1),
-            nav=_build_project_nav("atlas", 1, **nav_args),
+            breadcrumb=project_breadcrumb(section.label, 1),
+            nav=_build_project_nav(section.slug, 1, sections),
         )
 
         for page in all_pages:
@@ -828,8 +795,8 @@ class JinjaSiteRenderer:
                 section_dir / f"{page.slug}.html",
                 title=f"{page.title} — {project_name} — {org_name}",
                 heading=page.title,
-                toc=atlas_toc(page.slug),
+                toc=groups_toc(page.slug),
                 content=Markup(content),
                 **shared,
             )
-            print(f"    atlas/{page.slug}.html")
+            print(f"    {section.slug}/{page.slug}.html")
