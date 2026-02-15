@@ -140,7 +140,14 @@ After all sub-reports are complete, write `resources/index.md`:
    - Where technology or market evolution is happening
    - What constraints (regulatory, contractual, technical) exist
 5. Cross-reference sub-reports but do not duplicate their detail
-6. Include a manifest listing each sub-report, its date, and confidence
+6. **Verify citation density** before producing the gate artifact:
+   - Every factual claim in every sub-report must have an inline
+     citation with a URL
+   - Each sub-report must reference at least 3 distinct sources
+   - If any sub-report falls below this threshold, return to it and
+     add citations before proceeding. Do not produce the gate artifact
+     with uncited claims.
+7. Include a manifest listing each sub-report, its date, and confidence
 
 After each sub-report is written, register it in the structured manifest:
 ```
