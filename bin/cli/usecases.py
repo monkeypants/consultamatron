@@ -492,13 +492,11 @@ class RenderSiteUseCase:
     def __init__(
         self,
         projects: ProjectRepository,
-        tours: TourManifestRepository,
         research: ResearchTopicRepository,
         renderer: SiteRenderer,
         presenters: dict[str, ProjectPresenter],
     ) -> None:
         self._projects = projects
-        self._tours = tours
         self._research = research
         self._renderer = renderer
         self._presenters = presenters
@@ -516,8 +514,7 @@ class RenderSiteUseCase:
             if presenter is None:
                 print(f"    Unknown skillset '{project.skillset}', skipping")
                 continue
-            project_tours = self._tours.list_all(request.client, project.slug)
-            contributions.append(presenter.present(project, project_tours))
+            contributions.append(presenter.present(project))
 
         site_path = self._renderer.render(
             client=request.client,
