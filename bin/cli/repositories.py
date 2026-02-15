@@ -25,7 +25,6 @@ from bin.cli.entities import (
     ProjectStatus,
     ResearchTopic,
     Skillset,
-    TourManifest,
 )
 
 
@@ -208,35 +207,6 @@ class ResearchTopicRepository(Protocol):
 
     def exists(self, client: str, filename: str) -> bool:
         """Check whether a research topic exists for this filename."""
-        ...
-
-
-# ---------------------------------------------------------------------------
-# Tour manifest — replace semantics, name is identity within project
-# ---------------------------------------------------------------------------
-
-
-@runtime_checkable
-class TourManifestRepository(Protocol):
-    """Repository for audience tour manifests.
-
-    Tour manifests use replace semantics — each save overwrites
-    the entire manifest. The name is the natural key, scoped to
-    a client and project.
-    """
-
-    def get(
-        self, client: str, project_slug: str, tour_name: str
-    ) -> TourManifest | None:
-        """Retrieve a tour manifest by client, project, and name."""
-        ...
-
-    def list_all(self, client: str, project_slug: str) -> list[TourManifest]:
-        """List all tour manifests for a project."""
-        ...
-
-    def save(self, manifest: TourManifest) -> None:
-        """Save a tour manifest (creates or replaces)."""
         ...
 
 

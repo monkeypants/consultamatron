@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
 
-from bin.cli.entities import TourStop
+from bin.cli.wm_types import TourStop
 
 if TYPE_CHECKING:
     from bin.cli.entities import DecisionEntry, Project, ResearchTopic

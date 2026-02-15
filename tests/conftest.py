@@ -19,9 +19,8 @@ from bin.cli.entities import (
     ProjectStatus,
     ResearchTopic,
     Skillset,
-    TourManifest,
-    TourStop,
 )
+from bin.cli.wm_types import TourManifest, TourStop
 from bin.cli.infrastructure.json_repos import (
     JsonDecisionRepository,
     JsonEngagementRepository,

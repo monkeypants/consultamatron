@@ -21,8 +21,8 @@ from bin.cli.content import (
     ProjectContribution,
     ProjectSection,
 )
-from bin.cli.entities import Project, TourManifest
-from bin.cli.repositories import TourManifestRepository
+from bin.cli.entities import Project
+from bin.cli.wm_types import TourManifest, TourManifestRepository
 
 
 def _atlas_category(name: str) -> str:
