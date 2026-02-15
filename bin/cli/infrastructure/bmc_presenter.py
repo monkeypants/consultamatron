@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from bin.cli.content import ContentPage, ProjectContribution, ProjectSection
+from practice.content import ContentPage, ProjectContribution, ProjectSection
 from bin.cli.entities import Project
 
 

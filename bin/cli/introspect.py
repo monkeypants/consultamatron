@@ -18,7 +18,7 @@ import click
 from pydantic import BaseModel
 from pydantic.fields import FieldInfo
 
-from bin.cli.exceptions import DomainError
+from practice.exceptions import DomainError
 
 
 def _extra_dict(field_info: FieldInfo) -> dict[str, Any]:

@@ -11,7 +11,7 @@ import re
 import subprocess
 from pathlib import Path
 
-from bin.cli.content import (
+from practice.content import (
     ContentPage,
     Figure,
     NarrativeGroup,

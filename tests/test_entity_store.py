@@ -8,7 +8,7 @@ runs against every implementation backend.
 from __future__ import annotations
 
 from bin.cli.entities import ProjectStatus
-from bin.cli.store import EntityStore
+from practice.store import EntityStore
 
 from .conftest import make_decision, make_project
 

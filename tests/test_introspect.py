@@ -17,7 +17,7 @@ import click
 from click.testing import CliRunner
 from pydantic import BaseModel, Field
 
-from bin.cli.exceptions import DomainError
+from practice.exceptions import DomainError
 from bin.cli.introspect import generate_command
 
 import json
@@ -223,7 +223,7 @@ class TestErrorHandling:
         assert "Workspace already exists" in result.output
 
     def test_not_found_error_surfaces(self):
-        from bin.cli.exceptions import NotFoundError
+        from practice.exceptions import NotFoundError
 
         uc = FakeUseCase(error=NotFoundError("Project not found: x/y"))
         cli = _build_cli(uc, AllRequiredRequest)

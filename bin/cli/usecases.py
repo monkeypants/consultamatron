@@ -7,8 +7,6 @@ constructor.
 
 from __future__ import annotations
 
-from typing import Protocol, TypeVar
-
 from bin.cli.dtos import (
     AddEngagementEntryRequest,
     AddEngagementEntryResponse,
@@ -50,27 +48,15 @@ from bin.cli.entities import (
     ResearchTopic,
 )
 from bin.cli.wm_types import TourManifest, TourManifestRepository
-from bin.cli.exceptions import DuplicateError, InvalidTransitionError, NotFoundError
+from practice.exceptions import DuplicateError, InvalidTransitionError, NotFoundError
+from practice.repositories import Clock, IdGenerator, ProjectPresenter, SiteRenderer
 from bin.cli.repositories import (
-    Clock,
     DecisionRepository,
     EngagementRepository,
-    IdGenerator,
-    ProjectPresenter,
     ProjectRepository,
     ResearchTopicRepository,
-    SiteRenderer,
     SkillsetRepository,
 )
-
-TRequest = TypeVar("TRequest", contravariant=True)
-TResponse = TypeVar("TResponse", covariant=True)
-
-
-class UseCase(Protocol[TRequest, TResponse]):
-    """Contract: every usecase takes a typed request, returns a typed response."""
-
-    def execute(self, request: TRequest) -> TResponse: ...
 
 
 # ---------------------------------------------------------------------------

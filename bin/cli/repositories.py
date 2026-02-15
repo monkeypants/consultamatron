@@ -9,15 +9,15 @@ Follows the same conventions as bingo-frog bounded contexts:
 - Mutable entities get full CRUD (get, list, save, delete)
 - Immutable entities get create + read only (save is create-only)
 - Specialized query methods serve specific usecase needs
+
+Infrastructure service protocols (Clock, IdGenerator) and presentation
+protocols (ProjectPresenter, SiteRenderer) live in practice.repositories.
 """
 
 from __future__ import annotations
 
-from datetime import date, datetime, tzinfo
-from pathlib import Path
 from typing import Protocol, runtime_checkable
 
-from bin.cli.content import ProjectContribution
 from bin.cli.entities import (
     DecisionEntry,
     EngagementEntry,
@@ -207,84 +207,4 @@ class ResearchTopicRepository(Protocol):
 
     def exists(self, client: str, filename: str) -> bool:
         """Check whether a research topic exists for this filename."""
-        ...
-
-
-# ---------------------------------------------------------------------------
-# Project presenter — assembles workspace artifacts into deliverable content
-# ---------------------------------------------------------------------------
-
-
-@runtime_checkable
-class ProjectPresenter(Protocol):
-    """Assembles a project's workspace artifacts into structured content.
-
-    Reads workspace files (markdown, SVGs, manifests) for a specific
-    skillset and produces a ProjectContribution that any renderer can
-    consume without knowing the skillset.
-    """
-
-    def present(
-        self,
-        project: Project,
-    ) -> ProjectContribution: ...
-
-
-# ---------------------------------------------------------------------------
-# Site renderer — infrastructure port for HTML generation
-# ---------------------------------------------------------------------------
-
-
-@runtime_checkable
-class SiteRenderer(Protocol):
-    """Infrastructure port for generating static HTML sites.
-
-    Receives pre-assembled ProjectContribution entities from the usecase.
-    The renderer handles content transformation (markdown→HTML, SVG
-    embedding, templates) and file I/O, but does not decide what to
-    present — that decision belongs to ProjectPresenters.
-    """
-
-    def render(
-        self,
-        client: str,
-        contributions: list[ProjectContribution],
-        research_topics: list[ResearchTopic],
-    ) -> Path:
-        """Render a static site for a client. Returns the output directory."""
-        ...
-
-
-# ---------------------------------------------------------------------------
-# Infrastructure services — clock and identity generation
-# ---------------------------------------------------------------------------
-
-
-@runtime_checkable
-class Clock(Protocol):
-    """Wall-clock abstraction for timestamping domain events.
-
-    Provides both date (for display) and datetime (for ordering).
-    The timezone is available for consumers that need temporal context.
-    """
-
-    def today(self) -> date:
-        """Return the current date in the configured timezone."""
-        ...
-
-    def now(self) -> datetime:
-        """Return the current timezone-aware datetime."""
-        ...
-
-    def tz(self) -> tzinfo:
-        """Return the configured timezone."""
-        ...
-
-
-@runtime_checkable
-class IdGenerator(Protocol):
-    """Identity generation for new domain entities."""
-
-    def new_id(self) -> str:
-        """Return a new unique identifier."""
         ...
