@@ -127,6 +127,55 @@ Each sub-report must follow the template in
   potential strategic insights
 - Use direct quotes where possible
 
+## Research strategy selection
+
+Not every organisation has a public presence sufficient for the standard
+research tasks above. Before beginning sub-tasks, assess whether
+standard research will work. If early signals suggest it will not,
+propose an alternative strategy to the client.
+
+### Detection heuristics
+
+Standard research is likely to fail when:
+- **No corporate website** or only a placeholder / landing page
+- **No press coverage** in the last 24 months
+- **No job postings** on major platforms
+- **No regulatory filings** or public financial records
+- **Contradictory information** across sources suggesting a recent
+  pivot or rebrand
+
+If two or more of these conditions hold, standard research will produce
+thin sub-reports with low confidence. Switch to an alternative strategy.
+
+### Alternative strategies
+
+**Market landscape** — for stealth-mode, pre-launch, or early-stage
+organisations with minimal public presence. Instead of researching the
+organisation directly, research the market they operate in: competitors,
+adjacent players, market structure, technology trends, regulatory
+landscape, and customer problems in the space. The organisation's
+position is inferred from the negative space and whatever fragments
+are available (founder backgrounds, patent filings, domain registrations,
+conference appearances).
+
+**Recent pivot** — for organisations where public information
+contradicts itself because the organisation has recently changed
+direction. Separate sources by date. Research the pre-pivot and
+post-pivot states independently. Flag the pivot as a structural finding
+and note which information likely reflects current reality.
+
+**Operator-mediated briefing** — for organisations where the operator
+has direct access to principals (founders, executives). The operator
+conducts interviews or provides internal documents. The skill structures
+and synthesises this material into the standard sub-report format. Public
+research fills gaps around the operator-provided core.
+
+### Recording strategy choice
+
+Record the chosen strategy and rationale in `resources/index.md` under
+a "Research strategy" heading. This allows the review skill to evaluate
+whether the strategy was appropriate with the benefit of hindsight.
+
 ## Synthesis
 
 After all sub-reports are complete, write `resources/index.md`:
