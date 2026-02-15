@@ -44,8 +44,8 @@ only `ProjectSection` containing pages and groups.
 | `ProjectContribution` | Everything a project contributes to the deliverable |
 
 Generic content entities are defined in `bin/cli/content.py`.
-Skillset-specific content types (e.g. WM tour assembly structures)
-live behind the relevant presenter.
+Skillset-specific types (e.g. `TourStop`, `TourManifest`) live in
+`bin/cli/wm_types.py`, behind the relevant presenter boundary.
 
 ## Protocol boundary
 
@@ -60,16 +60,13 @@ the workspace filesystem. One presenter per skillset.
 
 ```python
 class ProjectPresenter(Protocol):
-    def present(
-        self,
-        project: Project,
-        research_topics: list[ResearchTopic],
-    ) -> ProjectContribution: ...
+    def present(self, project: Project) -> ProjectContribution: ...
 ```
 
 Each presenter fetches whatever skillset-specific data it needs from
-its own repositories. The generic protocol passes only lifecycle data
-that any presenter might use.
+its own repositories (injected at construction time). The generic
+protocol passes only the `Project` entity — lifecycle data that any
+presenter uses to locate workspace artifacts.
 
 ### SiteRenderer
 
@@ -117,11 +114,7 @@ class NewSkillsetPresenter:
     def __init__(self, workspace_root: Path) -> None:
         self._ws_root = workspace_root
 
-    def present(
-        self,
-        project: Project,
-        research_topics: list[ResearchTopic],
-    ) -> ProjectContribution:
+    def present(self, project: Project) -> ProjectContribution:
         proj_dir = self._ws_root / project.client / "projects" / project.slug
         # Read workspace files, assemble sections
         return ProjectContribution(
