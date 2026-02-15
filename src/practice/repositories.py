@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Protocol, runtime_checkable
 from practice.content import ProjectContribution
 
 if TYPE_CHECKING:
+    # TODO(#47): Move to consulting.entities when bounded contexts land.
     from bin.cli.entities import Project, ResearchTopic
 
 
