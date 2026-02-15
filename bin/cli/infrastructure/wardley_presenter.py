@@ -14,12 +14,12 @@ from pathlib import Path
 from bin.cli.content import (
     ContentPage,
     Figure,
+    NarrativeGroup,
+    NarrativePage,
+    NarrativeStop,
     PageGroup,
     ProjectContribution,
     ProjectSection,
-    TourGroupContent,
-    TourPageContent,
-    TourStopContent,
 )
 from bin.cli.entities import Project, TourManifest
 from bin.cli.repositories import TourManifestRepository
@@ -186,16 +186,16 @@ class WardleyProjectPresenter:
     def _build_presentations_section(
         self, proj_dir: Path, tours: list[TourManifest]
     ) -> ProjectSection:
-        tour_pages: list[TourPageContent] = []
+        narrative_pages: list[NarrativePage] = []
         for manifest in tours:
             tour_dir = proj_dir / "presentations" / manifest.name
-            tour_pages.append(self._assemble_tour(proj_dir, tour_dir, manifest))
+            narrative_pages.append(self._assemble_tour(proj_dir, tour_dir, manifest))
 
         return ProjectSection(
             label="Presentations",
             slug="presentations",
             description=("Curated tours of the strategy map for different audiences"),
-            tours=tour_pages,
+            narratives=narrative_pages,
         )
 
     def _assemble_tour(
@@ -203,9 +203,9 @@ class WardleyProjectPresenter:
         proj_dir: Path,
         tour_dir: Path,
         manifest: TourManifest,
-    ) -> TourPageContent:
+    ) -> NarrativePage:
         if not manifest.stops:
-            return TourPageContent(
+            return NarrativePage(
                 title=manifest.title,
                 slug=manifest.name,
                 description="",
@@ -240,16 +240,16 @@ class WardleyProjectPresenter:
         description = _extract_second_paragraph(opening_md) if opening_md else ""
 
         # Build groups
-        groups: list[TourGroupContent] = []
+        groups: list[NarrativeGroup] = []
         for gi, group in enumerate(raw_groups):
-            stops: list[TourStopContent] = []
+            stops: list[NarrativeStop] = []
             for stop in group["stops"]:
                 has_suffix = bool(re.search(r"[a-z]$", stop.order))
                 level = "h3" if has_suffix else "h2"
 
                 if not stop.atlas_source:
                     stops.append(
-                        TourStopContent(
+                        NarrativeStop(
                             title=stop.title,
                             level=level,
                             is_header=True,
@@ -264,7 +264,7 @@ class WardleyProjectPresenter:
                 analysis_md = _read_md(atlas_path / stop.analysis_file)
 
                 stops.append(
-                    TourStopContent(
+                    NarrativeStop(
                         title=stop.title,
                         level=level,
                         is_header=False,
@@ -277,9 +277,9 @@ class WardleyProjectPresenter:
             if gi < len(trans_files) and trans_files[gi].is_file():
                 transition_md = trans_files[gi].read_text()
 
-            groups.append(TourGroupContent(stops=stops, transition_md=transition_md))
+            groups.append(NarrativeGroup(stops=stops, transition_md=transition_md))
 
-        return TourPageContent(
+        return NarrativePage(
             title=manifest.title,
             slug=manifest.name,
             description=description,

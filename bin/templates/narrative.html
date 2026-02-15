@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 {% block body %}
 {% if opening_html %}
-<div class="tour-section">
+<div class="narrative-section">
 {{ opening_html }}
 </div>
 {% endif %}
 {% for group in groups %}
-<div class="tour-section">
+<div class="narrative-section">
 {% for row in group.rows %}
 {% if row.is_header %}
 <{{ row.level }}>{{ row.title }}</{{ row.level }}>
@@ -18,7 +18,7 @@
 {% endfor %}
 </div>
 {% if group.transition_html %}
-<div class="tour-section">
+<div class="narrative-section">
 {{ group.transition_html }}
 </div>
 {% endif %}

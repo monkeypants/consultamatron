@@ -16,7 +16,7 @@ import markdown
 from jinja2 import Environment, FileSystemLoader
 from markupsafe import Markup
 
-from bin.cli.content import Figure, ProjectContribution, ProjectSection, TourPageContent
+from bin.cli.content import Figure, NarrativePage, ProjectContribution, ProjectSection
 from bin.cli.entities import ResearchTopic
 
 
@@ -495,8 +495,8 @@ class JinjaSiteRenderer:
             return _build_breadcrumb(*crumbs)
 
         for section in contrib.sections:
-            if section.tours:
-                self._render_section_tours(
+            if section.narratives:
+                self._render_section_narratives(
                     env,
                     section,
                     site_dir,
@@ -632,7 +632,7 @@ class JinjaSiteRenderer:
             )
             print(f"    {section.slug}/{page.slug}.html")
 
-    def _render_section_tours(
+    def _render_section_narratives(
         self,
         env,
         section: ProjectSection,
@@ -642,28 +642,28 @@ class JinjaSiteRenderer:
         nav_args,
         project_breadcrumb,
     ) -> None:
-        """Render a Presentations section with tour pages."""
+        """Render a section with narrative pages."""
         section_dir = Path(site_dir) / section.slug
         section_dir.mkdir(parents=True, exist_ok=True)
 
-        tour_infos = [
+        narrative_infos = [
             {
                 "name": t.slug,
                 "url": f"{t.slug}.html",
                 "title": t.title,
                 "description": t.description,
             }
-            for t in section.tours
+            for t in section.narratives
         ]
 
-        def presentations_toc(active_name=None):
+        def narratives_toc(active_name=None):
             return [
                 {
                     "label": t["title"],
                     "url": t["url"],
                     "active": t["name"] == active_name,
                 }
-                for t in tour_infos
+                for t in narrative_infos
             ]
 
         # Presentations index
@@ -678,26 +678,26 @@ class JinjaSiteRenderer:
             breadcrumb=project_breadcrumb("Presentations", 1),
             nav=_build_project_nav("presentations", 1, **nav_args),
             toc=None,
-            tours=tour_infos,
+            tours=narrative_infos,
         )
         print("    presentations/index.html")
 
-        for tour in section.tours:
-            self._render_tour_from_content(
+        for narrative in section.narratives:
+            self._render_narrative_page(
                 env,
-                tour,
-                section_dir / f"{tour.slug}.html",
+                narrative,
+                section_dir / f"{narrative.slug}.html",
                 org_name,
                 project_name,
                 _build_project_nav("presentations", 1, **nav_args),
                 project_breadcrumb("Presentations", 1),
-                presentations_toc(tour.slug),
+                narratives_toc(narrative.slug),
             )
 
-    def _render_tour_from_content(
+    def _render_narrative_page(
         self,
         env,
-        tour: TourPageContent,
+        narrative: NarrativePage,
         output_file,
         org_name,
         project_name,
@@ -705,11 +705,11 @@ class JinjaSiteRenderer:
         breadcrumb,
         toc,
     ) -> None:
-        """Render a single tour from TourPageContent."""
-        opening_html = _md_to_html(tour.opening_md) if tour.opening_md else ""
+        """Render a single narrative page."""
+        opening_html = _md_to_html(narrative.opening_md) if narrative.opening_md else ""
 
         template_groups = []
-        for group in tour.groups:
+        for group in narrative.groups:
             rendered_rows = []
             for stop in group.stops:
                 svgs_html = ""
@@ -743,11 +743,11 @@ class JinjaSiteRenderer:
 
         _render_page(
             env,
-            "tour.html",
+            "narrative.html",
             output_file,
-            title=f"{tour.title} — {project_name} — {org_name}",
+            title=f"{narrative.title} — {project_name} — {org_name}",
             org_name=org_name,
-            heading=tour.title,
+            heading=narrative.title,
             css_path="../../style.css",
             breadcrumb=breadcrumb,
             nav=nav,
@@ -755,7 +755,7 @@ class JinjaSiteRenderer:
             opening_html=Markup(opening_html),
             groups=template_groups,
         )
-        print(f"    presentations/{tour.slug}.html")
+        print(f"    {Path(output_file).parent.name}/{narrative.slug}.html")
 
     def _render_section_groups(
         self,
@@ -793,10 +793,10 @@ class JinjaSiteRenderer:
                 for p in all_pages
             ]
 
-        # Atlas index
+        # Groups index
         _render_page(
             env,
-            "atlas_index.html",
+            "groups_index.html",
             section_dir / "index.html",
             title=f"Atlas — {project_name} — {org_name}",
             org_name=org_name,
