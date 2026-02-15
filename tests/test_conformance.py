@@ -20,7 +20,7 @@ from pathlib import Path
 import pytest
 
 from bin.cli.config import Config
-from bin.cli.content import ProjectContribution
+from practice.content import ProjectContribution
 from bin.cli.di import Container
 from bin.cli.dtos import (
     GetProjectProgressRequest,

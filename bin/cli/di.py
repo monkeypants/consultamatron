@@ -22,15 +22,12 @@ from bin.cli.infrastructure.json_repos import (
     JsonTourManifestRepository,
 )
 from bin.cli.infrastructure.wardley_presenter import WardleyProjectPresenter
+from practice.repositories import Clock, IdGenerator, ProjectPresenter, SiteRenderer
 from bin.cli.repositories import (
-    Clock,
     DecisionRepository,
     EngagementRepository,
-    IdGenerator,
-    ProjectPresenter,
     ProjectRepository,
     ResearchTopicRepository,
-    SiteRenderer,
     SkillsetRepository,
 )
 from bin.cli.wm_types import TourManifestRepository

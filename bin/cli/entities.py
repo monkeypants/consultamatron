@@ -4,8 +4,9 @@ Entities carry identity and scoping context so that repository
 save(entity) calls are self-contained. Skillsets are first-class
 entities discovered from manifests at runtime, not hardcoded enums.
 
-Domain exceptions live in bin.cli.exceptions.
-Deliverable content entities live in bin.cli.content.
+Domain exceptions live in practice.exceptions.
+Deliverable content entities live in practice.content.
+PipelineStage lives in practice.discovery.
 """
 
 from __future__ import annotations
@@ -15,20 +16,12 @@ from enum import Enum
 
 from pydantic import BaseModel
 
+from practice.discovery import PipelineStage
+
 
 # ---------------------------------------------------------------------------
 # Skillset entities (discovered from skillsets/*.md manifests)
 # ---------------------------------------------------------------------------
-
-
-class PipelineStage(BaseModel):
-    """One stage in a skillset's pipeline."""
-
-    order: int
-    skill: str
-    prerequisite_gate: str
-    produces_gate: str
-    description: str
 
 
 class Skillset(BaseModel):
