@@ -34,8 +34,8 @@ class PageGroup(BaseModel):
     pages: list[ContentPage]
 
 
-class TourStopContent(BaseModel):
-    """One assembled tour stop with figures and analysis."""
+class NarrativeStop(BaseModel):
+    """One assembled narrative stop with figures and analysis."""
 
     title: str
     level: str
@@ -44,21 +44,21 @@ class TourStopContent(BaseModel):
     analysis_md: str
 
 
-class TourGroupContent(BaseModel):
+class NarrativeGroup(BaseModel):
     """A group of related stops plus transition prose."""
 
-    stops: list[TourStopContent]
+    stops: list[NarrativeStop]
     transition_md: str
 
 
-class TourPageContent(BaseModel):
-    """A complete tour presentation, assembled from workspace files."""
+class NarrativePage(BaseModel):
+    """A complete narrative presentation, assembled from workspace files."""
 
     title: str
     slug: str
     description: str
     opening_md: str
-    groups: list[TourGroupContent]
+    groups: list[NarrativeGroup]
 
 
 class ProjectSection(BaseModel):
@@ -69,7 +69,7 @@ class ProjectSection(BaseModel):
     description: str = ""
     pages: list[ContentPage] = []
     groups: list[PageGroup] = []
-    tours: list[TourPageContent] = []
+    narratives: list[NarrativePage] = []
 
 
 class ProjectContribution(BaseModel):

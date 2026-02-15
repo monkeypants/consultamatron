@@ -178,32 +178,32 @@ class TestFullWorkspace:
         presenter = _make_presenter(full_workspace)
         contrib = presenter.present(_make_project())
         pres = contrib.sections[0]
-        assert len(pres.tours) == 1
-        assert pres.tours[0].title == "Investor Briefing"
+        assert len(pres.narratives) == 1
+        assert pres.narratives[0].title == "Investor Briefing"
 
     def test_tour_has_groups_and_stops(self, full_workspace):
         presenter = _make_presenter(full_workspace)
         contrib = presenter.present(_make_project())
-        tour = contrib.sections[0].tours[0]
+        tour = contrib.sections[0].narratives[0]
         assert len(tour.groups) == 2
         assert tour.groups[0].stops[0].title == "Overview"
 
     def test_tour_opening(self, full_workspace):
         presenter = _make_presenter(full_workspace)
         contrib = presenter.present(_make_project())
-        tour = contrib.sections[0].tours[0]
+        tour = contrib.sections[0].narratives[0]
         assert "First paragraph" in tour.opening_md
 
     def test_tour_description_from_second_paragraph(self, full_workspace):
         presenter = _make_presenter(full_workspace)
         contrib = presenter.present(_make_project())
-        tour = contrib.sections[0].tours[0]
+        tour = contrib.sections[0].narratives[0]
         assert "Second paragraph description" in tour.description
 
     def test_tour_transition(self, full_workspace):
         presenter = _make_presenter(full_workspace)
         contrib = presenter.present(_make_project())
-        tour = contrib.sections[0].tours[0]
+        tour = contrib.sections[0].narratives[0]
         assert "From overview to bottlenecks" in tour.groups[0].transition_md
 
     def test_atlas_has_categorized_groups(self, full_workspace):
@@ -368,7 +368,7 @@ class TestTourStopGrouping:
 
         presenter = _make_presenter(tmp_path)
         contrib = presenter.present(_make_project())
-        tour = contrib.sections[0].tours[0]
+        tour = contrib.sections[0].narratives[0]
 
         assert len(tour.groups) == 3
         assert len(tour.groups[0].stops) == 1  # "1"

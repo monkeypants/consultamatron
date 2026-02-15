@@ -124,12 +124,12 @@ nav.toc li.active::marker { font-weight: 700; }
 .bmc-cost { grid-column: 1 / 4; }
 .bmc-revenue { grid-column: 4 / 6; }
 
-/* Tour sections */
-.tour-section { margin: 2.5rem 0; padding-top: 1.5rem; border-top: 1px solid #e0e0e0; }
-.tour-section:first-of-type { border-top: none; padding-top: 0; }
+/* Narrative sections */
+.narrative-section { margin: 2.5rem 0; padding-top: 1.5rem; border-top: 1px solid #e0e0e0; }
+.narrative-section:first-of-type { border-top: none; padding-top: 0; }
 
-/* Atlas category headings */
-.atlas-category h2 {
+/* Page group category headings */
+.page-group-category h2 {
   font-size: 1.2rem;
   color: #555;
   text-transform: uppercase;
@@ -138,9 +138,9 @@ nav.toc li.active::marker { font-weight: 700; }
   padding-bottom: 0.3rem;
   margin-top: 2.5rem;
 }
-.atlas-category:first-child h2 { margin-top: 0; }
-.atlas-category ul { list-style: none; padding: 0; }
-.atlas-category li { padding: 0.4rem 0; }
+.page-group-category:first-child h2 { margin-top: 0; }
+.page-group-category ul { list-style: none; padding: 0; }
+.page-group-category li { padding: 0.4rem 0; }
 
 /* Section list (project index) */
 .section-list {
