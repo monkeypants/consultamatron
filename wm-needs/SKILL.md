@@ -122,7 +122,16 @@ Based on client feedback:
 3. Ask the client to confirm: "Is this needs document now accurate
    and complete enough to proceed?"
 
-When the client agrees:
+When the client agrees, clean up superseded drafts before writing the
+gate artifact:
+1. Compare files in `needs/drafts/` against the agreed user classes
+2. Move any draft that does not correspond to an agreed user class
+   to `needs/drafts/archive/` (merges, renames, and abandoned classes
+   all produce superseded drafts)
+3. The `needs/drafts/` directory should contain exactly one file per
+   agreed user class
+
+Then write the gate artifact:
 1. Copy `needs/needs.md` to `needs/needs.agreed.md`
 2. Record the agreement:
    ```
