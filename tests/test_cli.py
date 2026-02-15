@@ -107,6 +107,47 @@ class TestProjectRegister:
         assert "wardley-mapping" in result.output
         assert "holloway-group" in result.output
 
+    def test_missing_required_option_rejected(self, run):
+        _init(run)
+        result = run(
+            "project",
+            "register",
+            "--client",
+            CLIENT,
+            "--slug",
+            "maps-1",
+            # Missing --skillset and --scope
+        )
+        assert result.exit_code != 0
+        assert "Missing option" in result.output or "required" in result.output.lower()
+
+    def test_notes_defaults_to_empty(self, run):
+        _init(run)
+        _register(run)  # --notes not provided
+        result = run("project", "get", "--client", CLIENT, "--slug", "maps-1")
+        assert result.exit_code == 0
+        assert "Notes:" not in result.output
+
+    def test_explicit_notes_preserved(self, run):
+        _init(run)
+        result = run(
+            "project",
+            "register",
+            "--client",
+            CLIENT,
+            "--slug",
+            "maps-1",
+            "--skillset",
+            "wardley-mapping",
+            "--scope",
+            "Test scope",
+            "--notes",
+            "Important note",
+        )
+        assert result.exit_code == 0
+        result = run("project", "get", "--client", CLIENT, "--slug", "maps-1")
+        assert "Notes:    Important note" in result.output
+
 
 # ---------------------------------------------------------------------------
 # project update-status
@@ -172,6 +213,29 @@ class TestProjectList:
         assert "maps-1" in result.output
         assert "wardley-mapping" in result.output
         assert "planning" in result.output
+
+    def test_invalid_status_rejected_by_click(self, run):
+        _init(run)
+        result = run("project", "list", "--client", CLIENT, "--status", "mythical")
+        assert result.exit_code != 0
+        assert (
+            "Invalid value" in result.output
+            or "invalid choice" in result.output.lower()
+        )
+
+    def test_filter_by_status(self, run):
+        _init(run)
+        _register(run)
+        result = run("project", "list", "--client", CLIENT, "--status", "planning")
+        assert result.exit_code == 0
+        assert "maps-1" in result.output
+
+    def test_filter_by_status_no_match(self, run):
+        _init(run)
+        _register(run)
+        result = run("project", "list", "--client", CLIENT, "--status", "elaboration")
+        assert result.exit_code == 0
+        assert "No projects found" in result.output
 
 
 # ---------------------------------------------------------------------------
