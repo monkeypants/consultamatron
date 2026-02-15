@@ -21,7 +21,7 @@ from practice.content import (
     ProjectContribution,
     ProjectSection,
 )
-from bin.cli.entities import Project
+from practice.entities import Project
 from bin.cli.wm_types import TourManifest, TourManifestRepository
 
 

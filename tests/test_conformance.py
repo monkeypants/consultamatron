@@ -28,11 +28,8 @@ from bin.cli.dtos import (
     RecordDecisionRequest,
     RegisterProjectRequest,
 )
-from bin.cli.entities import (
-    PipelineStage,
-    Project,
-    ProjectStatus,
-)
+from practice.discovery import PipelineStage
+from practice.entities import Project, ProjectStatus
 from bin.cli.infrastructure.bmc_presenter import BmcProjectPresenter
 from bin.cli.infrastructure.json_repos import JsonTourManifestRepository
 from bin.cli.infrastructure.wardley_presenter import WardleyProjectPresenter

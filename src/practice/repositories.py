@@ -8,13 +8,10 @@ from __future__ import annotations
 
 from datetime import date, datetime, tzinfo
 from pathlib import Path
-from typing import TYPE_CHECKING, Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable
 
 from practice.content import ProjectContribution
-
-if TYPE_CHECKING:
-    # TODO(#47): Move to consulting.entities when bounded contexts land.
-    from bin.cli.entities import Project, ResearchTopic
+from practice.entities import Project, ResearchTopic
 
 
 @runtime_checkable
@@ -58,7 +55,7 @@ class ProjectPresenter(Protocol):
 
     def present(
         self,
-        project: "Project",
+        project: Project,
     ) -> ProjectContribution: ...
 
 
@@ -76,7 +73,7 @@ class SiteRenderer(Protocol):
         self,
         client: str,
         contributions: list[ProjectContribution],
-        research_topics: list["ResearchTopic"],
+        research_topics: list[ResearchTopic],
     ) -> Path:
         """Render a static site for a client. Returns the output directory."""
         ...

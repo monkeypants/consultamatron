@@ -10,11 +10,10 @@ import pytest
 
 from bin.cli.config import Config
 from bin.cli.di import Container
-from bin.cli.entities import (
+from bin.cli.entities import DecisionEntry, EngagementEntry
+from practice.discovery import PipelineStage
+from practice.entities import (
     Confidence,
-    DecisionEntry,
-    EngagementEntry,
-    PipelineStage,
     Project,
     ProjectStatus,
     ResearchTopic,

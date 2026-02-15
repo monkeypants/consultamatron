@@ -10,7 +10,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from practice.content import ContentPage, ProjectContribution, ProjectSection
-from bin.cli.entities import Project
+from practice.entities import Project
 
 
 def _read_md(path: Path) -> str:

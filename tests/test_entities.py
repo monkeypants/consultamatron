@@ -12,11 +12,9 @@ from datetime import date
 
 import pytest
 
-from bin.cli.entities import (
-    DecisionEntry,
-    PipelineStage,
-    ProjectStatus,
-)
+from bin.cli.entities import DecisionEntry
+from practice.discovery import PipelineStage
+from practice.entities import ProjectStatus
 
 from .conftest import (
     make_decision,
