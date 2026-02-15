@@ -3,3 +3,13 @@ maps/
 **/site/
 __pycache__/
 .claude/settings.local.json
+
+# Ewe, someone else's hair in my food.
+.DS_Store
+
+# Elegant weapon, civilised age.
+*~
+\#*\#
+.#*
+*.elc
+auto-save-list/
