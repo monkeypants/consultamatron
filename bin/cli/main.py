@@ -116,18 +116,19 @@ def project() -> None:
     """Manage consulting projects."""
 
 
-@project.command("init")
-@click.option("--client", required=True, help="Client slug.")
-@_inject("initialize_workspace_usecase")
-def project_init(usecase: InitializeWorkspaceUseCase, client: str) -> None:
-    """Initialize a new client workspace.
-
-    Creates empty project registry, engagement log, and research
-    manifest. Logs a "Client onboarded" engagement entry.
-    """
-    req = InitializeWorkspaceRequest(client=client)
-    resp = _run(usecase, req)
+def _format_init_workspace(resp: Any) -> None:
     click.echo(f"Initialized workspace for '{resp.client}'")
+
+
+project.add_command(
+    generate_command(
+        name="init",
+        request_model=InitializeWorkspaceRequest,
+        usecase_attr="initialize_workspace_usecase",
+        format_output=_format_init_workspace,
+        help_text=InitializeWorkspaceUseCase.__doc__,
+    )
+)
 
 
 def _format_register_project(resp: Any) -> None:
@@ -147,31 +148,19 @@ project.add_command(
 )
 
 
-@project.command("update-status")
-@click.option("--client", required=True, help="Client slug.")
-@click.option("--project", "project_slug", required=True, help="Project slug.")
-@click.option(
-    "--status",
-    required=True,
-    type=click.Choice(
-        ["planning", "elaboration", "implementation", "review", "closed"]
-    ),
-    help="New status.",
-)
-@_inject("update_project_status_usecase")
-def project_update_status(
-    usecase: UpdateProjectStatusUseCase, client: str, project_slug: str, status: str
-) -> None:
-    """Update a project's status.
-
-    Validates the transition follows planning -> elaboration ->
-    implementation -> review. No skipping, no reversal.
-    """
-    req = UpdateProjectStatusRequest(
-        client=client, project_slug=project_slug, status=status
-    )
-    resp = _run(usecase, req)
+def _format_update_status(resp: Any) -> None:
     click.echo(f"Updated '{resp.project_slug}' status to '{resp.status}'")
+
+
+project.add_command(
+    generate_command(
+        name="update-status",
+        request_model=UpdateProjectStatusRequest,
+        usecase_attr="update_project_status_usecase",
+        format_output=_format_update_status,
+        help_text=UpdateProjectStatusUseCase.__doc__,
+    )
+)
 
 
 def _format_list_projects(resp: Any) -> None:
@@ -193,16 +182,9 @@ project.add_command(
 )
 
 
-@project.command("get")
-@click.option("--client", required=True, help="Client slug.")
-@click.option("--slug", required=True, help="Project slug.")
-@_inject("get_project_usecase")
-def project_get(usecase: GetProjectUseCase, client: str, slug: str) -> None:
-    """Get details for a specific project."""
-    req = GetProjectRequest(client=client, slug=slug)
-    resp = _run(usecase, req)
+def _format_get_project(resp: Any) -> None:
     if resp.project is None:
-        raise click.ClickException(f"Project '{slug}' not found.")
+        raise click.ClickException(f"Project '{resp.slug}' not found.")
     p = resp.project
     click.echo(f"Slug:     {p.slug}")
     click.echo(f"Skillset: {p.skillset}")
@@ -212,21 +194,18 @@ def project_get(usecase: GetProjectUseCase, client: str, slug: str) -> None:
         click.echo(f"Notes:    {p.notes}")
 
 
-@project.command("progress")
-@click.option("--client", required=True, help="Client slug.")
-@click.option("--project", "project_slug", required=True, help="Project slug.")
-@_inject("get_project_progress_usecase")
-def project_progress(
-    usecase: GetProjectProgressUseCase, client: str, project_slug: str
-) -> None:
-    """Show pipeline progress for a project.
+project.add_command(
+    generate_command(
+        name="get",
+        request_model=GetProjectRequest,
+        usecase_attr="get_project_usecase",
+        format_output=_format_get_project,
+        help_text=GetProjectUseCase.__doc__,
+    )
+)
 
-    Loads the skillset definition, matches decision log entries against
-    pipeline stages, and reports completed stages, current stage, and
-    next prerequisite.
-    """
-    req = GetProjectProgressRequest(client=client, project_slug=project_slug)
-    resp = _run(usecase, req)
+
+def _format_project_progress(resp: Any) -> None:
     if not resp.stages:
         click.echo("No pipeline stages found.")
         return
@@ -237,6 +216,17 @@ def project_progress(
         click.echo(f"\nCurrent: {resp.current_stage}")
     if resp.next_prerequisite:
         click.echo(f"Next gate: {resp.next_prerequisite}")
+
+
+project.add_command(
+    generate_command(
+        name="progress",
+        request_model=GetProjectProgressRequest,
+        usecase_attr="get_project_progress_usecase",
+        format_output=_format_project_progress,
+        help_text=GetProjectProgressUseCase.__doc__,
+    )
+)
 
 
 # ---------------------------------------------------------------------------
@@ -280,16 +270,7 @@ def decision_record(
     )
 
 
-@decision.command("list")
-@click.option("--client", required=True, help="Client slug.")
-@click.option("--project", "project_slug", required=True, help="Project slug.")
-@_inject("list_decisions_usecase")
-def decision_list(
-    usecase: ListDecisionsUseCase, client: str, project_slug: str
-) -> None:
-    """List decisions for a project in chronological order."""
-    req = ListDecisionsRequest(client=client, project_slug=project_slug)
-    resp = _run(usecase, req)
+def _format_decision_list(resp: Any) -> None:
     if not resp.decisions:
         click.echo("No decisions recorded.")
         return
@@ -297,6 +278,17 @@ def decision_list(
         click.echo(f"  {d.date}  {d.title}")
         for k, v in d.fields.items():
             click.echo(f"           {k}: {v}")
+
+
+decision.add_command(
+    generate_command(
+        name="list",
+        request_model=ListDecisionsRequest,
+        usecase_attr="list_decisions_usecase",
+        format_output=_format_decision_list,
+        help_text=ListDecisionsUseCase.__doc__,
+    )
+)
 
 
 # ---------------------------------------------------------------------------
@@ -340,50 +332,40 @@ def research() -> None:
     """Manage research topics."""
 
 
-@research.command("add")
-@click.option("--client", required=True, help="Client slug.")
-@click.option("--topic", required=True, help="Topic name.")
-@click.option("--filename", required=True, help="Research file name.")
-@click.option(
-    "--confidence",
-    required=True,
-    type=click.Choice(["High", "Medium-High", "Medium", "Low"]),
-    help="Confidence level.",
-)
-@_inject("register_research_topic_usecase")
-def research_add(
-    usecase: RegisterResearchTopicUseCase,
-    client: str,
-    topic: str,
-    filename: str,
-    confidence: str,
-) -> None:
-    """Register a research topic in the client manifest.
-
-    Fails if the filename already exists in the manifest.
-    """
-    req = RegisterResearchTopicRequest(
-        client=client,
-        topic=topic,
-        filename=filename,
-        confidence=confidence,
+def _format_research_add(resp: Any) -> None:
+    click.echo(
+        f"Registered topic '{resp.topic}' as '{resp.filename}' for '{resp.client}'"
     )
-    resp = _run(usecase, req)
-    click.echo(f"Registered topic '{topic}' as '{resp.filename}' for '{resp.client}'")
 
 
-@research.command("list")
-@click.option("--client", required=True, help="Client slug.")
-@_inject("list_research_topics_usecase")
-def research_list(usecase: ListResearchTopicsUseCase, client: str) -> None:
-    """List research topics for a client."""
-    req = ListResearchTopicsRequest(client=client)
-    resp = _run(usecase, req)
+research.add_command(
+    generate_command(
+        name="add",
+        request_model=RegisterResearchTopicRequest,
+        usecase_attr="register_research_topic_usecase",
+        format_output=_format_research_add,
+        help_text=RegisterResearchTopicUseCase.__doc__,
+    )
+)
+
+
+def _format_research_list(resp: Any) -> None:
     if not resp.topics:
         click.echo("No research topics found.")
         return
     for t in resp.topics:
         click.echo(f"  {t.filename}  {t.topic}  {t.confidence}  {t.date}")
+
+
+research.add_command(
+    generate_command(
+        name="list",
+        request_model=ListResearchTopicsRequest,
+        usecase_attr="list_research_topics_usecase",
+        format_output=_format_research_list,
+        help_text=ListResearchTopicsUseCase.__doc__,
+    )
+)
 
 
 # ---------------------------------------------------------------------------
