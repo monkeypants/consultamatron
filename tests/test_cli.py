@@ -7,7 +7,7 @@ formatting, or error handling is broken.
 
 Business rule validation (duplicate slugs, unknown skillsets, invalid
 transitions) lives in test_usecases.py. One representative error test
-here verifies that _run() surfaces DomainError as exit code 1 + message.
+here verifies that DomainError surfaces as exit code 1 + message.
 
 The sample data continues the Holloway Group engagement from
 test_usecases.py: a freight logistics company commissioning a
