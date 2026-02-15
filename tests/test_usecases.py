@@ -17,13 +17,8 @@ from datetime import datetime, timezone
 
 import pytest
 
-from bin.cli.entities import (
-    DecisionEntry,
-    DuplicateError,
-    InvalidTransitionError,
-    NotFoundError,
-    TourStop,
-)
+from bin.cli.entities import DecisionEntry, TourStop
+from bin.cli.exceptions import DuplicateError, InvalidTransitionError, NotFoundError
 from bin.cli.di import Container
 from bin.cli.dtos import (
     AddEngagementEntryRequest,

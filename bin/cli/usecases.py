@@ -44,15 +44,13 @@ from bin.cli.dtos import (
 from bin.cli.entities import (
     Confidence,
     DecisionEntry,
-    DuplicateError,
     EngagementEntry,
-    InvalidTransitionError,
-    NotFoundError,
     Project,
     ProjectStatus,
     ResearchTopic,
     TourManifest,
 )
+from bin.cli.exceptions import DuplicateError, InvalidTransitionError, NotFoundError
 from bin.cli.repositories import (
     Clock,
     DecisionRepository,

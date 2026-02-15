@@ -11,18 +11,17 @@ import re
 import subprocess
 from pathlib import Path
 
-from bin.cli.entities import (
+from bin.cli.content import (
     ContentPage,
     Figure,
     PageGroup,
-    Project,
     ProjectContribution,
     ProjectSection,
     TourGroupContent,
-    TourManifest,
     TourPageContent,
     TourStopContent,
 )
+from bin.cli.entities import Project, TourManifest
 
 
 def _atlas_category(name: str) -> str:

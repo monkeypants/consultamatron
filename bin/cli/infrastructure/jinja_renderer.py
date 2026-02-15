@@ -16,13 +16,8 @@ import markdown
 from jinja2 import Environment, FileSystemLoader
 from markupsafe import Markup
 
-from bin.cli.entities import (
-    Figure,
-    ProjectContribution,
-    ProjectSection,
-    ResearchTopic,
-    TourPageContent,
-)
+from bin.cli.content import Figure, ProjectContribution, ProjectSection, TourPageContent
+from bin.cli.entities import ResearchTopic
 
 
 # ---------------------------------------------------------------------------
