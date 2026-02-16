@@ -32,7 +32,49 @@ If missing, tell the operator to complete `ns-design` first.
 
 Read all four inputs. The design document is your specification.
 
-## Step 1: Study the target
+## Step 1: Determine implementation path
+
+Read `brief.agreed.md` and check the **Source** section.
+
+### Commons path
+
+If the source is **commons**, follow the full BC implementation
+(steps 2–13 below). The skillset becomes a Python package with
+SKILLSETS, PRESENTER_FACTORY, presenter, tests, and conformance
+coverage.
+
+### Partnership path
+
+If the source is a **partnership**, the implementation is lighter:
+
+1. Create or verify the partnership directory:
+   ```
+   partners/{slug}/
+   ├── skillsets/index.json
+   ├── skills/{skill-name}/SKILL.md
+   ├── skills/{skill-name}/scripts/
+   ├── skills/{skill-name}/references/
+   └── resources/
+   ```
+
+2. Write skill files (same SKILL.md format as commons)
+
+3. Register the skillset in `partners/{slug}/skillsets/index.json`:
+   ```json
+   [{"name": "{skillset-name}", "display_name": "...", "stages": [...]}]
+   ```
+
+4. Create symlinks from `.claude/skills/` to `partners/{slug}/skills/`
+
+5. Verify: `uv run practice source show --slug {slug}`
+
+No Python BC, no presenter, no conformance tests (partnership
+skillsets are not discoverable by the test suite). The lighter
+weight is intentional — partnership IP stays private.
+
+Skip to step 12 (present to operator) after this path completes.
+
+## Step 2: Study the target
 
 Before building, understand what a conformant BC looks like:
 
@@ -48,7 +90,7 @@ Read the conformance tests:
 Read at least one existing BC's `__init__.py`, `presenter.py`, and
 `tests/test_presenter.py` as exemplars.
 
-## Step 2: Scaffold or verify the BC package
+## Step 3: Scaffold or verify the BC package
 
 If the BC package does not already exist, scaffold it:
 
@@ -66,7 +108,7 @@ This creates:
 If the package already exists (e.g. from a prospectus), verify its
 structure matches the scaffold output and update as needed.
 
-## Step 3: Populate SKILLSETS
+## Step 4: Populate SKILLSETS
 
 Edit `{bc_package}/__init__.py` to declare all skillsets from the
 design document. For each skillset:
@@ -103,7 +145,7 @@ Skillset(
 - Slug pattern contains `{n}`
 - Skill names use the prefix from the design document
 
-## Step 4: Write skill files
+## Step 5: Write skill files
 
 For each pipeline stage, create:
 
@@ -136,7 +178,7 @@ Each skill file should be self-contained — an agent loading it with
 the bytecode references should be able to execute the stage without
 reading the full research.
 
-## Step 5: Write bash wrapper scripts
+## Step 6: Write bash wrapper scripts
 
 For each stage that records a gate, create a bash script:
 
@@ -184,7 +226,7 @@ done
 
 Make every script executable: `chmod +x`.
 
-## Step 6: Create semantic bytecode references
+## Step 7: Create semantic bytecode references
 
 For each skill that needs domain context, symlink or copy the
 appropriate bytecode levels into `{skill}/references/`:
@@ -197,7 +239,7 @@ appropriate bytecode levels into `{skill}/references/`:
 The bytecode files live in the project's `research/bytecode/` directory.
 Skill files reference them with relative paths.
 
-## Step 7: Write the presenter
+## Step 8: Write the presenter
 
 Edit `{bc_package}/presenter.py` to assemble workspace artifacts into
 a `ProjectContribution`. The presenter must:
@@ -209,7 +251,7 @@ a `ProjectContribution`. The presenter must:
 
 Follow the pattern from existing presenters (wardley_mapping, BMC).
 
-## Step 8: Write presenter tests
+## Step 9: Write presenter tests
 
 Edit `{bc_package}/tests/test_presenter.py`:
 
@@ -219,7 +261,7 @@ Edit `{bc_package}/tests/test_presenter.py`:
    pages and sections
 3. An empty-workspace test verifying graceful degradation
 
-## Step 9: Create skill symlinks
+## Step 10: Create skill symlinks
 
 Link each skill into the Claude skills directory:
 
@@ -228,7 +270,7 @@ cd .claude/skills
 ln -s ../../{bc_package}/skills/{skill-name} {skill-name}
 ```
 
-## Step 10: Add custom infrastructure (if needed)
+## Step 11: Add custom infrastructure (if needed)
 
 If the design specifies custom usecases, repositories, or CLI
 subcommands:
@@ -241,7 +283,7 @@ subcommands:
 Only create what the design requires. Most skillsets need only
 the skill files and presenter.
 
-## Step 11: Verify conformance
+## Step 12: Verify conformance
 
 Run the full test suite:
 
@@ -255,13 +297,14 @@ uv run pytest
 All doctrine tests must pass. Fix any failures before proceeding.
 
 Key conformance checks:
-- `TestBoundedContextSkillsets` — SKILLSETS list is well-formed
-- `TestPresenterProtocol` — PRESENTER_FACTORY works
+- `TestSkillFileConformance` — SKILL.md frontmatter valid, name
+  matches directory, symlinks exist, scripts executable
 - `TestPipelineCoherence` — gates chain correctly
+- `TestPresenterProtocol` — PRESENTER_FACTORY works
 - `TestDecisionTitleJoin` — stage descriptions match title pattern
 - `TestBoundedContextTestOwnership` — tests/ directory exists
 
-## Step 12: Present to operator
+## Step 13: Present to operator
 
 Show the operator:
 1. The BC package structure (files created)
@@ -272,7 +315,7 @@ Show the operator:
 Ask: "Does this implementation match the design? Are there any
 adjustments needed before we mark it complete?"
 
-## Step 13: Iterate and agree
+## Step 14: Iterate and agree
 
 Based on operator feedback, update the implementation. When agreed:
 1. Write `implementation.agreed.md` summarising what was built
@@ -281,6 +324,7 @@ Based on operator feedback, update the implementation. When agreed:
    skillset_engineering/skills/ns-implement/scripts/record-implementation-agreed.sh \
      --client {org} --engagement {engagement} --project {slug} \
      --field "Package={bc_package}" \
+     --field "Source={commons/partnership-slug}" \
      --field "Stages={count}" \
      --field "Tests=All passing"
    ```

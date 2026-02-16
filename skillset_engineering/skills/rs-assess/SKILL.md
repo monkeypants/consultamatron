@@ -51,10 +51,20 @@ Check each structural property:
 - Does `tests/test_presenter.py` exist with doctrine-marked tests?
 - Do skill symlinks exist in `.claude/skills/`?
 
+### Skill file conformance
+For each skill in the pipeline:
+- Does `.claude/skills/{skill-name}` symlink exist?
+- Does SKILL.md have valid frontmatter (name matches dir, ≤64 chars)?
+- Is description ≤1024 chars?
+- Is SKILL.md under 500 lines?
+- Are bash scripts in scripts/ executable?
+
+Run `uv run pytest -m doctrine -k TestSkillFileConformance -v` to
+check all of these automatically.
+
 ### Skill file quality
 For each skill in the pipeline:
-- Does `SKILL.md` exist with valid frontmatter?
-- Does it have a prerequisites section?
+- Does `SKILL.md` have a prerequisites section?
 - Does it have step-by-step methodology?
 - Does it reference a bash wrapper script?
 - Does the bash wrapper invoke the correct CLI commands?
