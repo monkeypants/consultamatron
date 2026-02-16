@@ -27,7 +27,7 @@ jobs:
           path-to-document: "https://github.com/monkeypants/consultamatron/blob/master/CLA.md"
           path-to-signatures: "signatures/cla.json"
           branch: "master"
-          allowlist: monkeypants,dependabot*,github-actions*
+          allowlist: monkeypants,chris.gough@gosource.com.au,dependabot*,github-actions*
           custom-notsigned-prcomment: |
             Thank you for your contribution! Before we can merge this, you
             need to sign the [Contributor Assignment Agreement](https://github.com/monkeypants/consultamatron/blob/master/CLA.md).
