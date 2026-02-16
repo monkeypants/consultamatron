@@ -14,6 +14,12 @@ permissions:
 jobs:
   CLAAssistant:
     runs-on: ubuntu-latest
+    # Skip CLA for repo owner — the action matches by GitHub login on
+    # commits, which fails when the committer's git email is not linked
+    # to their GitHub account (and linking it opts into GitHub spam).
+    if: >-
+      github.event.pull_request.author_association != 'OWNER'
+      || github.event_name == 'issue_comment'
     steps:
       - name: "CLA Assistant"
         if: |
@@ -27,7 +33,7 @@ jobs:
           path-to-document: "https://github.com/monkeypants/consultamatron/blob/master/CLA.md"
           path-to-signatures: "signatures/cla.json"
           branch: "master"
-          allowlist: monkeypants,chris.gough@gosource.com.au,dependabot*,github-actions*
+          allowlist: monkeypants,dependabot*,github-actions*
           custom-notsigned-prcomment: |
             Thank you for your contribution! Before we can merge this, you
             need to sign the [Contributor Assignment Agreement](https://github.com/monkeypants/consultamatron/blob/master/CLA.md).
