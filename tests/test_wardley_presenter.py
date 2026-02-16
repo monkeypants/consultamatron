@@ -86,7 +86,7 @@ def _write_tour_manifest(proj: Path, manifest: TourManifest) -> None:
 def full_workspace(tmp_path):
     """Workspace with all Wardley stages, atlas, and tour."""
     ws = tmp_path / CLIENT
-    proj = ws / "projects" / SLUG
+    proj = ws / "engagements" / "strat-1" / SLUG
 
     # Brief
     _write(proj / "brief.agreed.md", "# Brief\n\nFreight operations scope.")
@@ -131,6 +131,7 @@ def full_workspace(tmp_path):
     tour_manifest = TourManifest(
         name="investor",
         client=CLIENT,
+        engagement="strat-1",
         project_slug=SLUG,
         title="Investor Briefing",
         stops=[
@@ -250,7 +251,7 @@ class TestMinimalWorkspace:
 
     def test_single_analysis_section(self, tmp_path):
         ws = tmp_path / CLIENT
-        proj = ws / "projects" / SLUG
+        proj = ws / "engagements" / "strat-1" / SLUG
         _write(proj / "brief.agreed.md", "# Brief\n\nMinimal project.")
 
         presenter = _make_presenter(tmp_path)
@@ -262,7 +263,7 @@ class TestMinimalWorkspace:
 
     def test_no_hero_without_maps(self, tmp_path):
         ws = tmp_path / CLIENT
-        proj = ws / "projects" / SLUG
+        proj = ws / "engagements" / "strat-1" / SLUG
         _write(proj / "brief.agreed.md", "# Brief\n\nMinimal.")
 
         presenter = _make_presenter(tmp_path)
@@ -280,7 +281,7 @@ class TestHeroPriority:
 
     def test_evolve_fallback(self, tmp_path):
         ws = tmp_path / CLIENT
-        proj = ws / "projects" / SLUG
+        proj = ws / "engagements" / "strat-1" / SLUG
         _write(proj / "brief.agreed.md", "# Brief\n\nScope.")
         _write_owm_with_svg(
             proj / "evolve" / "map.agreed.owm", proj / "evolve" / "map.svg"
@@ -293,7 +294,7 @@ class TestHeroPriority:
 
     def test_landscape_fallback(self, tmp_path):
         ws = tmp_path / CLIENT
-        proj = ws / "projects" / SLUG
+        proj = ws / "engagements" / "strat-1" / SLUG
         _write(proj / "brief.agreed.md", "# Brief\n\nScope.")
         _write(proj / "landscape.svg", MINIMAL_SVG)
 
@@ -311,7 +312,7 @@ class TestHeroPriority:
 class TestAtlasCategorization:
     def test_categories_assigned_correctly(self, tmp_path):
         ws = tmp_path / CLIENT
-        proj = ws / "projects" / SLUG
+        proj = ws / "engagements" / "strat-1" / SLUG
         _write(proj / "brief.agreed.md", "# Brief\n\nScope.")
 
         # Create views in different categories
@@ -339,7 +340,7 @@ class TestAtlasCategorization:
 class TestTourStopGrouping:
     def test_sub_stops_grouped_with_parent(self, tmp_path):
         ws = tmp_path / CLIENT
-        proj = ws / "projects" / SLUG
+        proj = ws / "engagements" / "strat-1" / SLUG
         _write(proj / "brief.agreed.md", "# Brief\n\nScope.")
 
         for view in ("overview", "risk", "bottlenecks"):
@@ -352,6 +353,7 @@ class TestTourStopGrouping:
         manifest = TourManifest(
             name="exec",
             client=CLIENT,
+            engagement="strat-1",
             project_slug=SLUG,
             title="Executive Tour",
             stops=[

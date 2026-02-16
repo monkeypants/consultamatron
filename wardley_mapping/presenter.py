@@ -98,11 +98,17 @@ class WardleyProjectPresenter:
         self,
         project: Project,
     ) -> ProjectContribution:
-        proj_dir = self._ws_root / project.client / "projects" / project.slug
+        proj_dir = (
+            self._ws_root
+            / project.client
+            / "engagements"
+            / project.engagement
+            / project.slug
+        )
 
         self._ensure_owm_svgs(proj_dir)
 
-        tours = self._tours.list_all(project.client, project.slug)
+        tours = self._tours.list_all(project.client, project.engagement, project.slug)
 
         has_brief = (proj_dir / "brief.agreed.md").is_file()
         has_needs = (proj_dir / "needs" / "needs.agreed.md").is_file()

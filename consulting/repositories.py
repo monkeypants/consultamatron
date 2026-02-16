@@ -19,7 +19,13 @@ from __future__ import annotations
 from typing import Protocol, runtime_checkable
 
 from consulting.entities import DecisionEntry, EngagementEntry
-from practice.entities import Project, ProjectStatus, ResearchTopic, Skillset
+from practice.entities import (
+    Engagement,
+    Project,
+    ProjectStatus,
+    ResearchTopic,
+    Skillset,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -46,7 +52,33 @@ class SkillsetRepository(Protocol):
 
 
 # ---------------------------------------------------------------------------
-# Project — mutable CRUD, slug is identity within client
+# Engagement entity — mutable CRUD, slug is identity within client
+# ---------------------------------------------------------------------------
+
+
+@runtime_checkable
+class EngagementRepository(Protocol):
+    """Repository for consulting engagement entities.
+
+    Engagements are mutable — status transitions, source list changes.
+    The slug is the natural key, scoped to a client.
+    """
+
+    def get(self, client: str, slug: str) -> Engagement | None:
+        """Retrieve an engagement by client and slug."""
+        ...
+
+    def list_all(self, client: str) -> list[Engagement]:
+        """List all engagements for a client."""
+        ...
+
+    def save(self, engagement: Engagement) -> None:
+        """Save an engagement (create or update)."""
+        ...
+
+
+# ---------------------------------------------------------------------------
+# Project — mutable CRUD, slug is identity within engagement
 # ---------------------------------------------------------------------------
 
 
@@ -55,36 +87,37 @@ class ProjectRepository(Protocol):
     """Repository for consulting projects.
 
     Projects are mutable — status transitions, notes updates.
-    The slug is the natural key, scoped to a client.
+    The slug is the natural key, scoped to a client and engagement.
     """
 
     # -----------------------------------------------------------------
     # Standard CRUD
     # -----------------------------------------------------------------
 
-    def get(self, client: str, slug: str) -> Project | None:
-        """Retrieve a project by client and slug."""
+    def get(self, client: str, engagement: str, slug: str) -> Project | None:
+        """Retrieve a project by client, engagement, and slug."""
         ...
 
     def list_all(self, client: str) -> list[Project]:
-        """List all projects for a client."""
+        """List all projects for a client across all engagements."""
         ...
 
     def list_filtered(
         self,
         client: str,
+        engagement: str,
         skillset: str | None = None,
         status: ProjectStatus | None = None,
     ) -> list[Project]:
-        """List projects with optional filters."""
+        """List projects within an engagement with optional filters."""
         ...
 
     def save(self, project: Project) -> None:
         """Save a project (create or update)."""
         ...
 
-    def delete(self, client: str, slug: str) -> bool:
-        """Delete a project by client and slug. Returns True if deleted."""
+    def delete(self, client: str, engagement: str, slug: str) -> bool:
+        """Delete a project. Returns True if deleted."""
         ...
 
     # -----------------------------------------------------------------
@@ -113,17 +146,22 @@ class DecisionRepository(Protocol):
     # Standard methods (no update, no delete)
     # -----------------------------------------------------------------
 
-    def get(self, client: str, project_slug: str, id: str) -> DecisionEntry | None:
+    def get(
+        self, client: str, engagement: str, project_slug: str, id: str
+    ) -> DecisionEntry | None:
         """Retrieve a decision entry by ID."""
         ...
 
-    def list_all(self, client: str, project_slug: str) -> list[DecisionEntry]:
+    def list_all(
+        self, client: str, engagement: str, project_slug: str
+    ) -> list[DecisionEntry]:
         """List all decisions for a project in chronological order."""
         ...
 
     def list_filtered(
         self,
         client: str,
+        engagement: str,
         project_slug: str,
         title: str | None = None,
     ) -> list[DecisionEntry]:
@@ -140,12 +178,12 @@ class DecisionRepository(Protocol):
 
 
 # ---------------------------------------------------------------------------
-# Engagement — immutable, append-only log per client
+# Engagement log — immutable, append-only audit trail per client
 # ---------------------------------------------------------------------------
 
 
 @runtime_checkable
-class EngagementRepository(Protocol):
+class EngagementLogRepository(Protocol):
     """Repository for client engagement log entries.
 
     Engagement entries are immutable — created once, never updated

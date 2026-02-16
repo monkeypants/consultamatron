@@ -3,7 +3,7 @@
 Configurable for any Pydantic entity type stored as a JSON array.
 Path resolution, key field, and save semantics are injected at
 construction time.  One class replaces JsonProjectRepository,
-JsonDecisionRepository, JsonEngagementRepository,
+JsonDecisionRepository, JsonEngagementLogRepository,
 JsonResearchTopicRepository, and JsonSkillsetRepository.
 
 TourManifestRepository uses JSON objects (not arrays) with directory

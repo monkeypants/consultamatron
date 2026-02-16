@@ -2,6 +2,7 @@
 
 from consulting.repositories import (
     DecisionRepository,
+    EngagementLogRepository,
     EngagementRepository,
     ProjectRepository,
     ResearchTopicRepository,
@@ -10,6 +11,7 @@ from consulting.repositories import (
 
 __all__ = [
     "DecisionRepository",
+    "EngagementLogRepository",
     "EngagementRepository",
     "ProjectRepository",
     "ResearchTopicRepository",

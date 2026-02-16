@@ -26,6 +26,7 @@ class TourManifest(BaseModel):
 
     name: str
     client: str
+    engagement: str
     project_slug: str
     title: str
     stops: list[TourStop]
@@ -37,16 +38,22 @@ class TourManifestRepository(Protocol):
 
     Tour manifests use replace semantics — each save overwrites
     the entire manifest. The name is the natural key, scoped to
-    a client and project.
+    a client, engagement, and project.
     """
 
     def get(
-        self, client: str, project_slug: str, tour_name: str
+        self,
+        client: str,
+        engagement: str,
+        project_slug: str,
+        tour_name: str,
     ) -> TourManifest | None:
-        """Retrieve a tour manifest by client, project, and name."""
+        """Retrieve a tour manifest."""
         ...
 
-    def list_all(self, client: str, project_slug: str) -> list[TourManifest]:
+    def list_all(
+        self, client: str, engagement: str, project_slug: str
+    ) -> list[TourManifest]:
         """List all tour manifests for a project."""
         ...
 
@@ -64,6 +71,6 @@ class ProjectLookup(Protocol):
     this shape, so DI passes it through with no adapter.
     """
 
-    def get(self, client: str, slug: str) -> object | None:
+    def get(self, client: str, engagement: str, slug: str) -> object | None:
         """Return something truthy if the project exists, None otherwise."""
         ...

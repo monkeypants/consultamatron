@@ -18,7 +18,7 @@ from business_model_canvas.presenter import BmcProjectPresenter
 from bin.cli.infrastructure.jinja_renderer import JinjaSiteRenderer
 from bin.cli.infrastructure.json_repos import (
     JsonDecisionRepository,
-    JsonEngagementRepository,
+    JsonEngagementLogRepository,
     JsonProjectRepository,
     JsonResearchTopicRepository,
     JsonTourManifestRepository,
@@ -33,7 +33,7 @@ from wardley_mapping.types import TourManifestRepository
 from wardley_mapping.usecases import RegisterTourUseCase
 from consulting.repositories import (
     DecisionRepository,
-    EngagementRepository,
+    EngagementLogRepository,
     ProjectRepository,
     ResearchTopicRepository,
     SkillsetRepository,
@@ -110,7 +110,7 @@ class Container:
         self.decisions: DecisionRepository = JsonDecisionRepository(
             config.workspace_root,
         )
-        self.engagement: EngagementRepository = JsonEngagementRepository(
+        self.engagement_log: EngagementLogRepository = JsonEngagementLogRepository(
             config.workspace_root,
         )
         self.research: ResearchTopicRepository = JsonResearchTopicRepository(
@@ -139,7 +139,7 @@ class Container:
         # -- Write usecases ------------------------------------------------
         self.initialize_workspace_usecase = InitializeWorkspaceUseCase(
             projects=self.projects,
-            engagement=self.engagement,
+            engagement_log=self.engagement_log,
             research=self.research,
             clock=self.clock,
             id_gen=self.id_gen,
@@ -147,7 +147,7 @@ class Container:
         self.register_project_usecase = RegisterProjectUseCase(
             projects=self.projects,
             decisions=self.decisions,
-            engagement=self.engagement,
+            engagement_log=self.engagement_log,
             skillsets=self.skillsets,
             clock=self.clock,
             id_gen=self.id_gen,
@@ -163,7 +163,7 @@ class Container:
         )
         self.add_engagement_entry_usecase = AddEngagementEntryUseCase(
             projects=self.projects,
-            engagement=self.engagement,
+            engagement_log=self.engagement_log,
             clock=self.clock,
             id_gen=self.id_gen,
         )
