@@ -20,4 +20,4 @@ build-backend = "hatchling.build"
 packages = ["bin", "business_model_canvas", "consulting", "src/practice", "wardley_mapping"]
 
 [project.scripts]
-consultamatron = "bin.cli.main:cli"
+practice = "bin.cli.main:cli"
