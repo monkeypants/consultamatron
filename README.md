@@ -141,9 +141,9 @@ skills.
 ## Extending the practice
 
 Additional skillsets can be added by:
-1. Creating a manifest in `skillsets/{name}.md`
+1. Creating a bounded context package with a `SKILLSETS` declaration
 2. Creating skill directories with `SKILL.md` files
-3. Running `bin/maintain-symlinks.sh`
+3. Registering the module in `bin/cli/di.py`
 
 The `engage` skill discovers skillsets automatically from the manifests.
 No changes to shared infrastructure are required.

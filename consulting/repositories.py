@@ -31,8 +31,8 @@ from practice.entities import Project, ProjectStatus, ResearchTopic, Skillset
 class SkillsetRepository(Protocol):
     """Read-only repository for skillset manifests.
 
-    Skillsets are reference data discovered from skillsets/*.md at
-    runtime. They are never created, updated, or deleted through
+    Skillsets are reference data declared in bounded context modules
+    at import time. They are never created, updated, or deleted through
     the accounting CLI.
     """
 

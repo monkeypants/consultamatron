@@ -105,7 +105,7 @@ contributions, and passes them to the renderer.
 
 ## Adding a new skillset
 
-1. **Define the skillset manifest** in `skillsets/`.
+1. **Declare the skillset** as a `SKILLSETS` list in the bounded context's `__init__.py`.
 
 2. **Implement a presenter** in `bin/cli/infrastructure/`:
 

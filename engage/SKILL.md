@@ -26,9 +26,9 @@ If missing, tell the user to run `org-research` first.
 
 ## Step 1: Discover available skillsets
 
-Read all files in `skillsets/` at the repository root. Each file is a
-skillset manifest describing a consulting product: its pipeline, skills,
-gates, and project directory structure.
+Run `practice skillset list` and `practice skillset show --name <name>`
+to discover available consulting products, their pipelines, skills,
+and gates.
 
 Build an inventory of what Consultamatron can do.
 
