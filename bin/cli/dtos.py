@@ -57,6 +57,8 @@ __all__ = [
     "RecordDecisionResponse",
     "RegisterProjectRequest",
     "RegisterProjectResponse",
+    "RegisterProspectusRequest",
+    "RegisterProspectusResponse",
     "RegisterResearchTopicRequest",
     "RegisterResearchTopicResponse",
     "RegisterTourRequest",
@@ -78,6 +80,8 @@ __all__ = [
     "ListSourcesResponse",
     "ShowSourceRequest",
     "ShowSourceResponse",
+    "UpdateProspectusRequest",
+    "UpdateProspectusResponse",
 ]
 
 
@@ -116,6 +120,12 @@ class SkillsetInfo(BaseModel):
     display_name: str
     description: str
     slug_pattern: str
+    is_implemented: bool
+    problem_domain: str
+    deliverables: list[str]
+    value_proposition: str
+    classification: list[str]
+    evidence: list[str]
     stages: list[SkillsetStageInfo]
 
 
@@ -124,6 +134,11 @@ class ListSkillsetsRequest(BaseModel):
 
     client: str | None = Field(default=None, description="Client slug.")
     engagement: str | None = Field(default=None, description="Engagement slug.")
+
+    implemented: str | None = Field(
+        default=None,
+        description="Filter by implementation status: 'true', 'false', or omit for all.",
+    )
 
 
 class ListSkillsetsResponse(BaseModel):
@@ -167,3 +182,66 @@ class ShowSourceRequest(BaseModel):
 
 class ShowSourceResponse(BaseModel):
     source: SourceInfo
+
+
+# ---------------------------------------------------------------------------
+# Prospectus — register and update unimplemented skillsets
+# ---------------------------------------------------------------------------
+
+
+class RegisterProspectusRequest(BaseModel):
+    """Register a new skillset prospectus."""
+
+    name: str = Field(description="Skillset name (kebab-case).")
+    display_name: str = Field(description="Human-readable display name.")
+    description: str = Field(description="Short description of the methodology.")
+    slug_pattern: str = Field(description="Project slug pattern with {n} placeholder.")
+    problem_domain: str = Field(default="", description="Problem domain.")
+    value_proposition: str = Field(default="", description="Value proposition.")
+    deliverables: str = Field(
+        default="",
+        description="Comma-separated list of deliverables.",
+    )
+    classification: str = Field(
+        default="",
+        description="Comma-separated classification tags.",
+    )
+    evidence: str = Field(
+        default="",
+        description="Comma-separated evidence references.",
+    )
+
+
+class RegisterProspectusResponse(BaseModel):
+    name: str
+    init_path: str
+
+
+class UpdateProspectusRequest(BaseModel):
+    """Update an existing skillset prospectus."""
+
+    name: str = Field(description="Skillset name to update.")
+    display_name: str | None = Field(default=None, description="New display name.")
+    description: str | None = Field(default=None, description="New description.")
+    slug_pattern: str | None = Field(default=None, description="New slug pattern.")
+    problem_domain: str | None = Field(default=None, description="New problem domain.")
+    value_proposition: str | None = Field(
+        default=None, description="New value proposition."
+    )
+    deliverables: str | None = Field(
+        default=None,
+        description="Comma-separated list of deliverables (replaces existing).",
+    )
+    classification: str | None = Field(
+        default=None,
+        description="Comma-separated classification tags (replaces existing).",
+    )
+    evidence: str | None = Field(
+        default=None,
+        description="Comma-separated evidence references (replaces existing).",
+    )
+
+
+class UpdateProspectusResponse(BaseModel):
+    name: str
+    init_path: str

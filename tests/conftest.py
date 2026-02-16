@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import json
+import shutil
 import uuid
 from datetime import date, datetime, timezone
+from pathlib import Path
 
 import pytest
 
@@ -36,6 +38,9 @@ from bin.cli.infrastructure.json_repos import (
 )
 
 
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+
+
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
@@ -43,7 +48,12 @@ from bin.cli.infrastructure.json_repos import (
 
 @pytest.fixture
 def tmp_config(tmp_path):
-    """Config pointing at a fresh temp directory."""
+    """Config pointing at a fresh temp directory.
+
+    Copies pyproject.toml so CodeSkillsetRepository can discover
+    bounded context packages via dynamic import.
+    """
+    shutil.copy(_REPO_ROOT / "pyproject.toml", tmp_path / "pyproject.toml")
     return Config(
         repo_root=tmp_path,
         workspace_root=tmp_path / "clients",
@@ -165,6 +175,27 @@ def make_skillset(**overrides) -> Skillset:
             ),
         ],
         slug_pattern="maps-{n}",
+        problem_domain="Strategy",
+        deliverables=["OWM map files"],
+        value_proposition="Visual strategic clarity.",
+        classification=["strategy"],
+        evidence=[],
+    )
+    return Skillset(**(defaults | overrides))
+
+
+def make_prospectus(**overrides) -> Skillset:
+    defaults = dict(
+        name="competitive-analysis",
+        display_name="Competitive Analysis",
+        description="Market positioning methodology.",
+        pipeline=[],
+        slug_pattern="comp-{n}",
+        problem_domain="Market positioning",
+        deliverables=["Competitor landscape report"],
+        value_proposition="Know your rivals.",
+        classification=["strategy", "market-analysis"],
+        evidence=["Porter's Five Forces"],
     )
     return Skillset(**(defaults | overrides))
 

@@ -19,6 +19,11 @@ import pytest
 
 from wardley_mapping.dtos import RegisterTourRequest
 from wardley_mapping.types import TourStop
+from bin.cli.dtos import (
+    ListSkillsetsRequest,
+    RegisterProspectusRequest,
+    UpdateProspectusRequest,
+)
 from consulting.dtos import (
     AddEngagementEntryRequest,
     AddEngagementSourceRequest,
@@ -1008,5 +1013,152 @@ class TestRemoveEngagementSource:
             workspace.remove_engagement_source_usecase.execute(
                 RemoveEngagementSourceRequest(
                     client=CLIENT, engagement="strat-2", source="partner-x"
+                )
+            )
+
+
+# ---------------------------------------------------------------------------
+# ListSkillsets (with filtering)
+# ---------------------------------------------------------------------------
+
+
+class TestListSkillsets:
+    """List skillsets with optional implementation filter."""
+
+    def test_all_skillsets_returned(self, di):
+        resp = di.list_skillsets_usecase.execute(ListSkillsetsRequest())
+        names = {s.name for s in resp.skillsets}
+        assert "wardley-mapping" in names
+        assert "business-model-canvas" in names
+
+    def test_filter_implemented(self, di):
+        resp = di.list_skillsets_usecase.execute(
+            ListSkillsetsRequest(implemented="true")
+        )
+        assert all(s.is_implemented for s in resp.skillsets)
+
+    def test_filter_prospectus(self, di):
+        resp = di.list_skillsets_usecase.execute(
+            ListSkillsetsRequest(implemented="false")
+        )
+        assert all(not s.is_implemented for s in resp.skillsets)
+
+    def test_skillset_info_has_new_fields(self, di):
+        resp = di.list_skillsets_usecase.execute(ListSkillsetsRequest())
+        for s in resp.skillsets:
+            assert isinstance(s.is_implemented, bool)
+            assert isinstance(s.problem_domain, str)
+            assert isinstance(s.deliverables, list)
+            assert isinstance(s.value_proposition, str)
+            assert isinstance(s.classification, list)
+            assert isinstance(s.evidence, list)
+
+
+# ---------------------------------------------------------------------------
+# RegisterProspectus
+# ---------------------------------------------------------------------------
+
+
+class TestRegisterProspectus:
+    """Register a new skillset prospectus."""
+
+    def test_registers_new_prospectus(self, di):
+        resp = di.register_prospectus_usecase.execute(
+            RegisterProspectusRequest(
+                name="competitive-analysis",
+                display_name="Competitive Analysis",
+                description="Market positioning methodology.",
+                slug_pattern="comp-{n}",
+                problem_domain="Market positioning",
+                value_proposition="Know your rivals.",
+                deliverables="Competitor landscape report, Market gap analysis",
+                classification="strategy, market-analysis",
+                evidence="Porter's Five Forces",
+            )
+        )
+        assert resp.name == "competitive-analysis"
+        assert resp.init_path.endswith("__init__.py")
+
+    def test_duplicate_name_rejected(self, di):
+        with pytest.raises(DuplicateError, match="already exists"):
+            di.register_prospectus_usecase.execute(
+                RegisterProspectusRequest(
+                    name="wardley-mapping",
+                    display_name="Duplicate",
+                    description="Already exists.",
+                    slug_pattern="dup-{n}",
+                )
+            )
+
+    def test_csv_fields_split_correctly(self, di):
+        resp = di.register_prospectus_usecase.execute(
+            RegisterProspectusRequest(
+                name="test-method",
+                display_name="Test Method",
+                description="A test.",
+                slug_pattern="test-{n}",
+                deliverables="Report, Dashboard, Slides",
+                classification="strategy, operations",
+            )
+        )
+        # Verify round-trip by parsing the generated __init__.py
+        from pathlib import Path
+
+        from bin.cli.infrastructure.skillset_scaffold import _parse_current_skillset
+
+        init_path = Path(resp.init_path)
+        s = _parse_current_skillset(init_path, "test-method")
+        assert s.deliverables == ["Report", "Dashboard", "Slides"]
+        assert s.classification == ["strategy", "operations"]
+        assert s.is_implemented is False
+
+
+# ---------------------------------------------------------------------------
+# UpdateProspectus
+# ---------------------------------------------------------------------------
+
+
+class TestUpdateProspectus:
+    """Update an existing skillset prospectus.
+
+    After registering a prospectus via the scaffold, the in-memory
+    SkillsetRepository doesn't see it until a fresh Container is
+    created (mirroring how the CLI re-discovers on each invocation).
+    The happy-path test therefore tests the scaffold.update() directly.
+    """
+
+    def test_scaffold_updates_description(self, di):
+        """Scaffold round-trips descriptive field updates."""
+        from bin.cli.infrastructure.skillset_scaffold import _parse_current_skillset
+
+        scaffold = di.scaffold
+        scaffold.create(
+            name="test-method",
+            display_name="Test Method",
+            description="Original.",
+            slug_pattern="test-{n}",
+            problem_domain="Testing",
+        )
+        updated = scaffold.update(name="test-method", description="Updated.")
+        s = _parse_current_skillset(updated, "test-method")
+        assert s.description == "Updated."
+        assert s.display_name == "Test Method"  # unchanged
+        assert s.problem_domain == "Testing"  # unchanged
+
+    def test_nonexistent_skillset_rejected(self, di):
+        with pytest.raises(NotFoundError, match="not found"):
+            di.update_prospectus_usecase.execute(
+                UpdateProspectusRequest(
+                    name="phantom-method",
+                    description="Nope.",
+                )
+            )
+
+    def test_implemented_skillset_rejected(self, di):
+        with pytest.raises(DuplicateError, match="implemented"):
+            di.update_prospectus_usecase.execute(
+                UpdateProspectusRequest(
+                    name="wardley-mapping",
+                    description="Cannot update implemented.",
                 )
             )

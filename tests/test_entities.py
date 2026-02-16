@@ -21,6 +21,7 @@ from .conftest import (
     make_engagement,
     make_engagement_entity,
     make_project,
+    make_prospectus,
     make_research,
     make_skillset,
     make_skillset_source,
@@ -65,24 +66,27 @@ class TestRoundTrip:
     @pytest.mark.parametrize(
         "entity",
         [
-            make_project(),
-            make_decision(),
-            make_engagement(),
-            make_research(),
-            make_tour_stop(),
-            make_tour(),
-            make_skillset(),
-            make_engagement_entity(),
-            make_skillset_source(),
-            PipelineStage(
-                order=1,
-                skill="wm-research",
-                prerequisite_gate="resources/index.md",
-                produces_gate="brief.agreed.md",
-                description="Kickoff",
+            pytest.param(make_project(), id="Project"),
+            pytest.param(make_decision(), id="DecisionEntry"),
+            pytest.param(make_engagement(), id="EngagementEntry"),
+            pytest.param(make_research(), id="ResearchTopic"),
+            pytest.param(make_tour_stop(), id="TourStop"),
+            pytest.param(make_tour(), id="TourManifest"),
+            pytest.param(make_skillset(), id="Skillset"),
+            pytest.param(make_prospectus(), id="Skillset-prospectus"),
+            pytest.param(make_engagement_entity(), id="Engagement"),
+            pytest.param(make_skillset_source(), id="SkillsetSource"),
+            pytest.param(
+                PipelineStage(
+                    order=1,
+                    skill="wm-research",
+                    prerequisite_gate="resources/index.md",
+                    produces_gate="brief.agreed.md",
+                    description="Kickoff",
+                ),
+                id="PipelineStage",
             ),
         ],
-        ids=lambda e: type(e).__name__,
     )
     def test_json_round_trip(self, entity):
         cls = type(entity)
@@ -110,6 +114,22 @@ class TestRoundTrip:
 # ---------------------------------------------------------------------------
 # Entity-specific semantics
 # ---------------------------------------------------------------------------
+
+
+class TestSkillsetImplementation:
+    """is_implemented reflects whether the pipeline has stages."""
+
+    def test_implemented_with_pipeline(self):
+        s = make_skillset()
+        assert s.is_implemented is True
+
+    def test_not_implemented_without_pipeline(self):
+        s = make_prospectus()
+        assert s.is_implemented is False
+
+    def test_empty_pipeline_is_not_implemented(self):
+        s = make_skillset(pipeline=[])
+        assert s.is_implemented is False
 
 
 class TestTourStopOrder:

@@ -10,8 +10,6 @@ from __future__ import annotations
 import uuid
 from datetime import date, datetime, timezone
 
-import business_model_canvas
-import wardley_mapping as wardley_mapping_mod
 from bin.cli.config import Config
 from bin.cli.infrastructure.code_skillset_repository import CodeSkillsetRepository
 from bin.cli.infrastructure.composite_skillset_repository import (
@@ -20,6 +18,7 @@ from bin.cli.infrastructure.composite_skillset_repository import (
 from bin.cli.infrastructure.filesystem_source_repository import (
     FilesystemSourceRepository,
 )
+from bin.cli.infrastructure.skillset_scaffold import SkillsetScaffold
 from business_model_canvas.presenter import BmcProjectPresenter
 from bin.cli.infrastructure.jinja_renderer import JinjaSiteRenderer
 from bin.cli.infrastructure.json_repos import (
@@ -33,9 +32,11 @@ from bin.cli.infrastructure.json_repos import (
 from bin.cli.usecases import (
     ListSkillsetsUseCase,
     ListSourcesUseCase,
+    RegisterProspectusUseCase,
     RenderSiteUseCase,
     ShowSkillsetUseCase,
     ShowSourceUseCase,
+    UpdateProspectusUseCase,
 )
 from wardley_mapping.presenter import WardleyProjectPresenter
 from wardley_mapping.types import TourManifestRepository
@@ -123,7 +124,7 @@ class Container:
 
         # -- Repositories --------------------------------------------------
         _commons_skillsets = CodeSkillsetRepository(
-            [wardley_mapping_mod, business_model_canvas],
+            config.repo_root,
         )
         self.skillsets: SkillsetRepository = CompositeSkillsetRepository(
             _commons_skillsets, config.repo_root
@@ -274,4 +275,15 @@ class Container:
             research=self.research,
             renderer=self.site_renderer,
             presenters=self.presenters,
+        )
+
+        # -- Prospectus usecases -------------------------------------------
+        self.scaffold = SkillsetScaffold(config.repo_root)
+        self.register_prospectus_usecase = RegisterProspectusUseCase(
+            skillsets=self.skillsets,
+            scaffold=self.scaffold,
+        )
+        self.update_prospectus_usecase = UpdateProspectusUseCase(
+            skillsets=self.skillsets,
+            scaffold=self.scaffold,
         )

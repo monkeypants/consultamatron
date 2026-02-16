@@ -9,6 +9,8 @@ from bin.cli.dtos import (
     ListSkillsetsResponse,
     ListSourcesRequest,
     ListSourcesResponse,
+    RegisterProspectusRequest,
+    RegisterProspectusResponse,
     RenderSiteRequest,
     RenderSiteResponse,
     ShowSkillsetRequest,
@@ -18,7 +20,10 @@ from bin.cli.dtos import (
     SkillsetInfo,
     SkillsetStageInfo,
     SourceInfo,
+    UpdateProspectusRequest,
+    UpdateProspectusResponse,
 )
+from bin.cli.infrastructure.skillset_scaffold import SkillsetScaffold
 from consulting.repositories import (
     EngagementRepository,
     ProjectRepository,
@@ -39,7 +44,7 @@ from consulting.usecases import (
     UpdateProjectStatusUseCase,
 )
 from practice.entities import Skillset, SkillsetSource
-from practice.exceptions import NotFoundError
+from practice.exceptions import DuplicateError, NotFoundError
 from practice.repositories import ProjectPresenter, SiteRenderer, SourceRepository
 from wardley_mapping.usecases import RegisterTourUseCase
 
@@ -55,12 +60,14 @@ __all__ = [
     "ListResearchTopicsUseCase",
     "RecordDecisionUseCase",
     "RegisterProjectUseCase",
+    "RegisterProspectusUseCase",
     "RegisterResearchTopicUseCase",
     "RegisterTourUseCase",
     "RenderSiteUseCase",
     "ShowSkillsetUseCase",
     "ShowSourceUseCase",
     "UpdateProjectStatusUseCase",
+    "UpdateProspectusUseCase",
 ]
 
 
@@ -130,6 +137,12 @@ def _skillset_to_info(s: Skillset) -> SkillsetInfo:
         display_name=s.display_name,
         description=s.description,
         slug_pattern=s.slug_pattern,
+        is_implemented=s.is_implemented,
+        problem_domain=s.problem_domain,
+        deliverables=list(s.deliverables),
+        value_proposition=s.value_proposition,
+        classification=list(s.classification),
+        evidence=list(s.evidence),
         stages=[
             SkillsetStageInfo(
                 order=st.order,
@@ -141,6 +154,13 @@ def _skillset_to_info(s: Skillset) -> SkillsetInfo:
             for st in s.pipeline
         ],
     )
+
+
+def _split_csv(value: str) -> list[str]:
+    """Split a comma-separated string into a list, stripping whitespace."""
+    if not value:
+        return []
+    return [item.strip() for item in value.split(",") if item.strip()]
 
 
 class ListSkillsetsUseCase:
@@ -176,6 +196,12 @@ class ListSkillsetsUseCase:
                 if src:
                     allowed_names.update(src.skillset_names)
             all_skillsets = [s for s in all_skillsets if s.name in allowed_names]
+
+        if request.implemented is not None:
+            want_implemented = request.implemented.lower() == "true"
+            all_skillsets = [
+                s for s in all_skillsets if s.is_implemented == want_implemented
+            ]
 
         return ListSkillsetsResponse(
             skillsets=[_skillset_to_info(s) for s in all_skillsets],
@@ -231,3 +257,82 @@ class ShowSourceUseCase:
         if source is None:
             raise NotFoundError(f"Source not found: {request.slug}")
         return ShowSourceResponse(source=_source_to_info(source))
+
+
+# ---------------------------------------------------------------------------
+# Prospectus — register and update unimplemented skillsets
+# ---------------------------------------------------------------------------
+
+
+class RegisterProspectusUseCase:
+    """Register a new skillset prospectus (unimplemented skillset)."""
+
+    def __init__(
+        self,
+        skillsets: SkillsetRepository,
+        scaffold: SkillsetScaffold,
+    ) -> None:
+        self._skillsets = skillsets
+        self._scaffold = scaffold
+
+    def execute(self, request: RegisterProspectusRequest) -> RegisterProspectusResponse:
+        if self._skillsets.get(request.name) is not None:
+            raise DuplicateError(f"Skillset already exists: {request.name}")
+        init_path = self._scaffold.create(
+            name=request.name,
+            display_name=request.display_name,
+            description=request.description,
+            slug_pattern=request.slug_pattern,
+            problem_domain=request.problem_domain,
+            value_proposition=request.value_proposition,
+            deliverables=_split_csv(request.deliverables),
+            classification=_split_csv(request.classification),
+            evidence=_split_csv(request.evidence),
+        )
+        return RegisterProspectusResponse(
+            name=request.name,
+            init_path=str(init_path),
+        )
+
+
+class UpdateProspectusUseCase:
+    """Update an existing skillset prospectus."""
+
+    def __init__(
+        self,
+        skillsets: SkillsetRepository,
+        scaffold: SkillsetScaffold,
+    ) -> None:
+        self._skillsets = skillsets
+        self._scaffold = scaffold
+
+    def execute(self, request: UpdateProspectusRequest) -> UpdateProspectusResponse:
+        existing = self._skillsets.get(request.name)
+        if existing is None:
+            raise NotFoundError(f"Skillset not found: {request.name}")
+        if existing.is_implemented:
+            raise DuplicateError(
+                f"Skillset {request.name!r} is implemented; "
+                "update the BC module directly"
+            )
+        init_path = self._scaffold.update(
+            name=request.name,
+            display_name=request.display_name,
+            description=request.description,
+            slug_pattern=request.slug_pattern,
+            problem_domain=request.problem_domain,
+            value_proposition=request.value_proposition,
+            deliverables=_split_csv(request.deliverables)
+            if request.deliverables is not None
+            else None,
+            classification=_split_csv(request.classification)
+            if request.classification is not None
+            else None,
+            evidence=_split_csv(request.evidence)
+            if request.evidence is not None
+            else None,
+        )
+        return UpdateProspectusResponse(
+            name=request.name,
+            init_path=str(init_path),
+        )
