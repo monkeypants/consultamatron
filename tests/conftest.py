@@ -14,10 +14,14 @@ from consulting.entities import DecisionEntry, EngagementEntry
 from practice.discovery import PipelineStage
 from practice.entities import (
     Confidence,
+    Engagement,
+    EngagementStatus,
     Project,
     ProjectStatus,
     ResearchTopic,
+    SkillsetSource,
     Skillset,
+    SourceType,
 )
 from wardley_mapping.types import TourManifest, TourStop
 from bin.cli.infrastructure.json_entity_store import JsonEntityStore
@@ -128,6 +132,7 @@ def decision_store(request, tmp_path):
 
 DEFAULT_CLIENT = "holloway-group"
 DEFAULT_PROJECT = "maps-1"
+DEFAULT_ENGAGEMENT = "strat-1"
 DEFAULT_DATE = date(2025, 6, 1)
 DEFAULT_TIMESTAMP = datetime(2025, 6, 1, 12, 0, 0, tzinfo=timezone.utc)
 
@@ -185,6 +190,26 @@ def make_engagement(**overrides) -> EngagementEntry:
         fields={},
     )
     return EngagementEntry(**(defaults | overrides))
+
+
+def make_engagement_entity(**overrides) -> Engagement:
+    defaults = dict(
+        slug=DEFAULT_ENGAGEMENT,
+        client=DEFAULT_CLIENT,
+        status=EngagementStatus.PLANNING,
+        allowed_sources=["commons"],
+        created=DEFAULT_DATE,
+    )
+    return Engagement(**(defaults | overrides))
+
+
+def make_skillset_source(**overrides) -> SkillsetSource:
+    defaults = dict(
+        slug="commons",
+        source_type=SourceType.COMMONS,
+        skillset_names=["wardley-mapping", "business-model-canvas"],
+    )
+    return SkillsetSource(**(defaults | overrides))
 
 
 def make_research(**overrides) -> ResearchTopic:
