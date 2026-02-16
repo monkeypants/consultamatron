@@ -3,14 +3,15 @@
 # Record that the strategy map has been agreed for a Wardley Mapping project.
 #
 # Usage:
-#   wm-strategy/scripts/record-agreement.sh --client CLIENT --project PROJECT \
+#   wm-strategy/scripts/record-agreement.sh --client CLIENT --engagement ENGAGEMENT \
+#     --project PROJECT \
 #     --field "Key plays=..." --field "Priorities=..." --field "Deferred=..."
 #
 # Files modified by this script:
-#   clients/{client}/projects/{slug}/decisions.json  — Decision log (append:
-#                                                      "Stage 5: Strategy map agreed")
-#   clients/{client}/projects/index.json             — Project registry
-#                                                      (status -> implementation)
+#   clients/{client}/engagements/{engagement}/{slug}/decisions.json — Decision log (append:
+#                                                                      "Stage 5: Strategy map agreed")
+#   clients/{client}/engagements/{engagement}/projects.json        — Project registry
+#                                                                      (status -> implementation)
 #
 # The files listed above are JSON documents managed by the consultamatron
 # CLI (bin/cli/). Agents may read these files directly for inspection.
@@ -22,26 +23,27 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-CLIENT="" PROJECT=""
+CLIENT="" ENGAGEMENT="" PROJECT=""
 FIELDS=()
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --client)  CLIENT="$2"; shift 2 ;;
-    --project) PROJECT="$2"; shift 2 ;;
+    --client)     CLIENT="$2"; shift 2 ;;
+    --engagement) ENGAGEMENT="$2"; shift 2 ;;
+    --project)    PROJECT="$2"; shift 2 ;;
     --field)   FIELDS+=("$2"); shift 2 ;;
     *) echo "Unknown option: $1" >&2; exit 1 ;;
   esac
 done
 
-if [[ -z "$CLIENT" || -z "$PROJECT" ]]; then
-  echo "Usage: $0 --client CLIENT --project PROJECT [--field Key=Value ...]" >&2
+if [[ -z "$CLIENT" || -z "$ENGAGEMENT" || -z "$PROJECT" ]]; then
+  echo "Usage: $0 --client CLIENT --engagement ENGAGEMENT --project PROJECT [--field Key=Value ...]" >&2
   exit 1
 fi
 
 CLI="uv run --project $REPO_DIR consultamatron"
 
 CMD=($CLI decision record \
-  --client "$CLIENT" --project "$PROJECT" \
+  --client "$CLIENT" --engagement "$ENGAGEMENT" --project "$PROJECT" \
   --title "Stage 5: Strategy map agreed" \
   --field "Agreed=Strategy-annotated Wardley Map signed off")
 for f in "${FIELDS[@]}"; do
@@ -51,4 +53,4 @@ done
 
 # Terminal interactive gate — transition to implementation
 $CLI project update-status \
-  --client "$CLIENT" --project "$PROJECT" --status implementation
+  --client "$CLIENT" --engagement "$ENGAGEMENT" --project "$PROJECT" --status implementation

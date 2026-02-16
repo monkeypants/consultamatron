@@ -21,23 +21,29 @@ clients/{org-slug}/
 │   ├── regulatory-environment.md
 │   └── partnerships-suppliers.md
 │
-├── projects/
-│   ├── index.md                   # Project registry (status, type, dates)
+├── engagements/
+│   ├── index.json                 # Engagement registry (status, sources, dates)
 │   │
-│   ├── {project-slug}/            # One directory per project
-│   │   ├── brief.agreed.md        # Project scope agreed with client
-│   │   ├── decisions.md           # Running log of client agreements
-│   │   └── ...                    # Skillset-specific artifacts
-│   └── ...
+│   └── {engagement-slug}/         # One directory per engagement
+│       ├── projects.json          # Project registry (status, skillset, dates)
+│       │
+│       └── {project-slug}/        # One directory per project
+│           ├── brief.agreed.md    # Project scope agreed with client
+│           ├── decisions.json     # Running log of client agreements
+│           └── ...                # Skillset-specific artifacts
 │
-├── review.md                      # Engagement-level review synthesis
-└── engagement.md                  # Cross-project engagement history
+├── engagement-log.json            # Cross-engagement audit trail
+└── review.md                      # Engagement-level review synthesis
 ```
+
+Research is client-scoped — you research the organisation, not the
+engagement. Multiple engagements share the same research base.
+Projects are engagement-scoped. The audit log spans all engagements.
 
 ### Wardley Mapping project structure
 
 ```
-projects/{slug}/
+engagements/{engagement}/{slug}/
 ├── brief.agreed.md
 ├── landscape.owm                  # Coarse sketch from project kickoff
 ├── needs/
@@ -63,20 +69,20 @@ projects/{slug}/
 │       └── analysis.md            # Analytical prose
 ├── presentations/                 # Audience-specific tours
 │   └── {tour-name}/
-│       ├── manifest.md            # Selected atlas entries + sequence
+│       ├── manifest.json          # Selected atlas entries + sequence
 │       ├── opening.md             # Audience framing (Consultamatron voice)
 │       └── transitions/
 │           └── NN-{slug}.md       # Connective prose between atlas entries
 ├── review/                        # Post-implementation review
 │   ├── review.md                  # Private review (not shared)
 │   └── findings.md                # Sanitised findings for GitHub issues
-└── decisions.md
+└── decisions.json
 ```
 
 ### Business Model Canvas project structure
 
 ```
-projects/{slug}/
+engagements/{engagement}/{slug}/
 ├── brief.agreed.md
 ├── hypotheses.md                  # Initial hypotheses for 9 BMC blocks
 ├── segments/
@@ -88,7 +94,7 @@ projects/{slug}/
 ├── review/                        # Post-implementation review
 │   ├── review.md                  # Private review (not shared)
 │   └── findings.md                # Sanitised findings for GitHub issues
-└── decisions.md
+└── decisions.json
 ```
 
 ## Gate Protocol
@@ -102,7 +108,7 @@ skills check for their prerequisite gates before proceeding.
 | Skill | Requires | Produces |
 |-------|----------|----------|
 | org-research | (nothing) | `resources/index.md` |
-| engage | `resources/index.md` | project directory + `projects/index.md` updated |
+| engage | `resources/index.md` | engagement + project directories |
 
 ### Wardley Mapping gates (project-relative)
 
@@ -138,25 +144,17 @@ skills check for their prerequisite gates before proceeding.
 - **Business Model Canvas**: Markdown throughout. BMC has no meaningful
   second axis that would warrant a specialised format.
 
-## The decisions.md Log
+## The decisions.json Log
 
-Every project has a `decisions.md` file. Every client agreement is
-appended with:
+Every project has a `decisions.json` file. Every client agreement is
+appended as a JSON entry with id, date, timestamp, title, and fields.
+The CLI manages this file — do not edit by hand.
 
-```markdown
-## {Date} — {Stage}: {Brief description}
+## The engagement-log.json Log
 
-**Agreed**: {What was agreed}
-**Context**: {Why / any caveats}
-```
-
-This provides an audit trail of the engagement.
-
-## The engagement.md Log
-
-The client-level `engagement.md` tracks cross-project history:
-research refreshes, project starts, project completions, and any
-strategic decisions that span projects.
+The client-level `engagement-log.json` tracks cross-engagement history:
+research refreshes, engagement creation, project starts, project
+completions, and any strategic decisions that span engagements.
 
 ## Review Artifacts
 

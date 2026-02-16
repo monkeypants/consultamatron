@@ -5,15 +5,16 @@
 # as reviewed.
 #
 # Usage:
-#   review/scripts/record-review.sh --client CLIENT --project PROJECT \
+#   review/scripts/record-review.sh --client CLIENT --engagement ENGAGEMENT \
+#     --project PROJECT \
 #     --field "Projects reviewed=..." --field "Issues raised=..." \
 #     --field "Key findings=..."
 #
 # Files modified by this script:
-#   clients/{client}/engagement.json       — Engagement log (append:
-#                                            "Post-implementation review")
-#   clients/{client}/projects/index.json   — Project registry
-#                                            (status -> reviewed)
+#   clients/{client}/engagements/{engagement}/engagement-log.json — Engagement log (append:
+#                                                                    "Post-implementation review")
+#   clients/{client}/engagements/{engagement}/projects.json       — Project registry
+#                                                                    (status -> reviewed)
 #
 # The files listed above are JSON documents managed by the consultamatron
 # CLI (bin/cli/). Agents may read these files directly for inspection.
@@ -26,25 +27,26 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 CLI="uv run --project $REPO_DIR consultamatron"
 
-CLIENT="" PROJECT=""
+CLIENT="" ENGAGEMENT="" PROJECT=""
 FIELDS=()
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --client)  CLIENT="$2"; shift 2 ;;
-    --project) PROJECT="$2"; shift 2 ;;
+    --client)     CLIENT="$2"; shift 2 ;;
+    --engagement) ENGAGEMENT="$2"; shift 2 ;;
+    --project)    PROJECT="$2"; shift 2 ;;
     --field)   FIELDS+=("$2"); shift 2 ;;
     *) echo "Unknown option: $1" >&2; exit 1 ;;
   esac
 done
 
-if [[ -z "$CLIENT" || -z "$PROJECT" ]]; then
-  echo "Usage: $0 --client CLIENT --project PROJECT [--field Key=Value ...]" >&2
+if [[ -z "$CLIENT" || -z "$ENGAGEMENT" || -z "$PROJECT" ]]; then
+  echo "Usage: $0 --client CLIENT --engagement ENGAGEMENT --project PROJECT [--field Key=Value ...]" >&2
   exit 1
 fi
 
 # Log the review in engagement history
 CMD=($CLI engagement add \
-  --client "$CLIENT" \
+  --client "$CLIENT" --engagement "$ENGAGEMENT" \
   --title "Post-implementation review")
 for f in "${FIELDS[@]}"; do
   CMD+=(--field "$f")
@@ -53,4 +55,4 @@ done
 
 # Mark the project as reviewed
 $CLI project update-status \
-  --client "$CLIENT" --project "$PROJECT" --status review
+  --client "$CLIENT" --engagement "$ENGAGEMENT" --project "$PROJECT" --status review
