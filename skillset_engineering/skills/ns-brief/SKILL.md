@@ -28,6 +28,17 @@ provides context about what consulting products are needed.
 
 ## Step 1: Understand the landscape
 
+Discover available skillset sources:
+
+```bash
+uv run practice source list
+```
+
+This shows commons (built-in) and any installed partnership sources.
+The operator must decide early whether the new skillset belongs in
+the commons or a partnership source, as this determines the
+implementation path.
+
 Read the existing practice infrastructure:
 
 ```bash
@@ -43,7 +54,31 @@ Read `resources/index.md` and sub-reports to understand:
 - Where existing skillsets fall short
 - What methodologies could address unmet needs
 
-## Step 2: Propose the brief
+## Step 2: Agree on source placement
+
+Ask the operator:
+
+> "Should this skillset be added to **the commons** (open, available
+> to all engagements) or to a **partnership source** (proprietary,
+> access-controlled per engagement)?"
+
+**Commons** means:
+- The skillset ships as a Python BC package in the public repo
+- It has SKILLSETS, PRESENTER_FACTORY, conformance tests
+- Anyone with the repo can use it
+- It appears in `practice skillset list` automatically
+
+**Partnership** means:
+- The skillset lives in `partners/{source-slug}/`
+- It has skill files, a JSON manifest, and proprietary references
+- It only appears in engagements where the source is allowed
+- No Python BC or conformance tests required (lighter weight)
+
+Record the decision in the brief under a **Source** heading:
+- Source: commons | {partnership-slug}
+- If partnership: which partnership repo, does it exist yet?
+
+## Step 3: Propose the brief
 
 Present a skillset brief to the operator:
 
@@ -97,6 +132,11 @@ How would it compose with them in an engagement?}
 - What quality attributes matter?
 - What would a bad version of this skillset look like?}
 
+## Source
+
+**Placement**: {commons / partners/{slug}}
+**Rationale**: {why this choice — IP sensitivity, reusability, etc.}
+
 ## Scope boundaries
 
 - **Included**: {explicit list}
@@ -104,7 +144,7 @@ How would it compose with them in an engagement?}
 - **Ambiguous**: {areas needing further research}
 ```
 
-## Step 3: Negotiate and agree
+## Step 4: Negotiate and agree
 
 This is a negotiation. The operator may:
 - Narrow or expand the problem domain
