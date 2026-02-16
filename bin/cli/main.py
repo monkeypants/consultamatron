@@ -15,7 +15,8 @@ import click
 
 from bin.cli.config import Config
 from bin.cli.di import Container
-from bin.cli.dtos import RegisterTourRequest, RenderSiteRequest
+from bin.cli.dtos import RenderSiteRequest
+from wardley_mapping.dtos import RegisterTourRequest
 from consulting.dtos import (
     AddEngagementEntryRequest,
     GetProjectProgressRequest,

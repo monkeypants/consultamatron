@@ -17,8 +17,8 @@ from datetime import datetime, timezone
 
 import pytest
 
-from bin.cli.dtos import RegisterTourRequest
-from bin.cli.wm_types import TourStop
+from wardley_mapping.dtos import RegisterTourRequest
+from wardley_mapping.types import TourStop
 from consulting.dtos import (
     AddEngagementEntryRequest,
     GetProjectProgressRequest,

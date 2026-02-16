@@ -1,16 +1,10 @@
 """Usecase implementations — re-exports from consulting.usecases
-plus tour and site usecases that remain in bin/cli.
+and wardley_mapping.usecases, plus site usecase that remains in bin/cli.
 """
 
 from __future__ import annotations
 
-from bin.cli.dtos import (
-    RegisterTourRequest,
-    RegisterTourResponse,
-    RenderSiteRequest,
-    RenderSiteResponse,
-)
-from bin.cli.wm_types import TourManifest, TourManifestRepository
+from bin.cli.dtos import RenderSiteRequest, RenderSiteResponse
 from consulting.repositories import ProjectRepository, ResearchTopicRepository
 from consulting.usecases import (
     AddEngagementEntryUseCase,
@@ -27,6 +21,7 @@ from consulting.usecases import (
 )
 from practice.exceptions import NotFoundError
 from practice.repositories import ProjectPresenter, SiteRenderer
+from wardley_mapping.usecases import RegisterTourUseCase
 
 __all__ = [
     "AddEngagementEntryUseCase",
@@ -43,49 +38,6 @@ __all__ = [
     "RenderSiteUseCase",
     "UpdateProjectStatusUseCase",
 ]
-
-
-# ---------------------------------------------------------------------------
-# RegisterTour — stays here until wardley_mapping BC is extracted
-# ---------------------------------------------------------------------------
-
-
-class RegisterTourUseCase:
-    """Validate project existence then persist a tour manifest.
-
-    Replaces any existing tour with the same name (upsert semantics).
-    """
-
-    def __init__(
-        self,
-        projects: ProjectRepository,
-        tours: TourManifestRepository,
-    ) -> None:
-        self._projects = projects
-        self._tours = tours
-
-    def execute(self, request: RegisterTourRequest) -> RegisterTourResponse:
-        if self._projects.get(request.client, request.project_slug) is None:
-            raise NotFoundError(
-                f"Project not found: {request.client}/{request.project_slug}"
-            )
-
-        self._tours.save(
-            TourManifest(
-                name=request.name,
-                client=request.client,
-                project_slug=request.project_slug,
-                title=request.title,
-                stops=request.stops,
-            )
-        )
-
-        return RegisterTourResponse(
-            client=request.client,
-            project_slug=request.project_slug,
-            name=request.name,
-            stop_count=len(request.stops),
-        )
 
 
 # ---------------------------------------------------------------------------

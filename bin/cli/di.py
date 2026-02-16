@@ -21,9 +21,10 @@ from bin.cli.infrastructure.json_repos import (
     JsonSkillsetRepository,
     JsonTourManifestRepository,
 )
-from bin.cli.infrastructure.wardley_presenter import WardleyProjectPresenter
-from bin.cli.usecases import RegisterTourUseCase, RenderSiteUseCase
-from bin.cli.wm_types import TourManifestRepository
+from bin.cli.usecases import RenderSiteUseCase
+from wardley_mapping.presenter import WardleyProjectPresenter
+from wardley_mapping.types import TourManifestRepository
+from wardley_mapping.usecases import RegisterTourUseCase
 from consulting.repositories import (
     DecisionRepository,
     EngagementRepository,
