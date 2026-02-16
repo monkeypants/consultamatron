@@ -538,10 +538,11 @@ class ListResearchTopicsUseCase:
 
 
 class CreateEngagementUseCase:
-    """Create a new engagement with commons as the default source.
+    """Create a new engagement with commons and personal as default sources.
 
     Validates the client workspace exists and the slug is unique.
-    Seeds the allowlist with "commons" and logs an engagement entry.
+    Seeds the allowlist with "commons" and "personal", then logs an
+    engagement entry.
     """
 
     def __init__(
@@ -570,7 +571,7 @@ class CreateEngagementUseCase:
             slug=request.slug,
             client=request.client,
             status=EngagementStatus.PLANNING,
-            allowed_sources=["commons"],
+            allowed_sources=["commons", "personal"],
             created=self._clock.today(),
             notes=request.notes,
         )
@@ -711,8 +712,8 @@ class RemoveEngagementSourceUseCase:
     def execute(
         self, request: RemoveEngagementSourceRequest
     ) -> RemoveEngagementSourceResponse:
-        if request.source == "commons":
-            raise InvalidTransitionError("Cannot remove commons source")
+        if request.source in ("commons", "personal"):
+            raise InvalidTransitionError(f"Cannot remove {request.source} source")
 
         engagement = self._engagements.get(request.client, request.engagement)
         if engagement is None:

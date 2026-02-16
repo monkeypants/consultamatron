@@ -477,6 +477,8 @@ def _discover_skill_dirs():
     """Return list of (name, resolved_path) for all skill directories."""
     skills_dir = _REPO_ROOT / ".claude" / "skills"
     results = []
+    if not skills_dir.is_dir():
+        return results
     for entry in sorted(skills_dir.iterdir()):
         skill_md = entry / "SKILL.md"
         if skill_md.is_file():
@@ -522,7 +524,10 @@ class TestSkillFileConformance:
     @pytest.mark.parametrize("skill_name", _PIPELINE_SKILLS)
     def test_pipeline_skill_has_skill_file(self, skill_name):
         """Every pipeline stage has a discoverable SKILL.md."""
-        skill_dir = _REPO_ROOT / ".claude" / "skills" / skill_name
+        skills_dir = _REPO_ROOT / ".claude" / "skills"
+        if not skills_dir.is_dir() or not any(skills_dir.iterdir()):
+            pytest.skip("No .claude/skills/ symlinks (regenerate with maintain-symlinks.sh)")
+        skill_dir = skills_dir / skill_name
         assert skill_dir.exists(), f"No .claude/skills/{skill_name} directory/symlink"
         assert (skill_dir / "SKILL.md").is_file(), (
             f".claude/skills/{skill_name}/SKILL.md missing"

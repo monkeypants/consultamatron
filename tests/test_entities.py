@@ -42,9 +42,9 @@ class TestDefaults:
         e = make_engagement_entity()
         assert e.notes == ""
 
-    def test_engagement_allowed_sources_defaults_to_commons(self):
+    def test_engagement_allowed_sources_defaults_to_commons_and_personal(self):
         e = make_engagement_entity()
-        assert e.allowed_sources == ["commons"]
+        assert e.allowed_sources == ["commons", "personal"]
 
 
 # ---------------------------------------------------------------------------
