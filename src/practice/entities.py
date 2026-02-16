@@ -24,13 +24,29 @@ from practice.discovery import PipelineStage
 
 
 class Skillset(BaseModel):
-    """A consulting product line declared in bounded context modules."""
+    """A consulting product line declared in bounded context modules.
+
+    A Skillset with a populated pipeline is implemented — projects can
+    be created and driven through the pipeline. A Skillset with an empty
+    pipeline is a prospectus — it describes a methodology that is not yet
+    operational.
+    """
 
     name: str
     display_name: str
     description: str
-    pipeline: list[PipelineStage]
+    pipeline: list[PipelineStage] = []
     slug_pattern: str
+    problem_domain: str = ""
+    deliverables: list[str] = []
+    value_proposition: str = ""
+    classification: list[str] = []
+    evidence: list[str] = []
+
+    @property
+    def is_implemented(self) -> bool:
+        """True when the pipeline has at least one stage."""
+        return len(self.pipeline) > 0
 
 
 # ---------------------------------------------------------------------------

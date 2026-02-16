@@ -18,9 +18,11 @@ from bin.cli.di import Container
 from bin.cli.dtos import (
     ListSkillsetsRequest,
     ListSourcesRequest,
+    RegisterProspectusRequest,
     RenderSiteRequest,
     ShowSkillsetRequest,
     ShowSourceRequest,
+    UpdateProspectusRequest,
 )
 from bin.cli.introspect import generate_command
 
@@ -48,7 +50,7 @@ wardley_mapping.cli.register_commands(cli)
 
 @cli.group()
 def skillset() -> None:
-    """Browse registered skillsets."""
+    """Browse and manage registered skillsets."""
 
 
 def _format_skillset_list(resp: Any) -> None:
@@ -56,18 +58,40 @@ def _format_skillset_list(resp: Any) -> None:
         click.echo("No skillsets registered.")
         return
     for s in resp.skillsets:
-        click.echo(f"  {s.name}  {s.display_name}  ({len(s.stages)} stages)")
+        status = "implemented" if s.is_implemented else "prospectus"
+        click.echo(f"  {s.name}  {s.display_name}  ({len(s.stages)} stages, {status})")
 
 
 def _format_skillset_show(resp: Any) -> None:
     s = resp.skillset
+    status = "implemented" if s.is_implemented else "prospectus"
     click.echo(f"Name:        {s.name}")
     click.echo(f"Display:     {s.display_name}")
     click.echo(f"Description: {s.description}")
     click.echo(f"Slug:        {s.slug_pattern}")
+    click.echo(f"Status:      {status}")
+    if s.problem_domain:
+        click.echo(f"Domain:      {s.problem_domain}")
+    if s.value_proposition:
+        click.echo(f"Value:       {s.value_proposition}")
+    if s.deliverables:
+        click.echo(f"Deliverables: {', '.join(s.deliverables)}")
+    if s.classification:
+        click.echo(f"Tags:        {', '.join(s.classification)}")
+    if s.evidence:
+        click.echo(f"Evidence:    {', '.join(s.evidence)}")
     click.echo(f"Pipeline:    {len(s.stages)} stages")
     for st in s.stages:
         click.echo(f"  {st.order}. {st.description} ({st.skill})")
+
+
+def _format_prospectus_register(resp: Any) -> None:
+    click.echo(f"Registered prospectus: {resp.name}")
+    click.echo(f"Created: {resp.init_path}")
+
+
+def _format_prospectus_update(resp: Any) -> None:
+    click.echo(f"Updated prospectus: {resp.name}")
 
 
 skillset.add_command(
@@ -84,6 +108,22 @@ skillset.add_command(
         request_model=ShowSkillsetRequest,
         usecase_attr="show_skillset_usecase",
         format_output=_format_skillset_show,
+    )
+)
+skillset.add_command(
+    generate_command(
+        name="add",
+        request_model=RegisterProspectusRequest,
+        usecase_attr="register_prospectus_usecase",
+        format_output=_format_prospectus_register,
+    )
+)
+skillset.add_command(
+    generate_command(
+        name="update",
+        request_model=UpdateProspectusRequest,
+        usecase_attr="update_prospectus_usecase",
+        format_output=_format_prospectus_update,
     )
 )
 
