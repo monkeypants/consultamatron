@@ -20,11 +20,13 @@ from pathlib import Path
 import pytest
 
 import business_model_canvas
+import six_simple_rules_complexity_audit
 import wardley_mapping
 from bin.cli.config import Config
 from bin.cli.di import Container
 from bin.cli.infrastructure.code_skillset_repository import _read_pyproject_packages
 from business_model_canvas.presenter import BmcProjectPresenter
+from six_simple_rules_complexity_audit.presenter import CaProjectPresenter
 from bin.cli.infrastructure.json_repos import JsonTourManifestRepository
 from consulting.dtos import (
     CreateEngagementRequest,
@@ -54,7 +56,9 @@ from .conftest import (
 # ---------------------------------------------------------------------------
 
 _ALL_SKILLSETS: list[Skillset] = (
-    wardley_mapping.SKILLSETS + business_model_canvas.SKILLSETS
+    wardley_mapping.SKILLSETS
+    + business_model_canvas.SKILLSETS
+    + six_simple_rules_complexity_audit.SKILLSETS
 )
 _IMPLEMENTED = [s for s in _ALL_SKILLSETS if s.is_implemented]
 _IMPLEMENTED_DICTS = [s.model_dump(mode="json") for s in _IMPLEMENTED]
@@ -263,10 +267,17 @@ def _build_presenters(ws_root: Path) -> dict:
         "business-model-canvas": BmcProjectPresenter(
             workspace_root=ws_root,
         ),
+        "six-simple-rules-complexity-audit": CaProjectPresenter(
+            workspace_root=ws_root,
+        ),
     }
 
 
-_PRESENTER_NAMES = ["wardley-mapping", "business-model-canvas"]
+_PRESENTER_NAMES = [
+    "wardley-mapping",
+    "business-model-canvas",
+    "six-simple-rules-complexity-audit",
+]
 
 
 @pytest.mark.doctrine
@@ -348,7 +359,11 @@ class TestSkillsetRegistration:
         """Packages exporting SKILLSETS must appear in pyproject.toml packages."""
         pyproject_path = _REPO_ROOT / "pyproject.toml"
         registered = _read_pyproject_packages(pyproject_path)
-        bc_packages = {"wardley_mapping", "business_model_canvas"}
+        bc_packages = {
+            "wardley_mapping",
+            "business_model_canvas",
+            "six_simple_rules_complexity_audit",
+        }
         for pkg in bc_packages:
             assert pkg in registered, (
                 f"BC package {pkg!r} not in pyproject.toml packages list"
