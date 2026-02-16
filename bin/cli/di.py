@@ -22,16 +22,16 @@ from bin.cli.infrastructure.json_repos import (
     JsonTourManifestRepository,
 )
 from bin.cli.infrastructure.wardley_presenter import WardleyProjectPresenter
-from practice.repositories import Clock, IdGenerator, ProjectPresenter, SiteRenderer
-from bin.cli.repositories import (
+from bin.cli.usecases import RegisterTourUseCase, RenderSiteUseCase
+from bin.cli.wm_types import TourManifestRepository
+from consulting.repositories import (
     DecisionRepository,
     EngagementRepository,
     ProjectRepository,
     ResearchTopicRepository,
     SkillsetRepository,
 )
-from bin.cli.wm_types import TourManifestRepository
-from bin.cli.usecases import (
+from consulting.usecases import (
     AddEngagementEntryUseCase,
     GetProjectProgressUseCase,
     GetProjectUseCase,
@@ -42,10 +42,9 @@ from bin.cli.usecases import (
     RecordDecisionUseCase,
     RegisterProjectUseCase,
     RegisterResearchTopicUseCase,
-    RegisterTourUseCase,
-    RenderSiteUseCase,
     UpdateProjectStatusUseCase,
 )
+from practice.repositories import Clock, IdGenerator, ProjectPresenter, SiteRenderer
 
 
 # ---------------------------------------------------------------------------
