@@ -10,7 +10,14 @@ from __future__ import annotations
 from consulting.dtos import (
     AddEngagementEntryRequest,
     AddEngagementEntryResponse,
+    AddEngagementSourceRequest,
+    AddEngagementSourceResponse,
+    CreateEngagementRequest,
+    CreateEngagementResponse,
     DecisionInfo,
+    EngagementInfo,
+    GetEngagementRequest,
+    GetEngagementResponse,
     GetProjectProgressRequest,
     GetProjectProgressResponse,
     GetProjectRequest,
@@ -19,6 +26,8 @@ from consulting.dtos import (
     InitializeWorkspaceResponse,
     ListDecisionsRequest,
     ListDecisionsResponse,
+    ListEngagementsRequest,
+    ListEngagementsResponse,
     ListProjectsRequest,
     ListProjectsResponse,
     ListResearchTopicsRequest,
@@ -30,6 +39,8 @@ from consulting.dtos import (
     RegisterProjectResponse,
     RegisterResearchTopicRequest,
     RegisterResearchTopicResponse,
+    RemoveEngagementSourceRequest,
+    RemoveEngagementSourceResponse,
     ResearchTopicInfo,
     StageProgress,
     UpdateProjectStatusRequest,
@@ -39,13 +50,21 @@ from consulting.entities import DecisionEntry, EngagementEntry
 from consulting.repositories import (
     DecisionRepository,
     EngagementLogRepository,
+    EngagementRepository,
     ProjectRepository,
     ResearchTopicRepository,
     SkillsetRepository,
 )
-from practice.entities import Confidence, Project, ProjectStatus, ResearchTopic
+from practice.entities import (
+    Confidence,
+    Engagement,
+    EngagementStatus,
+    Project,
+    ProjectStatus,
+    ResearchTopic,
+)
 from practice.exceptions import DuplicateError, InvalidTransitionError, NotFoundError
-from practice.repositories import Clock, IdGenerator
+from practice.repositories import Clock, IdGenerator, SourceRepository
 
 
 # ---------------------------------------------------------------------------
@@ -482,4 +501,227 @@ class ListResearchTopicsUseCase:
         return ListResearchTopicsResponse(
             client=request.client,
             topics=[ResearchTopicInfo.from_entity(t) for t in topics],
+        )
+
+
+# ---------------------------------------------------------------------------
+# Engagement usecases
+# ---------------------------------------------------------------------------
+
+
+class CreateEngagementUseCase:
+    """Create a new engagement with commons as the default source.
+
+    Validates the client workspace exists and the slug is unique.
+    Seeds the allowlist with "commons" and logs an engagement entry.
+    """
+
+    def __init__(
+        self,
+        projects: ProjectRepository,
+        engagements: EngagementRepository,
+        engagement_log: EngagementLogRepository,
+        clock: Clock,
+        id_gen: IdGenerator,
+    ) -> None:
+        self._projects = projects
+        self._engagements = engagements
+        self._engagement_log = engagement_log
+        self._clock = clock
+        self._id_gen = id_gen
+
+    def execute(self, request: CreateEngagementRequest) -> CreateEngagementResponse:
+        if not self._projects.client_exists(request.client):
+            raise NotFoundError(f"Client not found: {request.client}")
+        if self._engagements.get(request.client, request.slug) is not None:
+            raise DuplicateError(
+                f"Engagement already exists: {request.client}/{request.slug}"
+            )
+
+        engagement = Engagement(
+            slug=request.slug,
+            client=request.client,
+            status=EngagementStatus.PLANNING,
+            allowed_sources=["commons"],
+            created=self._clock.today(),
+            notes=request.notes,
+        )
+        self._engagements.save(engagement)
+        self._engagement_log.save(
+            EngagementEntry(
+                id=self._id_gen.new_id(),
+                client=request.client,
+                engagement=request.slug,
+                date=self._clock.today(),
+                timestamp=self._clock.now(),
+                title="Engagement created",
+                fields={},
+            )
+        )
+
+        return CreateEngagementResponse(
+            client=request.client,
+            slug=request.slug,
+            status=engagement.status.value,
+        )
+
+
+class GetEngagementUseCase:
+    """Look up a single engagement by client and slug."""
+
+    def __init__(self, engagements: EngagementRepository) -> None:
+        self._engagements = engagements
+
+    def execute(self, request: GetEngagementRequest) -> GetEngagementResponse:
+        engagement = self._engagements.get(request.client, request.slug)
+        if engagement is None:
+            raise NotFoundError(
+                f"Engagement not found: {request.client}/{request.slug}"
+            )
+        return GetEngagementResponse(
+            client=request.client,
+            slug=request.slug,
+            engagement=EngagementInfo.from_entity(engagement),
+        )
+
+
+class ListEngagementsUseCase:
+    """List all engagements for a client."""
+
+    def __init__(self, engagements: EngagementRepository) -> None:
+        self._engagements = engagements
+
+    def execute(self, request: ListEngagementsRequest) -> ListEngagementsResponse:
+        engagements = self._engagements.list_all(request.client)
+        return ListEngagementsResponse(
+            client=request.client,
+            engagements=[EngagementInfo.from_entity(e) for e in engagements],
+        )
+
+
+class AddEngagementSourceUseCase:
+    """Add a source to an engagement's allowlist.
+
+    Validates the engagement exists, the source is installed, and the
+    source is not already in the list.
+    """
+
+    def __init__(
+        self,
+        engagements: EngagementRepository,
+        engagement_log: EngagementLogRepository,
+        sources: SourceRepository,
+        clock: Clock,
+        id_gen: IdGenerator,
+    ) -> None:
+        self._engagements = engagements
+        self._engagement_log = engagement_log
+        self._sources = sources
+        self._clock = clock
+        self._id_gen = id_gen
+
+    def execute(
+        self, request: AddEngagementSourceRequest
+    ) -> AddEngagementSourceResponse:
+        engagement = self._engagements.get(request.client, request.engagement)
+        if engagement is None:
+            raise NotFoundError(
+                f"Engagement not found: {request.client}/{request.engagement}"
+            )
+        if self._sources.get(request.source) is None:
+            raise NotFoundError(f"Source not found: {request.source}")
+        if request.source in engagement.allowed_sources:
+            raise DuplicateError(f"Source already allowed: {request.source}")
+
+        new_sources = engagement.allowed_sources + [request.source]
+        self._engagements.save(
+            engagement.model_copy(update={"allowed_sources": new_sources})
+        )
+        self._engagement_log.save(
+            EngagementEntry(
+                id=self._id_gen.new_id(),
+                client=request.client,
+                engagement=request.engagement,
+                date=self._clock.today(),
+                timestamp=self._clock.now(),
+                title=f"Source added: {request.source}",
+                fields={},
+            )
+        )
+
+        return AddEngagementSourceResponse(
+            client=request.client,
+            engagement=request.engagement,
+            source=request.source,
+            allowed_sources=new_sources,
+        )
+
+
+class RemoveEngagementSourceUseCase:
+    """Remove a source from an engagement's allowlist.
+
+    Rejects removing "commons" (always required). Validates no projects
+    in the engagement use skillsets from the source being removed.
+    """
+
+    def __init__(
+        self,
+        engagements: EngagementRepository,
+        engagement_log: EngagementLogRepository,
+        projects: ProjectRepository,
+        sources: SourceRepository,
+        clock: Clock,
+        id_gen: IdGenerator,
+    ) -> None:
+        self._engagements = engagements
+        self._engagement_log = engagement_log
+        self._projects = projects
+        self._sources = sources
+        self._clock = clock
+        self._id_gen = id_gen
+
+    def execute(
+        self, request: RemoveEngagementSourceRequest
+    ) -> RemoveEngagementSourceResponse:
+        if request.source == "commons":
+            raise InvalidTransitionError("Cannot remove commons source")
+
+        engagement = self._engagements.get(request.client, request.engagement)
+        if engagement is None:
+            raise NotFoundError(
+                f"Engagement not found: {request.client}/{request.engagement}"
+            )
+        if request.source not in engagement.allowed_sources:
+            raise NotFoundError(f"Source not in allowlist: {request.source}")
+
+        # Check no projects use skillsets from this source
+        projects = self._projects.list_filtered(request.client, request.engagement)
+        for project in projects:
+            if self._sources.skillset_source(project.skillset) == request.source:
+                raise InvalidTransitionError(
+                    f"Cannot remove source '{request.source}': "
+                    f"project '{project.slug}' uses skillset '{project.skillset}' from it"
+                )
+
+        new_sources = [s for s in engagement.allowed_sources if s != request.source]
+        self._engagements.save(
+            engagement.model_copy(update={"allowed_sources": new_sources})
+        )
+        self._engagement_log.save(
+            EngagementEntry(
+                id=self._id_gen.new_id(),
+                client=request.client,
+                engagement=request.engagement,
+                date=self._clock.today(),
+                timestamp=self._clock.now(),
+                title=f"Source removed: {request.source}",
+                fields={},
+            )
+        )
+
+        return RemoveEngagementSourceResponse(
+            client=request.client,
+            engagement=request.engagement,
+            source=request.source,
+            allowed_sources=new_sources,
         )
