@@ -167,3 +167,17 @@ class SkillsetSource(BaseModel):
     slug: str
     source_type: SourceType
     skillset_names: list[str]
+
+
+# ---------------------------------------------------------------------------
+# Profile (named collection of skillsets for an activity type)
+# ---------------------------------------------------------------------------
+
+
+class Profile(BaseModel):
+    """A named collection of skillsets for a type of activity."""
+
+    name: str
+    display_name: str
+    description: str
+    skillsets: list[str]

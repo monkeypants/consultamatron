@@ -16,6 +16,9 @@ from bin.cli.infrastructure.code_skillset_repository import (
     CodeSkillsetRepository,
     _read_pyproject_packages,
 )
+from bin.cli.infrastructure.filesystem_profile_repository import (
+    FilesystemProfileRepository,
+)
 from bin.cli.infrastructure.filesystem_source_repository import (
     FilesystemSourceRepository,
 )
@@ -29,12 +32,15 @@ from bin.cli.infrastructure.json_repos import (
     JsonResearchTopicRepository,
 )
 from bin.cli.usecases import (
+    ListProfilesUseCase,
     ListSkillsetsUseCase,
     ListSourcesUseCase,
     RegisterProspectusUseCase,
     RenderSiteUseCase,
+    ShowProfileUseCase,
     ShowSkillsetUseCase,
     ShowSourceUseCase,
+    SkillPathUseCase,
     UpdateProspectusUseCase,
 )
 from consulting.repositories import (
@@ -66,6 +72,7 @@ from consulting.usecases import (
 from practice.repositories import (
     Clock,
     IdGenerator,
+    ProfileRepository,
     ProjectPresenter,
     SiteRenderer,
     SourceRepository,
@@ -178,6 +185,9 @@ class Container:
         )
         self.sources: SourceRepository = FilesystemSourceRepository(
             config.repo_root, self.skillsets
+        )
+        self.profiles: ProfileRepository = FilesystemProfileRepository(
+            config.repo_root, self.sources
         )
         self.site_renderer: SiteRenderer = JinjaSiteRenderer(
             workspace_root=config.workspace_root,
@@ -296,6 +306,15 @@ class Container:
         )
         self.show_source_usecase = ShowSourceUseCase(
             sources=self.sources,
+        )
+        self.list_profiles_usecase = ListProfilesUseCase(
+            profiles=self.profiles,
+        )
+        self.show_profile_usecase = ShowProfileUseCase(
+            profiles=self.profiles,
+        )
+        self.skill_path_usecase = SkillPathUseCase(
+            repo_root=config.repo_root,
         )
         self.render_site_usecase = RenderSiteUseCase(
             projects=self.projects,

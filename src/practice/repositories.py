@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Protocol, runtime_checkable
 
 from practice.content import ProjectContribution
-from practice.entities import Project, ResearchTopic, SkillsetSource
+from practice.entities import Profile, Project, ResearchTopic, SkillsetSource
 
 
 @runtime_checkable
@@ -98,4 +98,17 @@ class SiteRenderer(Protocol):
         research_topics: list[ResearchTopic],
     ) -> Path:
         """Render a static site for a client. Returns the output directory."""
+        ...
+
+
+@runtime_checkable
+class ProfileRepository(Protocol):
+    """Read-only repository for named skillset profiles."""
+
+    def get(self, name: str) -> tuple[Profile, str] | None:
+        """Retrieve a profile by name, returning (profile, source_slug) or None."""
+        ...
+
+    def list_all(self) -> list[tuple[Profile, str]]:
+        """List all profiles as (profile, source_slug) tuples."""
         ...

@@ -1,0 +1,20 @@
+[
+    {
+        "name": "strategic-consulting",
+        "display_name": "Strategic Consulting",
+        "description": "Full engagement lifecycle with analytical skillsets.",
+        "skillsets": ["consulting", "wardley-mapping", "business-model-canvas"]
+    },
+    {
+        "name": "practice-engineering",
+        "display_name": "Practice Engineering",
+        "description": "Build and refine consulting skillsets.",
+        "skillsets": ["new-skillset", "refine-skillset"]
+    },
+    {
+        "name": "world-domination",
+        "display_name": "World Domination",
+        "description": "Competitive survival, ecosystem influence, editorial identity.",
+        "skillsets": ["world-domination"]
+    }
+]

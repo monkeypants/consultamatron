@@ -17,12 +17,15 @@ import click
 from bin.cli.config import Config
 from bin.cli.di import Container
 from bin.cli.dtos import (
+    ListProfilesRequest,
     ListSkillsetsRequest,
     ListSourcesRequest,
     RegisterProspectusRequest,
     RenderSiteRequest,
+    ShowProfileRequest,
     ShowSkillsetRequest,
     ShowSourceRequest,
+    SkillPathRequest,
     UpdateProspectusRequest,
 )
 from bin.cli.infrastructure.code_skillset_repository import _read_pyproject_packages
@@ -173,6 +176,77 @@ source.add_command(
         request_model=ShowSourceRequest,
         usecase_attr="show_source_usecase",
         format_output=_format_source_show,
+    )
+)
+
+
+# ---------------------------------------------------------------------------
+# profile (cross-BC, stays here)
+# ---------------------------------------------------------------------------
+
+
+@cli.group()
+def profile() -> None:
+    """Browse registered profiles."""
+
+
+def _format_profile_list(resp: Any) -> None:
+    if not resp.profiles:
+        click.echo("No profiles registered.")
+        return
+    for p in resp.profiles:
+        click.echo(
+            f"  {p.name}  {p.display_name}  ({len(p.skillsets)} skillsets, {p.source})"
+        )
+
+
+def _format_profile_show(resp: Any) -> None:
+    p = resp.profile
+    click.echo(f"Name:        {p.name}")
+    click.echo(f"Display:     {p.display_name}")
+    click.echo(f"Description: {p.description}")
+    click.echo(f"Source:      {p.source}")
+    click.echo(f"Skillsets:   {', '.join(p.skillsets)}")
+
+
+profile.add_command(
+    generate_command(
+        name="list",
+        request_model=ListProfilesRequest,
+        usecase_attr="list_profiles_usecase",
+        format_output=_format_profile_list,
+    )
+)
+profile.add_command(
+    generate_command(
+        name="show",
+        request_model=ShowProfileRequest,
+        usecase_attr="show_profile_usecase",
+        format_output=_format_profile_show,
+    )
+)
+
+
+# ---------------------------------------------------------------------------
+# skill (cross-BC, stays here)
+# ---------------------------------------------------------------------------
+
+
+@cli.group()
+def skill() -> None:
+    """Skill operations."""
+
+
+def _format_skill_path(resp: Any) -> None:
+    click.echo(resp.path)
+
+
+skill.add_command(
+    generate_command(
+        name="path",
+        request_model=SkillPathRequest,
+        usecase_attr="skill_path_usecase",
+        format_output=_format_skill_path,
     )
 )
 

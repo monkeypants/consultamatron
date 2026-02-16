@@ -47,10 +47,13 @@ __all__ = [
     "InitializeWorkspaceResponse",
     "ListDecisionsRequest",
     "ListDecisionsResponse",
+    "ListProfilesRequest",
+    "ListProfilesResponse",
     "ListProjectsRequest",
     "ListProjectsResponse",
     "ListResearchTopicsRequest",
     "ListResearchTopicsResponse",
+    "ProfileInfo",
     "ProjectInfo",
     "RecordDecisionRequest",
     "RecordDecisionResponse",
@@ -64,8 +67,12 @@ __all__ = [
     "ListSkillsetsResponse",
     "RenderSiteRequest",
     "RenderSiteResponse",
+    "ShowProfileRequest",
+    "ShowProfileResponse",
     "ShowSkillsetRequest",
     "ShowSkillsetResponse",
+    "SkillPathRequest",
+    "SkillPathResponse",
     "SkillsetInfo",
     "SkillsetStageInfo",
     "ResearchTopicInfo",
@@ -242,3 +249,49 @@ class UpdateProspectusRequest(BaseModel):
 class UpdateProspectusResponse(BaseModel):
     name: str
     init_path: str
+
+
+# ---------------------------------------------------------------------------
+# Profile — named collections of skillsets
+# ---------------------------------------------------------------------------
+
+
+class ProfileInfo(BaseModel):
+    name: str
+    display_name: str
+    description: str
+    skillsets: list[str]
+    source: str
+
+
+class ListProfilesRequest(BaseModel):
+    """List all registered profiles."""
+
+
+class ListProfilesResponse(BaseModel):
+    profiles: list[ProfileInfo]
+
+
+class ShowProfileRequest(BaseModel):
+    """Show details of a registered profile."""
+
+    name: str = Field(description="Profile name.")
+
+
+class ShowProfileResponse(BaseModel):
+    profile: ProfileInfo
+
+
+# ---------------------------------------------------------------------------
+# SkillPath — locate a skill directory by name
+# ---------------------------------------------------------------------------
+
+
+class SkillPathRequest(BaseModel):
+    """Find the filesystem path to a skill by name."""
+
+    name: str = Field(description="Skill name.")
+
+
+class SkillPathResponse(BaseModel):
+    path: str

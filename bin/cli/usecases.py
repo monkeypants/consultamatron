@@ -4,19 +4,28 @@ and wardley_mapping.usecases, plus site usecase that remains in bin/cli.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from bin.cli.dtos import (
+    ListProfilesRequest,
+    ListProfilesResponse,
     ListSkillsetsRequest,
     ListSkillsetsResponse,
     ListSourcesRequest,
     ListSourcesResponse,
+    ProfileInfo,
     RegisterProspectusRequest,
     RegisterProspectusResponse,
     RenderSiteRequest,
     RenderSiteResponse,
+    ShowProfileRequest,
+    ShowProfileResponse,
     ShowSkillsetRequest,
     ShowSkillsetResponse,
     ShowSourceRequest,
     ShowSourceResponse,
+    SkillPathRequest,
+    SkillPathResponse,
     SkillsetInfo,
     SkillsetStageInfo,
     SourceInfo,
@@ -43,9 +52,14 @@ from consulting.usecases import (
     RegisterResearchTopicUseCase,
     UpdateProjectStatusUseCase,
 )
-from practice.entities import Skillset, SkillsetSource
+from practice.entities import Profile, Skillset, SkillsetSource
 from practice.exceptions import DuplicateError, NotFoundError
-from practice.repositories import ProjectPresenter, SiteRenderer, SourceRepository
+from practice.repositories import (
+    ProfileRepository,
+    ProjectPresenter,
+    SiteRenderer,
+    SourceRepository,
+)
 
 __all__ = [
     "AddEngagementEntryUseCase",
@@ -53,6 +67,7 @@ __all__ = [
     "GetProjectUseCase",
     "InitializeWorkspaceUseCase",
     "ListDecisionsUseCase",
+    "ListProfilesUseCase",
     "ListProjectsUseCase",
     "ListSkillsetsUseCase",
     "ListSourcesUseCase",
@@ -62,8 +77,10 @@ __all__ = [
     "RegisterProspectusUseCase",
     "RegisterResearchTopicUseCase",
     "RenderSiteUseCase",
+    "ShowProfileUseCase",
     "ShowSkillsetUseCase",
     "ShowSourceUseCase",
+    "SkillPathUseCase",
     "UpdateProjectStatusUseCase",
     "UpdateProspectusUseCase",
 ]
@@ -334,3 +351,66 @@ class UpdateProspectusUseCase:
             name=request.name,
             init_path=str(init_path),
         )
+
+
+# ---------------------------------------------------------------------------
+# Profile — named collections of skillsets
+# ---------------------------------------------------------------------------
+
+
+def _profile_to_info(profile: Profile, source: str) -> ProfileInfo:
+    return ProfileInfo(
+        name=profile.name,
+        display_name=profile.display_name,
+        description=profile.description,
+        skillsets=list(profile.skillsets),
+        source=source,
+    )
+
+
+class ListProfilesUseCase:
+    """List all registered profiles."""
+
+    def __init__(self, profiles: ProfileRepository) -> None:
+        self._profiles = profiles
+
+    def execute(self, request: ListProfilesRequest) -> ListProfilesResponse:
+        return ListProfilesResponse(
+            profiles=[_profile_to_info(p, s) for p, s in self._profiles.list_all()],
+        )
+
+
+class ShowProfileUseCase:
+    """Show details of a registered profile by name."""
+
+    def __init__(self, profiles: ProfileRepository) -> None:
+        self._profiles = profiles
+
+    def execute(self, request: ShowProfileRequest) -> ShowProfileResponse:
+        result = self._profiles.get(request.name)
+        if result is None:
+            raise NotFoundError(f"Profile not found: {request.name}")
+        profile, source = result
+        return ShowProfileResponse(profile=_profile_to_info(profile, source))
+
+
+# ---------------------------------------------------------------------------
+# SkillPath — locate a skill directory by name
+# ---------------------------------------------------------------------------
+
+
+class SkillPathUseCase:
+    """Find the filesystem path to a skill by name."""
+
+    def __init__(self, repo_root: Path) -> None:
+        self._repo_root = repo_root
+
+    def execute(self, request: SkillPathRequest) -> SkillPathResponse:
+        for container in ("commons", "personal", "partnerships"):
+            container_dir = self._repo_root / container
+            if not container_dir.is_dir():
+                continue
+            for skill_md in container_dir.rglob(f"{request.name}/SKILL.md"):
+                return SkillPathResponse(path=str(skill_md.parent))
+
+        raise NotFoundError(f"Skill not found: {request.name}")
