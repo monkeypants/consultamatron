@@ -13,25 +13,26 @@ Four conformance properties:
 
 from __future__ import annotations
 
-import json
 from datetime import date
 from pathlib import Path
 
 import pytest
 
+import business_model_canvas
+import wardley_mapping
 from bin.cli.config import Config
-from practice.content import ProjectContribution
 from bin.cli.di import Container
+from business_model_canvas.presenter import BmcProjectPresenter
+from bin.cli.infrastructure.json_repos import JsonTourManifestRepository
 from consulting.dtos import (
     GetProjectProgressRequest,
     InitializeWorkspaceRequest,
     RecordDecisionRequest,
     RegisterProjectRequest,
 )
+from practice.content import ProjectContribution
 from practice.discovery import PipelineStage
-from practice.entities import Project, ProjectStatus
-from business_model_canvas.presenter import BmcProjectPresenter
-from bin.cli.infrastructure.json_repos import JsonTourManifestRepository
+from practice.entities import Project, ProjectStatus, Skillset
 from wardley_mapping.presenter import WardleyProjectPresenter
 
 from .conftest import (
@@ -48,15 +49,10 @@ from .conftest import (
 # Helpers
 # ---------------------------------------------------------------------------
 
-SKILLSETS_INDEX = Path(__file__).resolve().parent.parent / "skillsets" / "index.json"
-
-
-def _load_skillsets() -> list[dict]:
-    """Load skillset definitions from the real index.json."""
-    return json.loads(SKILLSETS_INDEX.read_text())
-
-
-SKILLSETS = _load_skillsets()
+_ALL_SKILLSETS: list[Skillset] = (
+    wardley_mapping.SKILLSETS + business_model_canvas.SKILLSETS
+)
+SKILLSETS = [s.model_dump(mode="json") for s in _ALL_SKILLSETS]
 SKILLSET_IDS = [s["name"] for s in SKILLSETS]
 
 CLIENT = "conformance-corp"
@@ -126,15 +122,13 @@ class TestDecisionTitleJoin:
 
     @pytest.mark.parametrize("skillset", SKILLSETS, ids=SKILLSET_IDS)
     def test_progress_advances_through_all_stages(self, skillset, tmp_path):
-        # Wire up a container with skillsets seeded from the real index.json
-        # (not conftest helpers, which may drift from the source of truth)
+        # Wire up a container — skillsets are now auto-discovered from
+        # BC modules via CodeSkillsetRepository, no JSON seeding needed.
         config = Config(
             repo_root=tmp_path,
             workspace_root=tmp_path / "clients",
             skillsets_root=tmp_path / "skillsets",
         )
-        config.skillsets_root.mkdir(parents=True, exist_ok=True)
-        (config.skillsets_root / "index.json").write_text(SKILLSETS_INDEX.read_text())
         di = Container(config)
 
         # Initialize workspace and register project

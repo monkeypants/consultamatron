@@ -36,8 +36,6 @@ from consulting.entities import DecisionEntry
 from practice.exceptions import DuplicateError, InvalidTransitionError, NotFoundError
 from bin.cli.di import Container
 
-from .conftest import seed_wardley_mapping
-
 # ---------------------------------------------------------------------------
 # Fixtures and helpers
 # ---------------------------------------------------------------------------
@@ -47,8 +45,7 @@ CLIENT = "holloway-group"
 
 @pytest.fixture
 def di(tmp_config):
-    """Container with the wardley-mapping skillset available."""
-    seed_wardley_mapping(tmp_config.skillsets_root)
+    """Container with skillsets auto-discovered from BC modules."""
     return Container(tmp_config)
 
 
@@ -243,7 +240,7 @@ class TestRecordDecision:
             RecordDecisionRequest(
                 client=CLIENT,
                 project_slug="maps-1",
-                title="Stage 1: Research and brief agreed",
+                title="Stage 1: Project brief agreed",
                 fields={"Scope": "Freight division"},
             )
         )
@@ -266,7 +263,7 @@ class TestRecordDecision:
 
     def test_decisions_accumulate(self, project):
         for title in [
-            "Stage 1: Research and brief agreed",
+            "Stage 1: Project brief agreed",
             "Stage 2: User needs agreed",
             "Stage 3: Supply chain agreed",
         ]:
@@ -287,7 +284,7 @@ class TestRecordDecision:
                 RecordDecisionRequest(
                     client=CLIENT,
                     project_slug="phantom-1",
-                    title="Stage 1: Research and brief agreed",
+                    title="Stage 1: Project brief agreed",
                     fields={},
                 )
             )
@@ -546,14 +543,14 @@ class TestGetProjectProgress:
         "stage_decisions, expected_current, expected_gate",
         [
             pytest.param(
-                ["Stage 1: Research and brief agreed"],
+                ["Stage 1: Project brief agreed"],
                 "wm-needs",
                 "brief.agreed.md",
                 id="research-complete→needs",
             ),
             pytest.param(
                 [
-                    "Stage 1: Research and brief agreed",
+                    "Stage 1: Project brief agreed",
                     "Stage 2: User needs agreed",
                 ],
                 "wm-chain",
@@ -562,7 +559,7 @@ class TestGetProjectProgress:
             ),
             pytest.param(
                 [
-                    "Stage 1: Research and brief agreed",
+                    "Stage 1: Project brief agreed",
                     "Stage 2: User needs agreed",
                     "Stage 3: Supply chain agreed",
                 ],
@@ -572,7 +569,7 @@ class TestGetProjectProgress:
             ),
             pytest.param(
                 [
-                    "Stage 1: Research and brief agreed",
+                    "Stage 1: Project brief agreed",
                     "Stage 2: User needs agreed",
                     "Stage 3: Supply chain agreed",
                     "Stage 4: Evolution map agreed",
@@ -583,7 +580,7 @@ class TestGetProjectProgress:
             ),
             pytest.param(
                 [
-                    "Stage 1: Research and brief agreed",
+                    "Stage 1: Project brief agreed",
                     "Stage 2: User needs agreed",
                     "Stage 3: Supply chain agreed",
                     "Stage 4: Evolution map agreed",
@@ -641,7 +638,7 @@ class TestListDecisions:
             RecordDecisionRequest(
                 client=CLIENT,
                 project_slug="maps-1",
-                title="Stage 1: Research and brief agreed",
+                title="Stage 1: Project brief agreed",
                 fields={"Scope": "Freight division"},
             )
         )
@@ -650,7 +647,7 @@ class TestListDecisions:
         )
         titles = [d.title for d in resp.decisions]
         assert "Project created" in titles
-        assert "Stage 1: Research and brief agreed" in titles
+        assert "Stage 1: Project brief agreed" in titles
 
     def test_returns_chronological_order(self, project):
         """Decisions are returned sorted by timestamp, not insertion order."""

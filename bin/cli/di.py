@@ -10,7 +10,10 @@ from __future__ import annotations
 import uuid
 from datetime import date, datetime, timezone
 
+import business_model_canvas
+import wardley_mapping as wardley_mapping_mod
 from bin.cli.config import Config
+from bin.cli.infrastructure.code_skillset_repository import CodeSkillsetRepository
 from business_model_canvas.presenter import BmcProjectPresenter
 from bin.cli.infrastructure.jinja_renderer import JinjaSiteRenderer
 from bin.cli.infrastructure.json_repos import (
@@ -18,7 +21,6 @@ from bin.cli.infrastructure.json_repos import (
     JsonEngagementRepository,
     JsonProjectRepository,
     JsonResearchTopicRepository,
-    JsonSkillsetRepository,
     JsonTourManifestRepository,
 )
 from bin.cli.usecases import RenderSiteUseCase
@@ -95,8 +97,8 @@ class Container:
         self.id_gen: IdGenerator = UuidGenerator()
 
         # -- Repositories --------------------------------------------------
-        self.skillsets: SkillsetRepository = JsonSkillsetRepository(
-            config.skillsets_root,
+        self.skillsets: SkillsetRepository = CodeSkillsetRepository(
+            [wardley_mapping_mod, business_model_canvas],
         )
         self.projects: ProjectRepository = JsonProjectRepository(
             config.workspace_root,

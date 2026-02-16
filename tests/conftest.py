@@ -169,7 +169,7 @@ def make_decision(**overrides) -> DecisionEntry:
         project_slug=DEFAULT_PROJECT,
         date=DEFAULT_DATE,
         timestamp=DEFAULT_TIMESTAMP,
-        title="Stage 1: Research and brief agreed",
+        title="Stage 1: Project brief agreed",
         fields={"Scope": "Freight operations"},
     )
     return DecisionEntry(**(defaults | overrides))
@@ -228,7 +228,7 @@ WM_PIPELINE = [
         skill="wm-research",
         prerequisite_gate="resources/index.md",
         produces_gate="brief.agreed.md",
-        description="Stage 1: Research and brief agreed",
+        description="Stage 1: Project brief agreed",
     ),
     PipelineStage(
         order=2,
@@ -267,7 +267,7 @@ BMC_PIPELINE = [
         skill="bmc-research",
         prerequisite_gate="resources/index.md",
         produces_gate="brief.agreed.md",
-        description="Stage 1: BMC research and brief agreed",
+        description="Stage 1: Project brief agreed",
     ),
     PipelineStage(
         order=2,
@@ -281,7 +281,7 @@ BMC_PIPELINE = [
         skill="bmc-canvas",
         prerequisite_gate="segments/segments.agreed.md",
         produces_gate="canvas.agreed.md",
-        description="Stage 3: Canvas agreed",
+        description="Stage 3: Business Model Canvas agreed",
     ),
 ]
 
