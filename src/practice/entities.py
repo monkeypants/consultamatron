@@ -13,7 +13,7 @@ from __future__ import annotations
 from datetime import date
 from enum import Enum
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from practice.discovery import PipelineStage
 
@@ -90,3 +90,63 @@ class ResearchTopic(BaseModel):
     topic: str
     date: date
     confidence: Confidence
+
+
+# ---------------------------------------------------------------------------
+# Engagement (unit of contracted work with a client)
+# ---------------------------------------------------------------------------
+
+
+class EngagementStatus(str, Enum):
+    """Lifecycle phase of a consulting engagement.
+
+    The lifecycle is linear:
+    planning → active → review → closed.
+    """
+
+    PLANNING = "planning"
+    ACTIVE = "active"
+    REVIEW = "review"
+    CLOSED = "closed"
+
+    def next(self) -> EngagementStatus | None:
+        """Return the next lifecycle phase, or None if terminal."""
+        members = list(EngagementStatus)
+        idx = members.index(self)
+        return members[idx + 1] if idx + 1 < len(members) else None
+
+
+class Engagement(BaseModel):
+    """A unit of contracted work with a client.
+
+    Engagements scope which skillset sources are permitted and
+    contain projects. Research stays client-scoped.
+    """
+
+    slug: str
+    client: str
+    status: EngagementStatus
+    allowed_sources: list[str] = Field(default_factory=lambda: ["commons"])
+    created: date
+    notes: str = ""
+
+
+# ---------------------------------------------------------------------------
+# SkillsetSource (provenance of skillset definitions)
+# ---------------------------------------------------------------------------
+
+
+class SourceType(str, Enum):
+    """Where a skillset comes from."""
+
+    COMMONS = "commons"
+    VAULT = "vault"
+    PARTNERSHIP = "partnership"
+
+
+class SkillsetSource(BaseModel):
+    """A source of skillset definitions."""
+
+    slug: str
+    source_type: SourceType
+    skillset_names: list[str]
