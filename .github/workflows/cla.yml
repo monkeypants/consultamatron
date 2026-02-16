@@ -1,3 +1,4 @@
+# Contributor License Agreement enforcement for external contributors.
 name: "CLA Assistant"
 on:
   issue_comment:
