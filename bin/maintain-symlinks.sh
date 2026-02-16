@@ -1,26 +1,24 @@
 #!/usr/bin/env bash
 #
-# Ensure vendor-specific symlinks are in sync with canonical locations.
+# Maintain agent skill symlinks and instruction-file aliases.
 #
-# Canonical layout:
-#   AGENTS.md              project instructions
-#   */SKILL.md             skills (any directory containing a SKILL.md)
-#                          includes: org-research, engage, wm-*, bmc-*, editorial-voice
+# Skills live inside BC packages across three source containers:
+#   commons/       (committed)
+#   partnerships/  (gitignored, per-engagement)
+#   personal/      (gitignored, operator-private)
 #
-# Vendor expectations:
-#   CLAUDE.md, GEMINI.md   → AGENTS.md
-#   .claude/skills/*       → ../../{skill-dir}
-#   .agents/skills/*       → ../../{skill-dir}
-#   .github/skills/*       → ../../{skill-dir}
-#   .gemini/skills/*       → ../../{skill-dir}
+# This script finds every directory containing a SKILL.md under those
+# containers and creates symlinks in .claude/skills/, .agents/skills/,
+# .gemini/skills/, and .github/skills/ pointing to the actual location.
+#
+# It also maintains the instruction-file aliases:
+#   CLAUDE.md, GEMINI.md → AGENTS.md
 
 set -euo pipefail
 
 cd "$(git -C "$(dirname "$0")" rev-parse --show-toplevel)"
 
-VENDOR_DIRS=".claude .agents .github .gemini"
 dry_run=false
-
 if [ "${1:-}" = "-n" ] || [ "${1:-}" = "--dry-run" ]; then
     dry_run=true
 fi
@@ -48,46 +46,54 @@ ensure_link() {
     changes=$((changes + 1))
 }
 
-remove_link() {
-    link="$1"
-    if [ -L "$link" ]; then
-        log "rm   $link"
-        $dry_run || rm "$link"
-        changes=$((changes + 1))
-    fi
-}
-
-# --- discover canonical skills ---
-
-skills=""
-for skill_md in */SKILL.md; do
-    [ -f "$skill_md" ] || continue
-    skills="$skills $(dirname "$skill_md")"
-done
-
-# --- instruction files ---
+# -- Instruction-file aliases -----------------------------------------------
 
 ensure_link "CLAUDE.md" "AGENTS.md"
 ensure_link "GEMINI.md" "AGENTS.md"
 
-# --- vendor skill symlinks ---
+# -- Skill symlinks ---------------------------------------------------------
 
-for vendor in $VENDOR_DIRS; do
-    mkdir -p "$vendor/skills"
+# Directories to search for SKILL.md files
+SOURCE_DIRS=()
+[ -d "commons" ]      && SOURCE_DIRS+=("commons")
+[ -d "partnerships" ] && SOURCE_DIRS+=("partnerships")
+[ -d "personal" ]     && SOURCE_DIRS+=("personal")
 
-    # add or fix links for each canonical skill
-    for name in $skills; do
-        ensure_link "$vendor/skills/$name" "../../$name"
-    done
+# Collect all skill directories (dirs containing SKILL.md)
+declare -A SKILL_PATHS
+for source_dir in "${SOURCE_DIRS[@]}"; do
+    while IFS= read -r skill_md; do
+        skill_dir="$(dirname "$skill_md")"
+        skill_name="$(basename "$skill_dir")"
+        SKILL_PATHS["$skill_name"]="$skill_dir"
+    done < <(find "$source_dir" -name SKILL.md -not -path '*/references/*' -not -path '*/assets/*' 2>/dev/null)
+done
 
-    # remove stale links for skills that no longer exist
-    for entry in "$vendor/skills/"*; do
-        [ -e "$entry" ] || [ -L "$entry" ] || continue
-        name="$(basename "$entry")"
-        case " $skills " in
-            *" $name "*) ;;  # still canonical
-            *) remove_link "$entry" ;;
-        esac
+# Create symlinks in each agent's skills directory
+for agent_dir in .claude/skills .agents/skills .gemini/skills .github/skills; do
+    $dry_run || mkdir -p "$agent_dir"
+
+    # Remove stale symlinks (point to non-existent targets)
+    if [ -d "$agent_dir" ]; then
+        for link in "$agent_dir"/*; do
+            [ -L "$link" ] && [ ! -e "$link" ] && {
+                log "rm   $link (stale)"
+                $dry_run || rm "$link"
+                changes=$((changes + 1))
+            }
+        done
+    fi
+
+    # Create/fix symlinks for each discovered skill
+    for skill_name in $(echo "${!SKILL_PATHS[@]}" | tr ' ' '\n' | sort); do
+        skill_dir="${SKILL_PATHS[$skill_name]}"
+        # Compute relative path from agent_dir to skill_dir
+        # e.g. from .claude/skills/wm-research to commons/wardley_mapping/skills/wm-research
+        target="$(python3 -c "
+import os.path, sys
+print(os.path.relpath(sys.argv[1], sys.argv[2]))
+" "$skill_dir" "$agent_dir")"
+        ensure_link "$agent_dir/$skill_name" "$target"
     done
 done
 
