@@ -24,15 +24,12 @@ import pytest
 
 from bin.cli.main import cli
 
-from .conftest import seed_wardley_mapping
-
 CLIENT = "holloway-group"
 
 
 @pytest.fixture
 def run(tmp_config, monkeypatch):
-    """Invoke CLI commands against a temp workspace with wardley-mapping available."""
-    seed_wardley_mapping(tmp_config.skillsets_root)
+    """Invoke CLI commands against a temp workspace with skillsets auto-discovered."""
     monkeypatch.setattr(
         "bin.cli.main.Config",
         type(
@@ -313,7 +310,7 @@ class TestProjectProgress:
             "--project",
             "maps-1",
             "--title",
-            "Stage 1: Research and brief agreed",
+            "Stage 1: Project brief agreed",
         )
         result = run(
             "project",
