@@ -15,4 +15,4 @@ REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 # Extract client slug from path like "clients/duckitandrun/"
 CLIENT="$(basename "${1%/}")"
 
-exec uv run --project "$REPO_DIR" consultamatron site render --client "$CLIENT"
+exec uv run --project "$REPO_DIR" practice site render --client "$CLIENT"
