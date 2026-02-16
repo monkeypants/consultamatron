@@ -354,11 +354,7 @@ class ListProjectsUseCase:
 
 
 class GetProjectUseCase:
-    """Look up a single project.
-
-    Returns a response with project=None when not found rather than
-    raising — the caller decides how to handle absence.
-    """
+    """Look up a single project by client and slug."""
 
     def __init__(self, projects: ProjectRepository) -> None:
         self._projects = projects
@@ -366,9 +362,7 @@ class GetProjectUseCase:
     def execute(self, request: GetProjectRequest) -> GetProjectResponse:
         project = self._projects.get(request.client, request.slug)
         if project is None:
-            return GetProjectResponse(
-                client=request.client, slug=request.slug, project=None
-            )
+            raise NotFoundError(f"Project not found: {request.client}/{request.slug}")
         return GetProjectResponse(
             client=request.client,
             slug=request.slug,
