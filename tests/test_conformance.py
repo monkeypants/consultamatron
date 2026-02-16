@@ -54,16 +54,36 @@ CLIENT = "conformance-corp"
 
 
 def _discover_bc_modules():
-    """Discover BC modules by scanning repo root for SKILLSETS exports."""
-    for path in sorted(_REPO_ROOT.iterdir()):
-        if not path.is_dir() or not (path / "__init__.py").is_file():
+    """Discover BC modules by scanning all three source containers.
+
+    Checks commons/ (committed), personal/ (operator-private), and
+    partnerships/{slug}/ (per-engagement) for directories containing
+    ``__init__.py`` with a ``SKILLSETS`` attribute.
+    """
+    source_dirs = [_REPO_ROOT / "commons"]
+
+    personal = _REPO_ROOT / "personal"
+    if personal.is_dir():
+        source_dirs.append(personal)
+
+    partnerships = _REPO_ROOT / "partnerships"
+    if partnerships.is_dir():
+        for slug_dir in sorted(partnerships.iterdir()):
+            if slug_dir.is_dir():
+                source_dirs.append(slug_dir)
+
+    for source_dir in source_dirs:
+        if not source_dir.is_dir():
             continue
-        try:
-            mod = importlib.import_module(path.name)
-            if hasattr(mod, "SKILLSETS"):
-                yield mod
-        except ImportError:
-            continue
+        for path in sorted(source_dir.iterdir()):
+            if not path.is_dir() or not (path / "__init__.py").is_file():
+                continue
+            try:
+                mod = importlib.import_module(path.name)
+                if hasattr(mod, "SKILLSETS"):
+                    yield mod
+            except ImportError:
+                continue
 
 
 _BC_MODULES = list(_discover_bc_modules())
@@ -526,7 +546,9 @@ class TestSkillFileConformance:
         """Every pipeline stage has a discoverable SKILL.md."""
         skills_dir = _REPO_ROOT / ".claude" / "skills"
         if not skills_dir.is_dir() or not any(skills_dir.iterdir()):
-            pytest.skip("No .claude/skills/ symlinks (regenerate with maintain-symlinks.sh)")
+            pytest.skip(
+                "No .claude/skills/ symlinks (regenerate with maintain-symlinks.sh)"
+            )
         skill_dir = skills_dir / skill_name
         assert skill_dir.exists(), f"No .claude/skills/{skill_name} directory/symlink"
         assert (skill_dir / "SKILL.md").is_file(), (

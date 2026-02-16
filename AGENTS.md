@@ -20,37 +20,59 @@ Each bounded context declares its skillsets as Python data in its
 can be registered as prospectuses (empty pipeline) or implemented
 (with a pipeline of stages and gates).
 
-## Discovering skillsets
+## Discovering skills
 
-Do not assume you know which skillsets exist. Use the practice CLI:
+Do not assume you know which skills or skillsets exist. Discover
+everything through the practice CLI:
 
 ```bash
 uv run practice skillset list                    # all registered skillsets
 uv run practice skillset list --implemented true # only implemented skillsets
-uv run practice skillset show --name <name>      # pipeline, gates, and details
+uv run practice skillset show --name <name>      # pipeline, gates, skill names
+uv run practice source list                      # installed skillset sources
+uv run practice project progress                 # current pipeline position
 ```
 
 Each implemented skillset defines a pipeline of skills (stages) with
 gate artifacts. Use `skillset show` to discover the specific skills,
 their ordering, and prerequisites for any skillset.
 
-## Shared skills
+### Loading a skill
 
-| Skill | Purpose |
-|-------|---------|
-| org-research | Research an organisation from public sources |
-| engage | Plan engagements, create projects, direct next steps |
-| editorial-voice | Rewrite artifacts in Consultamatron's editorial voice |
-| review | Post-implementation review of completed projects, producing sanitised GitHub issues |
+The practice CLI gives skill names. To find the skill file, search
+the repository:
+
+```bash
+find . -name SKILL.md | grep <skill-name>
+```
+
+Read the SKILL.md file before executing any skill. It contains the
+methodology, acceptance criteria, and operational instructions.
+
+### Shared skills
+
+Some skills operate outside any skillset pipeline (org-research,
+engage, editorial-voice, review). These are discoverable the same
+way — their SKILL.md files live at the repository root.
 
 ## Operator workspace
 
-The operator's working directory has three layers, each `.gitignored`
-by the commons repository:
+The repository has three source containers for BC packages, plus
+operator-private directories:
 
 ```
-consultamatron/                       # commons (public repo)
-├── clients/                          # operator-private client workspaces
+consultamatron/
+├── commons/                          # committed BC packages
+│   ├── wardley_mapping/              # BC package (skills/, presenter, tests)
+│   ├── business_model_canvas/        # BC package
+│   ├── skillset_engineering/         # BC package (ns-*, rs-*)
+│   └── consulting/                   # engagement lifecycle BC
+├── partnerships/                     # gitignored, per-engagement
+│   └── {slug}/                       # each is a git repo with BC packages
+│       └── {bc_package}/__init__.py  # has SKILLSETS
+├── personal/                         # gitignored, always included
+│   └── {bc_package}/__init__.py      # has SKILLSETS
+├── clients/                          # gitignored client workspaces
 │   └── {org-slug}/
 │       ├── resources/                # Shared research (managed by org-research)
 │       │   ├── index.md              # Manifest + synthesis (gate artifact)
@@ -63,14 +85,13 @@ consultamatron/                       # commons (public repo)
 │       │           └── decisions.json
 │       ├── engagement-log.json       # Cross-engagement audit trail
 │       └── review.md                 # Engagement-level review synthesis
-└── partners/                     # operator-private partnership repos
-    ├── {personal-vault}/             # personal proprietary skills
-    └── {partnership}/                # shared proprietary skills
+├── src/practice/                     # shared infrastructure
+├── bin/                              # CLI + scripts
+└── tests/                            # root-level conformance/integration
 ```
 
-`clients/` and `partners/` are typically private git repositories
-cloned into these `.gitignored` directories. See `GETTING_STARTED.md`
-for setup instructions.
+`clients/`, `partnerships/`, and `personal/` are `.gitignored`.
+See `GETTING_STARTED.md` for setup instructions.
 
 Research is client-scoped (you research the org, not the engagement).
 Projects are engagement-scoped. The audit log spans all engagements.
@@ -98,37 +119,27 @@ what has already been agreed.
 
 ## Source discovery
 
-Skillset sources determine where skillset definitions come from:
+Skillset sources determine where skillset definitions come from. All
+three use the same BC package structure (Python package with
+`__init__.py` exporting `SKILLSETS`):
 
-- **commons** — built-in skillsets declared in bounded context modules
-- **partnerships** — external skillset definitions in `partners/{slug}/skillsets/index.json`
+- **commons** — committed BC packages in `commons/` (always included)
+- **personal** — operator-private BC packages in `personal/` (always included)
+- **partnerships** — per-engagement BC packages in `partnerships/{slug}/`
 
 Use `practice source list` to see installed sources and
 `practice source show --slug <slug>` for detail.
 
-## Partnership skillsets
+## Partnership and personal skillsets
 
-Operators may have proprietary skillsets in `partners/`. Each
-partnership subdirectory is an independent git repository containing:
+Operators may have proprietary skillsets in `partnerships/` or
+`personal/`. Each is a full BC package — same structure as commons
+packages, with `__init__.py` exporting `SKILLSETS`, skill files,
+presenter, and tests. The conformance test suite applies uniformly
+to all source containers.
 
-```
-partners/{name}/
-├── skillsets/{domain}.md             # skillset manifest
-├── resources/{topic}.md              # proprietary domain knowledge
-├── skills/{skill-name}/SKILL.md      # partnership skills (same format as commons)
-└── reviews/                          # de-cliented engagement findings
-```
-
-The `engage` skill discovers partnership skillsets alongside commons
-skillset declarations. Partnership skills are injected at three points
-in the engagement pipeline:
-
-- **Partner-1** (after plan, before execute): domain enrichment
-- **Partner-2** (after synthesis, before delivery): domain enhancement
-- **Partner-3** (after delivery): domain-specific finishing
-
-If no partnerships are configured, these injection points are skipped
-and the pipeline matches the commons-only flow.
+Personal skillsets are always available (like commons). Partnership
+skillsets require explicit `add-source` on the engagement.
 
 ## Gate protocol
 
@@ -187,25 +198,16 @@ output is "good enough" on its own.
 
 ## Choosing the right skill
 
-Shared skills (not part of any skillset pipeline):
+Use the practice CLI to determine what to do next:
 
-- "Research this organisation" → **org-research**
-- "Plan the engagement" / "What should we do?" → **engage**
-- "Rewrite this in the right voice" → **editorial-voice**
-- "Review the project" / "Lessons learned" → **review**
+1. Check workspace state: look in `clients/` for existing engagements
+2. Run `practice project progress` to see where active projects stand
+3. Run `practice skillset show --name <name>` to see the pipeline
+4. Find and read the SKILL.md for the next stage
 
-For skillset-specific work, use `practice skillset show --name <name>`
-to discover the pipeline stages and their skill names. Each stage has
-a skill name, a prerequisite gate, and a produces gate — use the
-pipeline to determine which skill applies next.
+If the user's request is ambiguous, check which gate artifacts exist
+in the workspace to determine where the engagement is and which skill
+applies.
 
-If the user's request is ambiguous, check which gate artifacts exist in
-the workspace to determine where the engagement is and which skill
-applies. Use `practice project progress` to see pipeline status.
-
-## Background knowledge
-
-Agents executing skillset pipelines should understand the methodology
-behind each skillset. Use `practice skillset show --name <name>` to
-read the skillset's description and value proposition, then consult
-the skill files themselves for detailed methodology references.
+Before executing any skill, read its SKILL.md to understand the
+methodology, acceptance criteria, and operational instructions.
