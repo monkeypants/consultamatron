@@ -64,7 +64,7 @@ class SourceRepository(Protocol):
     """Read-only repository for skillset sources.
 
     Sources represent where skillsets come from — commons, partnerships,
-    or a personal vault.  The repository tracks which skillsets belong
+    or personal.  The repository tracks which skillsets belong
     to which source, enabling engagement-level access control.
     """
 

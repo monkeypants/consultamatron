@@ -792,7 +792,7 @@ class TestSkillsetList:
     def test_filtered_by_engagement(self, run):
         _init(run)
         _create_engagement(run)
-        # Default engagement has allowed_sources=["commons"], which
+        # Default engagement has allowed_sources=["commons", "personal"], which
         # includes both skillsets, so both should appear.
         result = run(
             "skillset",

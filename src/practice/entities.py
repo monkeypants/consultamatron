@@ -143,7 +143,7 @@ class Engagement(BaseModel):
     slug: str
     client: str
     status: EngagementStatus
-    allowed_sources: list[str] = Field(default_factory=lambda: ["commons"])
+    allowed_sources: list[str] = Field(default_factory=lambda: ["commons", "personal"])
     created: date
     notes: str = ""
 
@@ -157,7 +157,7 @@ class SourceType(str, Enum):
     """Where a skillset comes from."""
 
     COMMONS = "commons"
-    VAULT = "vault"
+    PERSONAL = "personal"
     PARTNERSHIP = "partnership"
 
 

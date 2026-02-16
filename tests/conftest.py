@@ -236,7 +236,7 @@ def make_engagement_entity(**overrides) -> Engagement:
         slug=DEFAULT_ENGAGEMENT,
         client=DEFAULT_CLIENT,
         status=EngagementStatus.PLANNING,
-        allowed_sources=["commons"],
+        allowed_sources=["commons", "personal"],
         created=DEFAULT_DATE,
     )
     return Engagement(**(defaults | overrides))

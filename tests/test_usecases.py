@@ -668,7 +668,7 @@ class TestCreateEngagement:
         )
         eng = workspace.engagement_entities.get(CLIENT, "strat-2")
         assert eng is not None
-        assert eng.allowed_sources == ["commons"]
+        assert eng.allowed_sources == ["commons", "personal"]
 
     def test_logs_entry(self, workspace):
         workspace.create_engagement_usecase.execute(
@@ -710,7 +710,7 @@ class TestGetEngagement:
         )
         assert resp.engagement.slug == "strat-2"
         assert resp.engagement.status == "planning"
-        assert resp.engagement.allowed_sources == ["commons"]
+        assert resp.engagement.allowed_sources == ["commons", "personal"]
 
     def test_not_found(self, workspace):
         with pytest.raises(NotFoundError):
@@ -811,6 +811,17 @@ class TestRemoveEngagementSource:
             workspace.remove_engagement_source_usecase.execute(
                 RemoveEngagementSourceRequest(
                     client=CLIENT, engagement="strat-2", source="commons"
+                )
+            )
+
+    def test_personal_cannot_be_removed(self, workspace):
+        workspace.create_engagement_usecase.execute(
+            CreateEngagementRequest(client=CLIENT, slug="strat-2")
+        )
+        with pytest.raises(InvalidTransitionError, match="Cannot remove personal"):
+            workspace.remove_engagement_source_usecase.execute(
+                RemoveEngagementSourceRequest(
+                    client=CLIENT, engagement="strat-2", source="personal"
                 )
             )
 

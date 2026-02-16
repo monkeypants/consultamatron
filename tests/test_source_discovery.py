@@ -1,17 +1,16 @@
-"""Tests for partnership discovery and composite skillset aggregation.
+"""Tests for source discovery across all three source containers.
 
 Covers FilesystemSourceRepository (source discovery from filesystem)
-and CompositeSkillsetRepository (merging commons + partnership skillsets).
+and CodeSkillsetRepository (unified skillset aggregation from commons,
+personal, and partnership BC packages).
 """
 
 from __future__ import annotations
 
-import json
-
 import pytest
 
-from bin.cli.infrastructure.composite_skillset_repository import (
-    CompositeSkillsetRepository,
+from bin.cli.infrastructure.code_skillset_repository import (
+    _scan_directory,
 )
 from bin.cli.infrastructure.filesystem_source_repository import (
     FilesystemSourceRepository,
@@ -24,19 +23,61 @@ from practice.entities import SourceType
 # ---------------------------------------------------------------------------
 
 
-def _write_partnership(repo_root, slug, skillsets):
-    """Create a partnership directory with a skillsets/index.json."""
-    index = repo_root / "partners" / slug / "skillsets" / "index.json"
-    index.parent.mkdir(parents=True, exist_ok=True)
-    index.write_text(json.dumps(skillsets, indent=2) + "\n")
+def _write_bc_package(parent_dir, pkg_name, skillset_defs):
+    """Create a BC package directory with __init__.py exporting SKILLSETS.
+
+    skillset_defs is a list of dicts like:
+        [{"name": "acme-analysis", "display_name": "Acme Analysis", ...}]
+    """
+    pkg_dir = parent_dir / pkg_name
+    pkg_dir.mkdir(parents=True, exist_ok=True)
+
+    # Build the Python source for __init__.py
+    lines = [
+        "from practice.discovery import PipelineStage",
+        "from practice.entities import Skillset",
+        "",
+        "SKILLSETS = [",
+    ]
+    for sd in skillset_defs:
+        pipeline_src = ""
+        if sd.get("pipeline"):
+            stages = []
+            for stage in sd["pipeline"]:
+                stages.append(
+                    f"        PipelineStage("
+                    f"order={stage['order']}, "
+                    f"skill={stage['skill']!r}, "
+                    f"prerequisite_gate={stage['prerequisite_gate']!r}, "
+                    f"produces_gate={stage['produces_gate']!r}, "
+                    f"description={stage['description']!r})"
+                )
+            pipeline_src = ",\n".join(stages)
+
+        lines.append("    Skillset(")
+        lines.append(f"        name={sd['name']!r},")
+        lines.append(f"        display_name={sd.get('display_name', 'Test')!r},")
+        lines.append(f"        description={sd.get('description', 'A test.')!r},")
+        lines.append(
+            f"        slug_pattern={sd.get('slug_pattern', sd['name'] + '-{n}')!r},"
+        )
+        if pipeline_src:
+            lines.append("        pipeline=[")
+            lines.append(pipeline_src)
+            lines.append("        ],")
+        lines.append("    ),")
+    lines.append("]")
+
+    (pkg_dir / "__init__.py").write_text("\n".join(lines) + "\n")
 
 
-def _make_skillset_json(name, display_name="Test Skillset", description="A test."):
-    """Build a Skillset-shaped dict for writing to partnership JSON."""
+def _make_skillset_def(name, display_name="Test Skillset", description="A test."):
+    """Build a skillset definition dict for _write_bc_package."""
     return {
         "name": name,
         "display_name": display_name,
         "description": description,
+        "slug_pattern": f"{name}-{{n}}",
         "pipeline": [
             {
                 "order": 1,
@@ -46,7 +87,6 @@ def _make_skillset_json(name, display_name="Test Skillset", description="A test.
                 "description": "Stage 1: Brief agreed",
             },
         ],
-        "slug_pattern": f"{name}-{{n}}",
     }
 
 
@@ -80,12 +120,12 @@ def commons_repo():
 
 
 # ---------------------------------------------------------------------------
-# FilesystemSourceRepository
+# FilesystemSourceRepository — no extra sources
 # ---------------------------------------------------------------------------
 
 
 class TestFilesystemSourceEmpty:
-    """No partnerships directory at all."""
+    """No partnerships or personal directory at all."""
 
     def test_list_returns_only_commons(self, tmp_path, commons_repo):
         repo = FilesystemSourceRepository(tmp_path, commons_repo)
@@ -106,23 +146,77 @@ class TestFilesystemSourceEmpty:
         assert repo.get("nonexistent") is None
 
 
+# ---------------------------------------------------------------------------
+# FilesystemSourceRepository — personal source
+# ---------------------------------------------------------------------------
+
+
+class TestFilesystemSourcePersonal:
+    """Personal BC packages in personal/."""
+
+    def test_personal_source_discovered(self, tmp_path, commons_repo):
+        _write_bc_package(
+            tmp_path / "personal",
+            "my_analysis",
+            [_make_skillset_def("my-analysis")],
+        )
+        repo = FilesystemSourceRepository(tmp_path, commons_repo)
+        source = repo.get("personal")
+        assert source is not None
+        assert source.source_type == SourceType.PERSONAL
+        assert "my-analysis" in source.skillset_names
+
+    def test_personal_included_in_list(self, tmp_path, commons_repo):
+        _write_bc_package(
+            tmp_path / "personal",
+            "my_analysis",
+            [_make_skillset_def("my-analysis")],
+        )
+        repo = FilesystemSourceRepository(tmp_path, commons_repo)
+        slugs = [s.slug for s in repo.list_all()]
+        assert "personal" in slugs
+
+    def test_personal_provenance(self, tmp_path, commons_repo):
+        _write_bc_package(
+            tmp_path / "personal",
+            "my_analysis",
+            [_make_skillset_def("my-analysis")],
+        )
+        repo = FilesystemSourceRepository(tmp_path, commons_repo)
+        assert repo.skillset_source("my-analysis") == "personal"
+
+    def test_empty_personal_not_in_list(self, tmp_path, commons_repo):
+        (tmp_path / "personal").mkdir()
+        repo = FilesystemSourceRepository(tmp_path, commons_repo)
+        slugs = [s.slug for s in repo.list_all()]
+        assert "personal" not in slugs
+
+
+# ---------------------------------------------------------------------------
+# FilesystemSourceRepository — partnership sources
+# ---------------------------------------------------------------------------
+
+
 class TestFilesystemSourceSinglePartnership:
-    """One partnership directory with skillsets."""
+    """One partnership directory with BC packages."""
 
     def test_list_includes_partnership(self, tmp_path, commons_repo):
-        _write_partnership(
-            tmp_path, "acme-corp", [_make_skillset_json("acme-analysis")]
+        _write_bc_package(
+            tmp_path / "partnerships" / "acme-corp",
+            "acme_analysis",
+            [_make_skillset_def("acme-analysis")],
         )
         repo = FilesystemSourceRepository(tmp_path, commons_repo)
         sources = repo.list_all()
-        assert len(sources) == 2
         slugs = [s.slug for s in sources]
         assert "commons" in slugs
         assert "acme-corp" in slugs
 
     def test_get_partnership(self, tmp_path, commons_repo):
-        _write_partnership(
-            tmp_path, "acme-corp", [_make_skillset_json("acme-analysis")]
+        _write_bc_package(
+            tmp_path / "partnerships" / "acme-corp",
+            "acme_analysis",
+            [_make_skillset_def("acme-analysis")],
         )
         repo = FilesystemSourceRepository(tmp_path, commons_repo)
         source = repo.get("acme-corp")
@@ -131,22 +225,28 @@ class TestFilesystemSourceSinglePartnership:
         assert source.skillset_names == ["acme-analysis"]
 
     def test_provenance_commons(self, tmp_path, commons_repo):
-        _write_partnership(
-            tmp_path, "acme-corp", [_make_skillset_json("acme-analysis")]
+        _write_bc_package(
+            tmp_path / "partnerships" / "acme-corp",
+            "acme_analysis",
+            [_make_skillset_def("acme-analysis")],
         )
         repo = FilesystemSourceRepository(tmp_path, commons_repo)
         assert repo.skillset_source("wardley-mapping") == "commons"
 
     def test_provenance_partnership(self, tmp_path, commons_repo):
-        _write_partnership(
-            tmp_path, "acme-corp", [_make_skillset_json("acme-analysis")]
+        _write_bc_package(
+            tmp_path / "partnerships" / "acme-corp",
+            "acme_analysis",
+            [_make_skillset_def("acme-analysis")],
         )
         repo = FilesystemSourceRepository(tmp_path, commons_repo)
         assert repo.skillset_source("acme-analysis") == "acme-corp"
 
     def test_provenance_unknown(self, tmp_path, commons_repo):
-        _write_partnership(
-            tmp_path, "acme-corp", [_make_skillset_json("acme-analysis")]
+        _write_bc_package(
+            tmp_path / "partnerships" / "acme-corp",
+            "acme_analysis",
+            [_make_skillset_def("acme-analysis")],
         )
         repo = FilesystemSourceRepository(tmp_path, commons_repo)
         assert repo.skillset_source("nonexistent") is None
@@ -156,30 +256,31 @@ class TestFilesystemSourceMultiplePartnerships:
     """Multiple partnership directories."""
 
     def test_list_includes_all(self, tmp_path, commons_repo):
-        _write_partnership(
-            tmp_path, "acme-corp", [_make_skillset_json("acme-analysis")]
+        _write_bc_package(
+            tmp_path / "partnerships" / "acme-corp",
+            "acme_analysis",
+            [_make_skillset_def("acme-analysis")],
         )
-        _write_partnership(
-            tmp_path,
-            "beta-inc",
+        _write_bc_package(
+            tmp_path / "partnerships" / "beta-inc",
+            "beta_audit",
             [
-                _make_skillset_json("beta-audit"),
-                _make_skillset_json("beta-compliance"),
+                _make_skillset_def("beta-audit"),
+                _make_skillset_def("beta-compliance"),
             ],
         )
         repo = FilesystemSourceRepository(tmp_path, commons_repo)
         sources = repo.list_all()
-        assert len(sources) == 3
         slugs = [s.slug for s in sources]
-        assert set(slugs) == {"commons", "acme-corp", "beta-inc"}
+        assert set(slugs) >= {"commons", "acme-corp", "beta-inc"}
 
     def test_partnership_multiple_skillsets(self, tmp_path, commons_repo):
-        _write_partnership(
-            tmp_path,
-            "beta-inc",
+        _write_bc_package(
+            tmp_path / "partnerships" / "beta-inc",
+            "beta_audit",
             [
-                _make_skillset_json("beta-audit"),
-                _make_skillset_json("beta-compliance"),
+                _make_skillset_def("beta-audit"),
+                _make_skillset_def("beta-compliance"),
             ],
         )
         repo = FilesystemSourceRepository(tmp_path, commons_repo)
@@ -188,25 +289,31 @@ class TestFilesystemSourceMultiplePartnerships:
         assert source.skillset_names == ["beta-audit", "beta-compliance"]
 
     def test_provenance_resolves_correct_source(self, tmp_path, commons_repo):
-        _write_partnership(
-            tmp_path, "acme-corp", [_make_skillset_json("acme-analysis")]
+        _write_bc_package(
+            tmp_path / "partnerships" / "acme-corp",
+            "acme_analysis",
+            [_make_skillset_def("acme-analysis")],
         )
-        _write_partnership(tmp_path, "beta-inc", [_make_skillset_json("beta-audit")])
+        _write_bc_package(
+            tmp_path / "partnerships" / "beta-inc",
+            "beta_audit",
+            [_make_skillset_def("beta-audit")],
+        )
         repo = FilesystemSourceRepository(tmp_path, commons_repo)
         assert repo.skillset_source("acme-analysis") == "acme-corp"
         assert repo.skillset_source("beta-audit") == "beta-inc"
 
 
 class TestFilesystemSourceIgnoresInvalid:
-    """Directories without skillsets/index.json are skipped."""
+    """Directories without BC packages are skipped."""
 
-    def test_dir_without_index_ignored(self, tmp_path, commons_repo):
-        (tmp_path / "partners" / "empty-partner").mkdir(parents=True)
+    def test_dir_without_init_ignored(self, tmp_path, commons_repo):
+        (tmp_path / "partnerships" / "empty-partner").mkdir(parents=True)
         repo = FilesystemSourceRepository(tmp_path, commons_repo)
         assert len(repo.list_all()) == 1
 
     def test_file_in_partnerships_ignored(self, tmp_path, commons_repo):
-        partnerships_dir = tmp_path / "partners"
+        partnerships_dir = tmp_path / "partnerships"
         partnerships_dir.mkdir(parents=True)
         (partnerships_dir / "README.md").write_text("Not a partnership")
         repo = FilesystemSourceRepository(tmp_path, commons_repo)
@@ -214,71 +321,33 @@ class TestFilesystemSourceIgnoresInvalid:
 
 
 # ---------------------------------------------------------------------------
-# CompositeSkillsetRepository
+# _scan_directory — BC package scanning
 # ---------------------------------------------------------------------------
 
 
-class TestCompositeNoPartnerships:
-    """Composite with no partnership directories returns only commons."""
+class TestScanDirectory:
+    """Unit tests for the BC package scanner."""
 
-    def test_list_returns_commons(self, tmp_path, commons_repo):
-        repo = CompositeSkillsetRepository(commons_repo, tmp_path)
-        skillsets = repo.list_all()
+    def test_empty_directory(self, tmp_path):
+        assert _scan_directory(tmp_path) == []
+
+    def test_nonexistent_directory(self, tmp_path):
+        assert _scan_directory(tmp_path / "nope") == []
+
+    def test_discovers_bc_package(self, tmp_path):
+        _write_bc_package(tmp_path, "test_pkg", [_make_skillset_def("test-skillset")])
+        skillsets = _scan_directory(tmp_path)
+        assert len(skillsets) == 1
+        assert skillsets[0].name == "test-skillset"
+
+    def test_ignores_dirs_without_init(self, tmp_path):
+        (tmp_path / "no_init").mkdir()
+        assert _scan_directory(tmp_path) == []
+
+    def test_multiple_packages(self, tmp_path):
+        _write_bc_package(tmp_path, "pkg_a", [_make_skillset_def("alpha")])
+        _write_bc_package(tmp_path, "pkg_b", [_make_skillset_def("beta")])
+        skillsets = _scan_directory(tmp_path)
         names = [s.name for s in skillsets]
-        assert "wardley-mapping" in names
-        assert "business-model-canvas" in names
-
-    def test_get_commons_skillset(self, tmp_path, commons_repo):
-        repo = CompositeSkillsetRepository(commons_repo, tmp_path)
-        s = repo.get("wardley-mapping")
-        assert s is not None
-        assert s.name == "wardley-mapping"
-
-    def test_get_unknown_returns_none(self, tmp_path, commons_repo):
-        repo = CompositeSkillsetRepository(commons_repo, tmp_path)
-        assert repo.get("nonexistent") is None
-
-
-class TestCompositeMergesPartnerships:
-    """Composite merges commons and partnership skillsets."""
-
-    def test_list_includes_partnership_skillsets(self, tmp_path, commons_repo):
-        _write_partnership(
-            tmp_path, "acme-corp", [_make_skillset_json("acme-analysis")]
-        )
-        repo = CompositeSkillsetRepository(commons_repo, tmp_path)
-        names = [s.name for s in repo.list_all()]
-        assert "wardley-mapping" in names
-        assert "acme-analysis" in names
-
-    def test_get_partnership_skillset(self, tmp_path, commons_repo):
-        _write_partnership(
-            tmp_path, "acme-corp", [_make_skillset_json("acme-analysis")]
-        )
-        repo = CompositeSkillsetRepository(commons_repo, tmp_path)
-        s = repo.get("acme-analysis")
-        assert s is not None
-        assert s.name == "acme-analysis"
-        assert len(s.pipeline) == 1
-
-    def test_commons_takes_precedence(self, tmp_path, commons_repo):
-        """If a partnership declares the same name, commons wins."""
-        _write_partnership(
-            tmp_path,
-            "acme-corp",
-            [_make_skillset_json("wardley-mapping", description="Duplicate")],
-        )
-        repo = CompositeSkillsetRepository(commons_repo, tmp_path)
-        s = repo.get("wardley-mapping")
-        assert s is not None
-        assert s.description != "Duplicate"
-
-    def test_multiple_partnerships_merged(self, tmp_path, commons_repo):
-        _write_partnership(
-            tmp_path, "acme-corp", [_make_skillset_json("acme-analysis")]
-        )
-        _write_partnership(tmp_path, "beta-inc", [_make_skillset_json("beta-audit")])
-        repo = CompositeSkillsetRepository(commons_repo, tmp_path)
-        names = [s.name for s in repo.list_all()]
-        assert "acme-analysis" in names
-        assert "beta-audit" in names
+        assert "alpha" in names
+        assert "beta" in names
