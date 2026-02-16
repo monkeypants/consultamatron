@@ -18,6 +18,7 @@ from practice.entities import (
     Confidence,
     Engagement,
     EngagementStatus,
+    Profile,
     Project,
     ProjectStatus,
     ResearchTopic,
@@ -260,6 +261,16 @@ def make_research(**overrides) -> ResearchTopic:
         confidence=Confidence.MEDIUM,
     )
     return ResearchTopic(**(defaults | overrides))
+
+
+def make_profile(**overrides) -> Profile:
+    defaults = dict(
+        name="test-profile",
+        display_name="Test Profile",
+        description="A test profile.",
+        skillsets=["test-skillset"],
+    )
+    return Profile(**(defaults | overrides))
 
 
 def _write_skillsets(skillsets_root, skillsets):
