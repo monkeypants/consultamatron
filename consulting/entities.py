@@ -28,6 +28,7 @@ class DecisionEntry(BaseModel):
 
     id: str
     client: str
+    engagement: str
     project_slug: str
     date: date
     timestamp: datetime

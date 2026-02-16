@@ -30,7 +30,13 @@ class BmcProjectPresenter:
         self,
         project: Project,
     ) -> ProjectContribution:
-        proj_dir = self._ws_root / project.client / "projects" / project.slug
+        proj_dir = (
+            self._ws_root
+            / project.client
+            / "engagements"
+            / project.engagement
+            / project.slug
+        )
 
         has_brief = (proj_dir / "brief.agreed.md").is_file()
         has_segments = (proj_dir / "segments" / "segments.agreed.md").is_file()

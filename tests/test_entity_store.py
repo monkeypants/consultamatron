@@ -16,6 +16,8 @@ from .conftest import make_decision, make_project
 
 pytestmark = pytest.mark.doctrine
 
+ENGAGEMENT = "strat-1"
+
 
 # ---------------------------------------------------------------------------
 # Protocol conformance
@@ -42,7 +44,9 @@ class TestRoundTrip:
     def test_save_then_get_returns_equivalent_entity(self, project_store):
         original = make_project()
         project_store.save(original)
-        got = project_store.get({"client": "holloway-group", "slug": "maps-1"})
+        got = project_store.get(
+            {"client": "holloway-group", "engagement": ENGAGEMENT, "slug": "maps-1"}
+        )
         assert got is not None, "get must return a saved entity"
         assert got.slug == original.slug, "retrieved entity must match saved slug"
         assert got.skillset == original.skillset, (
@@ -51,28 +55,37 @@ class TestRoundTrip:
 
     def test_get_missing_returns_none(self, project_store):
         assert (
-            project_store.get({"client": "holloway-group", "slug": "nope"}) is None
+            project_store.get(
+                {"client": "holloway-group", "engagement": ENGAGEMENT, "slug": "nope"}
+            )
+            is None
         ), "get on an empty store must return None"
 
     def test_get_wrong_key_returns_none(self, project_store):
         project_store.save(make_project(slug="maps-1"))
         assert (
-            project_store.get({"client": "holloway-group", "slug": "maps-2"}) is None
+            project_store.get(
+                {"client": "holloway-group", "engagement": ENGAGEMENT, "slug": "maps-2"}
+            )
+            is None
         ), "get with non-matching key must return None even when store is non-empty"
 
     def test_delete_removes_entity(self, project_store):
         project_store.save(make_project())
-        assert project_store.delete({"client": "holloway-group", "slug": "maps-1"}), (
-            "delete must return True when entity existed"
-        )
+        assert project_store.delete(
+            {"client": "holloway-group", "engagement": ENGAGEMENT, "slug": "maps-1"}
+        ), "delete must return True when entity existed"
         assert (
-            project_store.get({"client": "holloway-group", "slug": "maps-1"}) is None
+            project_store.get(
+                {"client": "holloway-group", "engagement": ENGAGEMENT, "slug": "maps-1"}
+            )
+            is None
         ), "deleted entity must not be retrievable"
 
     def test_delete_missing_returns_false(self, project_store):
-        assert not project_store.delete({"client": "holloway-group", "slug": "nope"}), (
-            "delete must return False when no entity matched"
-        )
+        assert not project_store.delete(
+            {"client": "holloway-group", "engagement": ENGAGEMENT, "slug": "nope"}
+        ), "delete must return False when no entity matched"
 
 
 # ---------------------------------------------------------------------------
@@ -89,14 +102,17 @@ class TestFilterSemantics:
     """
 
     def test_search_empty_store_returns_empty_list(self, project_store):
-        assert project_store.search({"client": "holloway-group"}) == [], (
-            "search on an empty store must return an empty list"
-        )
+        assert (
+            project_store.search({"client": "holloway-group", "engagement": ENGAGEMENT})
+            == []
+        ), "search on an empty store must return an empty list"
 
     def test_search_by_scope_returns_all_in_scope(self, project_store):
         project_store.save(make_project(slug="maps-1"))
         project_store.save(make_project(slug="maps-2"))
-        results = project_store.search({"client": "holloway-group"})
+        results = project_store.search(
+            {"client": "holloway-group", "engagement": ENGAGEMENT}
+        )
         assert len(results) == 2, (
             "scope-only filter must return all entities in that scope"
         )
@@ -107,7 +123,11 @@ class TestFilterSemantics:
             make_project(slug="canvas-1", skillset="business-model-canvas")
         )
         results = project_store.search(
-            {"client": "holloway-group", "skillset": "wardley-mapping"}
+            {
+                "client": "holloway-group",
+                "engagement": ENGAGEMENT,
+                "skillset": "wardley-mapping",
+            }
         )
         assert len(results) == 1, "domain filter must narrow results"
         assert results[0].slug == "maps-1", (
@@ -132,6 +152,7 @@ class TestFilterSemantics:
         results = project_store.search(
             {
                 "client": "holloway-group",
+                "engagement": ENGAGEMENT,
                 "skillset": "wardley-mapping",
                 "status": "planning",
             }
@@ -144,7 +165,11 @@ class TestFilterSemantics:
     def test_filter_with_no_match_returns_empty(self, project_store):
         project_store.save(make_project(status=ProjectStatus.PLANNING))
         results = project_store.search(
-            {"client": "holloway-group", "status": "implementation"}
+            {
+                "client": "holloway-group",
+                "engagement": ENGAGEMENT,
+                "status": "implementation",
+            }
         )
         assert results == [], "filter that matches no entities must return empty list"
 
@@ -159,7 +184,11 @@ class TestFilterSemantics:
             make_project(slug="maps-2", status=ProjectStatus.ELABORATION)
         )
         results = project_store.search(
-            {"client": "holloway-group", "status": "elaboration"}
+            {
+                "client": "holloway-group",
+                "engagement": ENGAGEMENT,
+                "status": "elaboration",
+            }
         )
         assert len(results) == 1, (
             "enum filter must match against the enum's string value"
@@ -184,18 +213,26 @@ class TestIdentity:
     def test_upsert_replaces_entity_with_same_key(self, project_store):
         project_store.save(make_project(status=ProjectStatus.PLANNING))
         project_store.save(make_project(status=ProjectStatus.ELABORATION))
-        got = project_store.get({"client": "holloway-group", "slug": "maps-1"})
+        got = project_store.get(
+            {"client": "holloway-group", "engagement": ENGAGEMENT, "slug": "maps-1"}
+        )
         assert got.status == ProjectStatus.ELABORATION, (
             "second save with same key must replace the first"
         )
-        all_results = project_store.search({"client": "holloway-group"})
+        all_results = project_store.search(
+            {"client": "holloway-group", "engagement": ENGAGEMENT}
+        )
         assert len(all_results) == 1, "upsert must not create a duplicate"
 
     def test_same_key_different_scope_are_separate_entities(self, project_store):
         project_store.save(make_project(slug="maps-1", client="holloway-group"))
         project_store.save(make_project(slug="maps-1", client="meridian-health"))
-        holloway = project_store.search({"client": "holloway-group"})
-        meridian = project_store.search({"client": "meridian-health"})
+        holloway = project_store.search(
+            {"client": "holloway-group", "engagement": ENGAGEMENT}
+        )
+        meridian = project_store.search(
+            {"client": "meridian-health", "engagement": ENGAGEMENT}
+        )
         assert len(holloway) == 1, (
             "same key in different scope must not collide (holloway)"
         )
@@ -219,16 +256,28 @@ class TestScoping:
     def test_different_clients_are_isolated(self, project_store):
         project_store.save(make_project(client="holloway-group"))
         project_store.save(make_project(client="meridian-health"))
-        assert len(project_store.search({"client": "holloway-group"})) == 1, (
-            "client scope must isolate holloway-group entities"
-        )
-        assert len(project_store.search({"client": "meridian-health"})) == 1, (
-            "client scope must isolate meridian-health entities"
-        )
+        assert (
+            len(
+                project_store.search(
+                    {"client": "holloway-group", "engagement": ENGAGEMENT}
+                )
+            )
+            == 1
+        ), "client scope must isolate holloway-group entities"
+        assert (
+            len(
+                project_store.search(
+                    {"client": "meridian-health", "engagement": ENGAGEMENT}
+                )
+            )
+            == 1
+        ), "client scope must isolate meridian-health entities"
 
     def test_empty_scope_is_empty(self, project_store):
         project_store.save(make_project(client="holloway-group"))
-        results = project_store.search({"client": "meridian-health"})
+        results = project_store.search(
+            {"client": "meridian-health", "engagement": ENGAGEMENT}
+        )
         assert results == [], "search in an unpopulated scope must return empty list"
 
 
@@ -248,14 +297,20 @@ class TestAppendVsUpsert:
     def test_upsert_replaces_on_key_match(self, project_store):
         project_store.save(make_project(status=ProjectStatus.PLANNING))
         project_store.save(make_project(status=ProjectStatus.ELABORATION))
-        results = project_store.search({"client": "holloway-group"})
+        results = project_store.search(
+            {"client": "holloway-group", "engagement": ENGAGEMENT}
+        )
         assert len(results) == 1, "upsert must replace, not duplicate"
 
     def test_append_creates_separate_entries(self, decision_store):
         decision_store.save(make_decision(id="d1", title="Stage 1"))
         decision_store.save(make_decision(id="d2", title="Stage 2"))
         results = decision_store.search(
-            {"client": "holloway-group", "project_slug": "maps-1"}
+            {
+                "client": "holloway-group",
+                "engagement": ENGAGEMENT,
+                "project_slug": "maps-1",
+            }
         )
         assert len(results) == 2, (
             "append_only store must create separate entries for each save"
@@ -265,7 +320,11 @@ class TestAppendVsUpsert:
         decision_store.save(make_decision(id="d1", title="First"))
         decision_store.save(make_decision(id="d1", title="Revised"))
         results = decision_store.search(
-            {"client": "holloway-group", "project_slug": "maps-1"}
+            {
+                "client": "holloway-group",
+                "engagement": ENGAGEMENT,
+                "project_slug": "maps-1",
+            }
         )
         assert len(results) == 2, "append_only store must not deduplicate on key_field"
 
@@ -275,6 +334,7 @@ class TestAppendVsUpsert:
         results = decision_store.search(
             {
                 "client": "holloway-group",
+                "engagement": ENGAGEMENT,
                 "project_slug": "maps-1",
                 "title": "Stage 1: Research agreed",
             }
@@ -290,7 +350,11 @@ class TestAppendVsUpsert:
         decision_store.save(make_decision(id="d1", project_slug="maps-1"))
         decision_store.save(make_decision(id="d2", project_slug="maps-2"))
         results = decision_store.search(
-            {"client": "holloway-group", "project_slug": "maps-1"}
+            {
+                "client": "holloway-group",
+                "engagement": ENGAGEMENT,
+                "project_slug": "maps-1",
+            }
         )
         assert len(results) == 1, "append_only store must respect project_slug scoping"
 
@@ -310,14 +374,20 @@ class TestBoundaries:
     def test_filter_on_nonexistent_field_excludes_entity(self, project_store):
         project_store.save(make_project())
         results = project_store.search(
-            {"client": "holloway-group", "nonexistent_field": "anything"}
+            {
+                "client": "holloway-group",
+                "engagement": ENGAGEMENT,
+                "nonexistent_field": "anything",
+            }
         )
         assert results == [], (
             "filtering on a field the entity lacks must exclude it, not crash"
         )
 
     def test_missing_file_returns_empty(self, project_store):
-        results = project_store.search({"client": "no-such-client"})
+        results = project_store.search(
+            {"client": "no-such-client", "engagement": ENGAGEMENT}
+        )
         assert results == [], (
             "store backed by a nonexistent file must return empty, not raise"
         )
@@ -325,7 +395,7 @@ class TestBoundaries:
     def test_get_with_partial_filters_returns_first_match(self, project_store):
         project_store.save(make_project(slug="maps-1"))
         project_store.save(make_project(slug="maps-2"))
-        got = project_store.get({"client": "holloway-group"})
+        got = project_store.get({"client": "holloway-group", "engagement": ENGAGEMENT})
         assert got is not None, (
             "get with partial filters must return a match when multiple exist"
         )

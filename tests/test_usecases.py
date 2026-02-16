@@ -116,7 +116,7 @@ class TestInitializeWorkspace:
 
     def test_onboarding_entry_logged(self, di):
         _init(di)
-        entries = di.engagement.list_all(CLIENT)
+        entries = di.engagement_log.list_all(CLIENT)
         assert len(entries) == 1
         assert entries[0].title == "Client onboarded"
 
@@ -142,14 +142,14 @@ class TestRegisterProject:
 
     def test_project_entity_created_in_planning(self, workspace):
         _register(workspace)
-        project = workspace.projects.get(CLIENT, "maps-1")
+        project = workspace.projects.get(CLIENT, ENGAGEMENT, "maps-1")
         assert project is not None
         assert project.status.value == "planning"
         assert project.skillset == "wardley-mapping"
 
     def test_project_created_decision_seeded(self, workspace):
         _register(workspace)
-        decisions = workspace.decisions.list_all(CLIENT, "maps-1")
+        decisions = workspace.decisions.list_all(CLIENT, ENGAGEMENT, "maps-1")
         assert len(decisions) == 1
         assert decisions[0].title == "Project created"
         assert decisions[0].fields["Skillset"] == "wardley-mapping"
@@ -157,7 +157,7 @@ class TestRegisterProject:
 
     def test_engagement_entry_logged(self, workspace):
         _register(workspace)
-        titles = [e.title for e in workspace.engagement.list_all(CLIENT)]
+        titles = [e.title for e in workspace.engagement_log.list_all(CLIENT)]
         assert "Project registered: maps-1" in titles
 
     def test_two_projects_coexist(self, workspace):
@@ -197,7 +197,10 @@ class TestUpdateProjectStatus:
 
     def test_transition_persists(self, project):
         _elaborate(project)
-        assert project.projects.get(CLIENT, "maps-1").status.value == "elaboration"
+        assert (
+            project.projects.get(CLIENT, ENGAGEMENT, "maps-1").status.value
+            == "elaboration"
+        )
 
     def test_full_lifecycle(self, project):
         for status in ("elaboration", "implementation", "review"):
@@ -209,7 +212,9 @@ class TestUpdateProjectStatus:
                     status=status,
                 )
             )
-        assert project.projects.get(CLIENT, "maps-1").status.value == "review"
+        assert (
+            project.projects.get(CLIENT, ENGAGEMENT, "maps-1").status.value == "review"
+        )
 
     def test_skipping_a_step_rejected(self, project):
         with pytest.raises(InvalidTransitionError, match="Invalid transition"):
@@ -278,7 +283,7 @@ class TestRecordDecision:
                 },
             )
         )
-        got = project.decisions.get(CLIENT, "maps-1", resp.decision_id)
+        got = project.decisions.get(CLIENT, ENGAGEMENT, "maps-1", resp.decision_id)
         assert got.title == "Stage 2: User needs agreed"
         assert "Fleet operators" in got.fields["Users"]
 
@@ -298,7 +303,7 @@ class TestRecordDecision:
                 )
             )
         # +1 for the "Project created" decision seeded by registration
-        assert len(project.decisions.list_all(CLIENT, "maps-1")) == 4
+        assert len(project.decisions.list_all(CLIENT, ENGAGEMENT, "maps-1")) == 4
 
     def test_nonexistent_project_rejected(self, workspace):
         with pytest.raises(NotFoundError, match="not found"):
@@ -344,7 +349,7 @@ class TestAddEngagementEntry:
                 fields={},
             )
         )
-        titles = [e.title for e in workspace.engagement.list_all(CLIENT)]
+        titles = [e.title for e in workspace.engagement_log.list_all(CLIENT)]
         assert "Research findings presented" in titles
 
     def test_nonexistent_client_rejected(self, di):
@@ -423,6 +428,7 @@ class TestRegisterTour:
         resp = project.register_tour_usecase.execute(
             RegisterTourRequest(
                 client=CLIENT,
+                engagement=ENGAGEMENT,
                 project_slug="maps-1",
                 name="investor",
                 title="Investor Briefing: Strategic Position and Defensibility",
@@ -452,6 +458,7 @@ class TestRegisterTour:
         project.register_tour_usecase.execute(
             RegisterTourRequest(
                 client=CLIENT,
+                engagement=ENGAGEMENT,
                 project_slug="maps-1",
                 name="executive",
                 title="Executive Summary: Risk and Opportunity",
@@ -469,7 +476,7 @@ class TestRegisterTour:
                 ],
             )
         )
-        got = project.tours.get(CLIENT, "maps-1", "executive")
+        got = project.tours.get(CLIENT, ENGAGEMENT, "maps-1", "executive")
         assert got is not None
         assert len(got.stops) == 2
         assert got.stops[1].atlas_source == "atlas/risk/"
@@ -479,6 +486,7 @@ class TestRegisterTour:
             workspace.register_tour_usecase.execute(
                 RegisterTourRequest(
                     client=CLIENT,
+                    engagement=ENGAGEMENT,
                     project_slug="phantom-1",
                     name="investor",
                     title="Phantom Tour",
@@ -540,7 +548,9 @@ class TestGetProject:
     def test_not_found(self, workspace):
         with pytest.raises(NotFoundError):
             workspace.get_project_usecase.execute(
-                GetProjectRequest(client=CLIENT, engagement=ENGAGEMENT, slug="nonexistent")
+                GetProjectRequest(
+                    client=CLIENT, engagement=ENGAGEMENT, slug="nonexistent"
+                )
             )
 
     def test_found(self, project):
@@ -698,6 +708,7 @@ class TestListDecisions:
             DecisionEntry(
                 id="late",
                 client=CLIENT,
+                engagement=ENGAGEMENT,
                 project_slug="maps-1",
                 date=datetime(2025, 6, 3, tzinfo=timezone.utc).date(),
                 timestamp=datetime(2025, 6, 3, 14, 0, 0, tzinfo=timezone.utc),
@@ -709,6 +720,7 @@ class TestListDecisions:
             DecisionEntry(
                 id="early",
                 client=CLIENT,
+                engagement=ENGAGEMENT,
                 project_slug="maps-1",
                 date=datetime(2025, 6, 1, tzinfo=timezone.utc).date(),
                 timestamp=datetime(2025, 6, 1, 9, 0, 0, tzinfo=timezone.utc),
@@ -720,6 +732,7 @@ class TestListDecisions:
             DecisionEntry(
                 id="middle",
                 client=CLIENT,
+                engagement=ENGAGEMENT,
                 project_slug="maps-1",
                 date=datetime(2025, 6, 2, tzinfo=timezone.utc).date(),
                 timestamp=datetime(2025, 6, 2, 11, 0, 0, tzinfo=timezone.utc),

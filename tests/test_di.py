@@ -36,6 +36,6 @@ class TestContainerUsable:
         from .conftest import make_project
 
         container.projects.save(make_project())
-        got = container.projects.get("holloway-group", "maps-1")
+        got = container.projects.get("holloway-group", "strat-1", "maps-1")
         assert got is not None
         assert got.slug == "maps-1"

@@ -44,7 +44,7 @@ MINIMAL_SVG = (
 
 def _build_wardley_workspace(ws: Path) -> None:
     """Build a fully-equipped Wardley project workspace."""
-    proj = ws / "projects" / "maps-1"
+    proj = ws / "engagements" / "strat-1" / "maps-1"
 
     # Brief
     _write(proj / "brief.agreed.md", "# Project Brief\n\nScope: freight operations.")
@@ -107,7 +107,7 @@ def _build_wardley_workspace(ws: Path) -> None:
 
 def _build_bmc_workspace(ws: Path) -> None:
     """Build a BMC project workspace."""
-    proj = ws / "projects" / "bmc-1"
+    proj = ws / "engagements" / "strat-1" / "bmc-1"
 
     _write(proj / "brief.agreed.md", "# BMC Brief\n\nBusiness model analysis.")
     _write(
@@ -199,6 +199,7 @@ def rendered_site(tmp_path_factory):
     container.register_tour_usecase.execute(
         RegisterTourRequest(
             client=CLIENT,
+            engagement="strat-1",
             project_slug="maps-1",
             name="investor",
             title="Investor Briefing: Strategic Position",

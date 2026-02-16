@@ -27,7 +27,8 @@ from wardley_mapping.types import TourManifest, TourStop
 from bin.cli.infrastructure.json_entity_store import JsonEntityStore
 from bin.cli.infrastructure.json_repos import (
     JsonDecisionRepository,
-    JsonEngagementRepository,
+    JsonEngagementEntityRepository,
+    JsonEngagementLogRepository,
     JsonProjectRepository,
     JsonResearchTopicRepository,
     JsonSkillsetRepository,
@@ -79,9 +80,15 @@ def decision_repo(request, tmp_config):
 
 
 @pytest.fixture(params=["json"])
-def engagement_repo(request, tmp_config):
+def engagement_log_repo(request, tmp_config):
     if request.param == "json":
-        return JsonEngagementRepository(tmp_config.workspace_root)
+        return JsonEngagementLogRepository(tmp_config.workspace_root)
+
+
+@pytest.fixture(params=["json"])
+def engagement_entity_repo(request, tmp_config):
+    if request.param == "json":
+        return JsonEngagementEntityRepository(tmp_config.workspace_root)
 
 
 @pytest.fixture(params=["json"])
@@ -103,7 +110,12 @@ def project_store(request, tmp_path):
             model=Project,
             key_field="slug",
             path_resolver=lambda f: (
-                tmp_path / "clients" / f["client"] / "projects" / "index.json"
+                tmp_path
+                / "clients"
+                / f["client"]
+                / "engagements"
+                / f["engagement"]
+                / "projects.json"
             ),
         )
 
@@ -118,7 +130,8 @@ def decision_store(request, tmp_path):
                 tmp_path
                 / "clients"
                 / f["client"]
-                / "projects"
+                / "engagements"
+                / f["engagement"]
                 / f["project_slug"]
                 / "decisions.json"
             ),
@@ -172,6 +185,7 @@ def make_decision(**overrides) -> DecisionEntry:
     defaults = dict(
         id=str(uuid.uuid4()),
         client=DEFAULT_CLIENT,
+        engagement=DEFAULT_ENGAGEMENT,
         project_slug=DEFAULT_PROJECT,
         date=DEFAULT_DATE,
         timestamp=DEFAULT_TIMESTAMP,
@@ -238,6 +252,7 @@ def make_tour(**overrides) -> TourManifest:
     defaults = dict(
         name="investor",
         client=DEFAULT_CLIENT,
+        engagement=DEFAULT_ENGAGEMENT,
         project_slug=DEFAULT_PROJECT,
         title="Investor Tour",
         stops=[make_tour_stop()],

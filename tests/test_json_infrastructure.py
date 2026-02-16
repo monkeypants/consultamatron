@@ -18,6 +18,8 @@ from bin.cli.infrastructure.json_store import read_json_array, read_json_object
 
 from .conftest import make_project, make_research, make_tour
 
+ENGAGEMENT = "strat-1"
+
 
 # ---------------------------------------------------------------------------
 # Path conventions
@@ -31,7 +33,11 @@ class TestPathConventions:
         repo = JsonProjectRepository(tmp_config.workspace_root)
         repo.save(make_project(client="holloway-group"))
         expected = (
-            tmp_config.workspace_root / "holloway-group" / "projects" / "index.json"
+            tmp_config.workspace_root
+            / "holloway-group"
+            / "engagements"
+            / ENGAGEMENT
+            / "projects.json"
         )
         assert expected.exists()
 
@@ -44,17 +50,18 @@ class TestPathConventions:
         expected = (
             tmp_config.workspace_root
             / "holloway-group"
-            / "projects"
+            / "engagements"
+            / ENGAGEMENT
             / "maps-1"
             / "decisions.json"
         )
         assert expected.exists()
 
-    def test_engagement_file(self, tmp_config, engagement_repo):
+    def test_engagement_file(self, tmp_config, engagement_log_repo):
         from .conftest import make_engagement
 
-        engagement_repo.save(make_engagement(client="holloway-group"))
-        expected = tmp_config.workspace_root / "holloway-group" / "engagement.json"
+        engagement_log_repo.save(make_engagement(client="holloway-group"))
+        expected = tmp_config.workspace_root / "holloway-group" / "engagement-log.json"
         assert expected.exists()
 
     def test_research_index(self, tmp_config):
@@ -73,7 +80,8 @@ class TestPathConventions:
         expected = (
             tmp_config.workspace_root
             / "holloway-group"
-            / "projects"
+            / "engagements"
+            / ENGAGEMENT
             / "maps-1"
             / "presentations"
             / "investor"
@@ -105,7 +113,7 @@ class TestDirectoryAsIdentity:
 
         assert repo.client_exists("old-name") is False
         assert repo.client_exists("new-name") is True
-        assert repo.get("new-name", "maps-1") is not None
+        assert repo.get("new-name", ENGAGEMENT, "maps-1") is not None
 
 
 # ---------------------------------------------------------------------------
@@ -117,7 +125,13 @@ class TestJsonFormat:
     def test_file_is_valid_json(self, tmp_config):
         repo = JsonProjectRepository(tmp_config.workspace_root)
         repo.save(make_project())
-        path = tmp_config.workspace_root / "holloway-group" / "projects" / "index.json"
+        path = (
+            tmp_config.workspace_root
+            / "holloway-group"
+            / "engagements"
+            / ENGAGEMENT
+            / "projects.json"
+        )
         data = json.loads(path.read_text(encoding="utf-8"))
         assert isinstance(data, list)
         assert len(data) == 1
@@ -125,14 +139,26 @@ class TestJsonFormat:
     def test_file_is_indented(self, tmp_config):
         repo = JsonProjectRepository(tmp_config.workspace_root)
         repo.save(make_project())
-        path = tmp_config.workspace_root / "holloway-group" / "projects" / "index.json"
+        path = (
+            tmp_config.workspace_root
+            / "holloway-group"
+            / "engagements"
+            / ENGAGEMENT
+            / "projects.json"
+        )
         text = path.read_text(encoding="utf-8")
         assert "\n  " in text  # indented with 2 spaces
 
     def test_file_ends_with_newline(self, tmp_config):
         repo = JsonProjectRepository(tmp_config.workspace_root)
         repo.save(make_project())
-        path = tmp_config.workspace_root / "holloway-group" / "projects" / "index.json"
+        path = (
+            tmp_config.workspace_root
+            / "holloway-group"
+            / "engagements"
+            / ENGAGEMENT
+            / "projects.json"
+        )
         text = path.read_text(encoding="utf-8")
         assert text.endswith("\n")
 
@@ -142,7 +168,8 @@ class TestJsonFormat:
         path = (
             tmp_config.workspace_root
             / "holloway-group"
-            / "projects"
+            / "engagements"
+            / ENGAGEMENT
             / "maps-1"
             / "presentations"
             / "investor"
@@ -174,7 +201,8 @@ class TestMissingFileResilience:
         path = (
             tmp_config.workspace_root
             / "holloway-group"
-            / "projects"
+            / "engagements"
+            / ENGAGEMENT
             / "maps-1"
             / "presentations"
             / "investor"

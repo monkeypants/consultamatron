@@ -22,7 +22,10 @@ class RegisterTourUseCase:
         self._tours = tours
 
     def execute(self, request: RegisterTourRequest) -> RegisterTourResponse:
-        if self._projects.get(request.client, request.project_slug) is None:
+        if (
+            self._projects.get(request.client, request.engagement, request.project_slug)
+            is None
+        ):
             raise NotFoundError(
                 f"Project not found: {request.client}/{request.project_slug}"
             )
@@ -31,6 +34,7 @@ class RegisterTourUseCase:
             TourManifest(
                 name=request.name,
                 client=request.client,
+                engagement=request.engagement,
                 project_slug=request.project_slug,
                 title=request.title,
                 stops=request.stops,

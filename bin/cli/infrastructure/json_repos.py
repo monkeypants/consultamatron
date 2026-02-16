@@ -9,16 +9,18 @@ a file.
     {workspace_root}/
     └── {client}/
         ├── index.json
-        ├── engagement.json
+        ├── engagement-log.json
         ├── resources/
         │   └── index.json
-        └── projects/
+        └── engagements/
             ├── index.json
-            └── {project-slug}/
-                ├── decisions.json
-                └── presentations/
-                    └── {tour-name}/
-                        └── manifest.json
+            └── {engagement-slug}/
+                ├── projects.json
+                └── {project-slug}/
+                    ├── decisions.json
+                    └── presentations/
+                        └── {tour-name}/
+                            └── manifest.json
 
     {skillsets_root}/
     └── index.json
@@ -29,7 +31,13 @@ from __future__ import annotations
 from pathlib import Path
 
 from consulting.entities import DecisionEntry, EngagementEntry
-from practice.entities import Project, ProjectStatus, ResearchTopic, Skillset
+from practice.entities import (
+    Engagement,
+    Project,
+    ProjectStatus,
+    ResearchTopic,
+    Skillset,
+)
 from wardley_mapping.types import TourManifest
 from bin.cli.infrastructure.json_store import (
     JsonArrayStore,
@@ -58,33 +66,69 @@ class JsonSkillsetRepository:
 
 
 # ---------------------------------------------------------------------------
+# Engagement entity (mutable CRUD)
+# ---------------------------------------------------------------------------
+
+
+class JsonEngagementEntityRepository:
+    """Engagement entity repository. One index.json per client."""
+
+    def __init__(self, workspace_root: Path) -> None:
+        self._root = workspace_root
+        self._store: JsonArrayStore[Engagement] = JsonArrayStore(Engagement, "slug")
+
+    def _file(self, client: str) -> Path:
+        return self._root / client / "engagements" / "index.json"
+
+    def get(self, client: str, slug: str) -> Engagement | None:
+        return self._store.find(self._store.load(self._file(client)), slug)
+
+    def list_all(self, client: str) -> list[Engagement]:
+        return self._store.load(self._file(client))
+
+    def save(self, engagement: Engagement) -> None:
+        self._store.upsert(self._file(engagement.client), engagement)
+
+
+# ---------------------------------------------------------------------------
 # Project
 # ---------------------------------------------------------------------------
 
 
 class JsonProjectRepository:
-    """Project repository. One index.json per client under projects/."""
+    """Project repository. One projects.json per engagement."""
 
     def __init__(self, workspace_root: Path) -> None:
         self._root = workspace_root
         self._store: JsonArrayStore[Project] = JsonArrayStore(Project, "slug")
 
-    def _file(self, client: str) -> Path:
-        return self._root / client / "projects" / "index.json"
+    def _file(self, client: str, engagement: str) -> Path:
+        return self._root / client / "engagements" / engagement / "projects.json"
 
-    def get(self, client: str, slug: str) -> Project | None:
-        return self._store.find(self._store.load(self._file(client)), slug)
+    def get(self, client: str, engagement: str, slug: str) -> Project | None:
+        return self._store.find(self._store.load(self._file(client, engagement)), slug)
 
     def list_all(self, client: str) -> list[Project]:
-        return self._store.load(self._file(client))
+        """List all projects across all engagements for a client."""
+        eng_dir = self._root / client / "engagements"
+        if not eng_dir.is_dir():
+            return []
+        projects: list[Project] = []
+        for sub in sorted(eng_dir.iterdir()):
+            if not sub.is_dir():
+                continue
+            proj_file = sub / "projects.json"
+            projects.extend(self._store.load(proj_file))
+        return projects
 
     def list_filtered(
         self,
         client: str,
+        engagement: str,
         skillset: str | None = None,
         status: ProjectStatus | None = None,
     ) -> list[Project]:
-        projects = self._store.load(self._file(client))
+        projects = self._store.load(self._file(client, engagement))
         if skillset is not None:
             projects = [p for p in projects if p.skillset == skillset]
         if status is not None:
@@ -92,10 +136,10 @@ class JsonProjectRepository:
         return projects
 
     def save(self, project: Project) -> None:
-        self._store.upsert(self._file(project.client), project)
+        self._store.upsert(self._file(project.client, project.engagement), project)
 
-    def delete(self, client: str, slug: str) -> bool:
-        path = self._file(client)
+    def delete(self, client: str, engagement: str, slug: str) -> bool:
+        path = self._file(client, engagement)
         items = self._store.load(path)
         filtered = [p for p in items if p.slug != slug]
         if len(filtered) == len(items):
@@ -119,37 +163,53 @@ class JsonDecisionRepository:
         self._root = workspace_root
         self._store: JsonArrayStore[DecisionEntry] = JsonArrayStore(DecisionEntry, "id")
 
-    def _file(self, client: str, project_slug: str) -> Path:
-        return self._root / client / "projects" / project_slug / "decisions.json"
+    def _file(self, client: str, engagement: str, project_slug: str) -> Path:
+        return (
+            self._root
+            / client
+            / "engagements"
+            / engagement
+            / project_slug
+            / "decisions.json"
+        )
 
-    def get(self, client: str, project_slug: str, id: str) -> DecisionEntry | None:
-        return self._store.find(self._store.load(self._file(client, project_slug)), id)
+    def get(
+        self, client: str, engagement: str, project_slug: str, id: str
+    ) -> DecisionEntry | None:
+        return self._store.find(
+            self._store.load(self._file(client, engagement, project_slug)), id
+        )
 
-    def list_all(self, client: str, project_slug: str) -> list[DecisionEntry]:
-        return self._store.load(self._file(client, project_slug))
+    def list_all(
+        self, client: str, engagement: str, project_slug: str
+    ) -> list[DecisionEntry]:
+        return self._store.load(self._file(client, engagement, project_slug))
 
     def list_filtered(
         self,
         client: str,
+        engagement: str,
         project_slug: str,
         title: str | None = None,
     ) -> list[DecisionEntry]:
-        entries = self._store.load(self._file(client, project_slug))
+        entries = self._store.load(self._file(client, engagement, project_slug))
         if title is not None:
             entries = [e for e in entries if e.title == title]
         return entries
 
     def save(self, entry: DecisionEntry) -> None:
-        self._store.append(self._file(entry.client, entry.project_slug), entry)
+        self._store.append(
+            self._file(entry.client, entry.engagement, entry.project_slug), entry
+        )
 
 
 # ---------------------------------------------------------------------------
-# Engagement
+# Engagement log (append-only audit trail)
 # ---------------------------------------------------------------------------
 
 
-class JsonEngagementRepository:
-    """Append-only engagement repository. One file per client."""
+class JsonEngagementLogRepository:
+    """Append-only engagement log repository. One file per client."""
 
     def __init__(self, workspace_root: Path) -> None:
         self._root = workspace_root
@@ -158,7 +218,7 @@ class JsonEngagementRepository:
         )
 
     def _file(self, client: str) -> Path:
-        return self._root / client / "engagement.json"
+        return self._root / client / "engagement-log.json"
 
     def get(self, client: str, id: str) -> EngagementEntry | None:
         return self._store.find(self._store.load(self._file(client)), id)
@@ -211,11 +271,14 @@ class JsonTourManifestRepository:
     def __init__(self, workspace_root: Path) -> None:
         self._root = workspace_root
 
-    def _file(self, client: str, project_slug: str, tour_name: str) -> Path:
+    def _file(
+        self, client: str, engagement: str, project_slug: str, tour_name: str
+    ) -> Path:
         return (
             self._root
             / client
-            / "projects"
+            / "engagements"
+            / engagement
             / project_slug
             / "presentations"
             / tour_name
@@ -223,16 +286,29 @@ class JsonTourManifestRepository:
         )
 
     def get(
-        self, client: str, project_slug: str, tour_name: str
+        self,
+        client: str,
+        engagement: str,
+        project_slug: str,
+        tour_name: str,
     ) -> TourManifest | None:
-        data = read_json_object(self._file(client, project_slug, tour_name))
+        data = read_json_object(self._file(client, engagement, project_slug, tour_name))
         if data is None:
             return None
         return TourManifest.model_validate(data)
 
-    def list_all(self, client: str, project_slug: str) -> list[TourManifest]:
+    def list_all(
+        self, client: str, engagement: str, project_slug: str
+    ) -> list[TourManifest]:
         """List all tour manifests for a project."""
-        pres_dir = self._root / client / "projects" / project_slug / "presentations"
+        pres_dir = (
+            self._root
+            / client
+            / "engagements"
+            / engagement
+            / project_slug
+            / "presentations"
+        )
         if not pres_dir.is_dir():
             return []
         manifests = []
@@ -246,6 +322,11 @@ class JsonTourManifestRepository:
 
     def save(self, manifest: TourManifest) -> None:
         write_json_object(
-            self._file(manifest.client, manifest.project_slug, manifest.name),
+            self._file(
+                manifest.client,
+                manifest.engagement,
+                manifest.project_slug,
+                manifest.name,
+            ),
             manifest.model_dump(mode="json"),
         )

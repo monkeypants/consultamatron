@@ -39,7 +39,7 @@ def _make_project(**overrides) -> Project:
 def full_workspace(tmp_path):
     """Workspace with all BMC stages."""
     ws = tmp_path / CLIENT
-    proj = ws / "projects" / SLUG
+    proj = ws / "engagements" / "strat-1" / SLUG
 
     _write(proj / "brief.agreed.md", "# BMC Brief\n\nBusiness model analysis.")
     _write(
@@ -92,7 +92,7 @@ class TestMinimalWorkspace:
 
     def test_single_page(self, tmp_path):
         ws = tmp_path / CLIENT
-        proj = ws / "projects" / SLUG
+        proj = ws / "engagements" / "strat-1" / SLUG
         _write(proj / "brief.agreed.md", "# Brief\n\nMinimal.")
 
         presenter = BmcProjectPresenter(workspace_root=tmp_path)
@@ -103,7 +103,7 @@ class TestMinimalWorkspace:
 
     def test_no_overview_without_canvas(self, tmp_path):
         ws = tmp_path / CLIENT
-        proj = ws / "projects" / SLUG
+        proj = ws / "engagements" / "strat-1" / SLUG
         _write(proj / "brief.agreed.md", "# Brief\n\nMinimal.")
 
         presenter = BmcProjectPresenter(workspace_root=tmp_path)
@@ -116,7 +116,7 @@ class TestEmptyWorkspace:
 
     def test_no_sections(self, tmp_path):
         ws = tmp_path / CLIENT
-        proj = ws / "projects" / SLUG
+        proj = ws / "engagements" / "strat-1" / SLUG
         proj.mkdir(parents=True)
 
         presenter = BmcProjectPresenter(workspace_root=tmp_path)
