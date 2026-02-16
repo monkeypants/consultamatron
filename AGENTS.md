@@ -27,6 +27,7 @@ skillsets and `practice skillset show --name <name>` for details.
 | Wardley Mapping (atlas) | wm-atlas-overview, wm-atlas-anchor-chains, wm-atlas-need-traces, wm-atlas-bottlenecks, wm-atlas-shared-components, wm-atlas-layers, wm-atlas-plays, wm-atlas-sourcing, wm-atlas-movement, wm-atlas-inertia, wm-atlas-flows, wm-atlas-forces, wm-atlas-doctrine, wm-atlas-risk, wm-atlas-teams, wm-atlas-pipelines, wm-atlas-evolution-mismatch | Focused OWM maps + analysis |
 | Wardley Mapping (tours) | wm-tour-investor, wm-tour-technical, wm-tour-executive, wm-tour-operations, wm-tour-onboarding, wm-tour-competitive | Curated presentations |
 | Business Model Canvas | bmc-research, bmc-segments, bmc-canvas, bmc-iterate | Structured markdown canvas |
+| Six Simple Rules Complexity Audit | ca-research, ca-diagnose-understanding, ca-diagnose-integrators, ca-diagnose-power, ca-diagnose-future, ca-diagnose-reciprocity, ca-diagnose-rewards, ca-aggregate, ca-synthesise, ca-iterate | Diagnostic reports + audit |
 
 Run `practice skillset show --name <name>` for pipeline definitions
 and gates.
@@ -133,6 +134,8 @@ visual map.
   editorial voice. Tours reference atlas content, not duplicate it.
 - **Business Model Canvas**: Markdown throughout. BMC has no meaningful
   second axis.
+- **Six Simple Rules Complexity Audit**: Markdown throughout. Diagnostic
+  reports, aggregated findings, and audit synthesis are all prose.
 
 ## Site generation
 
@@ -186,6 +189,26 @@ output is "good enough" on its own.
   **bmc-canvas**
 - "Update the canvas" →
   **bmc-iterate**
+- "Audit organisational complexity" / "Six Simple Rules" →
+  **ca-research** (after org-research)
+- "Diagnose understanding" / "What do people really do?" →
+  **ca-diagnose-understanding**
+- "Diagnose integrators" / "Who coordinates across silos?" →
+  **ca-diagnose-integrators**
+- "Diagnose power dynamics" / "Is cooperation zero-sum?" →
+  **ca-diagnose-power**
+- "Diagnose feedback loops" / "Shadow of the future?" →
+  **ca-diagnose-future**
+- "Diagnose reciprocity" / "Can teams succeed alone?" →
+  **ca-diagnose-reciprocity**
+- "Diagnose incentives" / "Are cooperators rewarded?" →
+  **ca-diagnose-rewards**
+- "Aggregate the diagnostics" / "Cross-cutting patterns?" →
+  **ca-aggregate**
+- "Produce the audit report" / "Recommendations?" →
+  **ca-synthesise**
+- "Update the audit" / "Refine the recommendations" →
+  **ca-iterate**
 - "Rewrite this in the right voice" →
   **editorial-voice**
 - "How did that go?" / "Review the project" / "Lessons learned" →
@@ -201,6 +224,16 @@ serve user needs, positioned by visibility (how visible to the user) on
 the Y-axis and evolution (how mature, from genesis to commodity) on the
 X-axis. The method was created by Simon Wardley. The Wardley Mapping
 skillset encodes a structured approach to producing these maps.
+
+## What is Six Simple Rules
+
+The Six Simple Rules framework (Yves Morieux, Boston Consulting Group)
+addresses organisational complexity by focusing on cooperation rather
+than adding structure. The six rules are: (1) Understand What People
+Really Do, (2) Reinforce Integrators, (3) Increase Total Quantity of
+Power, (4) Extend the Shadow of the Future, (5) Increase Reciprocity,
+(6) Reward Those Who Cooperate. The complexity audit skillset encodes
+a structured diagnostic and synthesis approach based on these rules.
 
 ## What is Business Model Canvas
 

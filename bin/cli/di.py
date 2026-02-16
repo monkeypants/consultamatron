@@ -20,6 +20,7 @@ from bin.cli.infrastructure.filesystem_source_repository import (
 )
 from bin.cli.infrastructure.skillset_scaffold import SkillsetScaffold
 from business_model_canvas.presenter import BmcProjectPresenter
+from six_simple_rules_complexity_audit.presenter import CaProjectPresenter
 from bin.cli.infrastructure.jinja_renderer import JinjaSiteRenderer
 from bin.cli.infrastructure.json_repos import (
     JsonDecisionRepository,
@@ -163,6 +164,9 @@ class Container:
                 tours=self.tours,
             ),
             "business-model-canvas": BmcProjectPresenter(
+                workspace_root=config.workspace_root,
+            ),
+            "six-simple-rules-complexity-audit": CaProjectPresenter(
                 workspace_root=config.workspace_root,
             ),
         }
