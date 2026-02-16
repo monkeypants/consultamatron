@@ -31,7 +31,6 @@ from bin.cli.infrastructure.json_repos import (
     JsonProjectRepository,
     JsonResearchTopicRepository,
 )
-from wardley_mapping.infrastructure import JsonTourManifestRepository
 from bin.cli.usecases import (
     ListSkillsetsUseCase,
     ListSourcesUseCase,
@@ -41,8 +40,6 @@ from bin.cli.usecases import (
     ShowSourceUseCase,
     UpdateProspectusUseCase,
 )
-from wardley_mapping.types import TourManifestRepository
-from wardley_mapping.usecases import RegisterTourUseCase
 from consulting.repositories import (
     DecisionRepository,
     EngagementLogRepository,
@@ -120,6 +117,8 @@ class Container:
     """
 
     def __init__(self, config: Config) -> None:
+        self.config = config
+
         # -- Infrastructure services ----------------------------------------
         self.clock: Clock = WallClock()
         self.id_gen: IdGenerator = UuidGenerator()
@@ -143,9 +142,6 @@ class Container:
         self.research: ResearchTopicRepository = JsonResearchTopicRepository(
             config.workspace_root,
         )
-        self.tours: TourManifestRepository = JsonTourManifestRepository(
-            config.workspace_root,
-        )
         self.engagement_entities: EngagementRepository = JsonEngagementEntityRepository(
             config.workspace_root
         )
@@ -157,7 +153,7 @@ class Container:
             repo_root=config.repo_root,
         )
 
-        # -- Project presenters (discovered from BC modules) -------------------
+        # -- BC discovery (presenters + service hooks) -------------------------
         self.presenters: dict[str, ProjectPresenter] = {}
         for pkg_name in _read_pyproject_packages(config.repo_root / "pyproject.toml"):
             try:
@@ -170,6 +166,9 @@ class Container:
                 self.presenters[skillset_name] = create_fn(
                     config.workspace_root, config.repo_root
                 )
+            register = getattr(mod, "register_services", None)
+            if register is not None:
+                register(self)
 
         # -- Write usecases ------------------------------------------------
         self.initialize_workspace_usecase = InitializeWorkspaceUseCase(
@@ -208,10 +207,6 @@ class Container:
             projects=self.projects,
             research=self.research,
             clock=self.clock,
-        )
-        self.register_tour_usecase = RegisterTourUseCase(
-            projects=self.projects,
-            tours=self.tours,
         )
         self.create_engagement_usecase = CreateEngagementUseCase(
             projects=self.projects,

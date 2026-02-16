@@ -19,6 +19,19 @@ def _create_presenter(workspace_root, repo_root):
 
 PRESENTER_FACTORY = ("wardley-mapping", _create_presenter)
 
+
+def register_services(container) -> None:
+    """Register WM-specific services on the DI container."""
+    from wardley_mapping.infrastructure import JsonTourManifestRepository
+    from wardley_mapping.usecases import RegisterTourUseCase
+
+    container.tours = JsonTourManifestRepository(container.config.workspace_root)
+    container.register_tour_usecase = RegisterTourUseCase(
+        projects=container.projects,
+        tours=container.tours,
+    )
+
+
 SKILLSETS: list[Skillset] = [
     Skillset(
         name="wardley-mapping",
