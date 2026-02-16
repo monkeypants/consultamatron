@@ -46,23 +46,52 @@ All skills operate on a shared workspace at `./clients/{org-slug}/`
 
 ```
 clients/{org-slug}/
-├── resources/          # Shared research (managed by org-research)
-│   ├── index.md        # Manifest + synthesis (gate artifact)
-│   └── {topic}.md      # Sub-reports with citations
-├── projects/
-│   ├── index.md        # Project registry
-│   └── {project-slug}/ # One directory per project
-├── review.md               # Engagement-level review synthesis
-└── engagement.md           # Cross-project engagement history
+├── resources/                  # Shared research (managed by org-research)
+│   ├── index.md                # Manifest + synthesis (gate artifact)
+│   └── {topic}.md              # Sub-reports with citations
+├── engagements/
+│   ├── index.json              # Engagement registry
+│   └── {engagement-slug}/      # One engagement = one unit of contracted work
+│       ├── projects.json       # Project registry for this engagement
+│       └── {project-slug}/     # One directory per project
+│           └── decisions.json  # Project decision log
+├── engagement-log.json         # Cross-engagement audit trail
+└── review.md                   # Engagement-level review synthesis
 ```
+
+Research is client-scoped (you research the org, not the engagement).
+Projects are engagement-scoped. The audit log spans all engagements.
 
 See `org-research/assets/workspace-layout.md` for the full directory
 structure including per-skillset project layouts.
 
+## Engagement lifecycle
+
+An engagement is a unit of contracted work with a client. It scopes
+which skillset sources are permitted and contains projects.
+
+```
+planning → active → review → closed
+```
+
+Each engagement has an `allowed_sources` list controlling which
+skillset sources (commons, partnerships) can be used for projects
+within that engagement. Commons is always present.
+
 Before starting any skill, check `clients/` for existing engagements.
 If work already exists for an organisation, resume from where it left
-off. Read `engagement.md` and project `decisions.md` files to understand
+off. Read the engagement log and project decision logs to understand
 what has already been agreed.
+
+## Source discovery
+
+Skillset sources determine where skillset definitions come from:
+
+- **commons** — built-in skillsets declared in bounded context modules
+- **partnerships** — external skillset definitions in `partnerships/{slug}/skillsets/index.json`
+
+Use `practice source list` to see installed sources and
+`practice source show --slug <slug>` for detail.
 
 ## Gate protocol
 

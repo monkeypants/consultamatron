@@ -26,7 +26,7 @@ Identify which projects in the client workspace require review.
 A project requires review when:
 1. It has reached its **terminal gate artifact** OR is in iterative
    refinement (an `*-iterate` skill has been used, detectable from
-   `decisions.md` entries after the terminal gate), AND
+   `decisions.json` entries after the terminal gate), AND
 2. It has **no** `review/review.md` file
 
 To determine the terminal gate for each project, check the project's
@@ -35,9 +35,11 @@ skillset pipeline via `practice skillset show`. Terminal gates by skillset:
 - **Business Model Canvas**: `canvas.agreed.md`
 
 Check each project directory:
-1. Read `projects/index.md` for the list of projects and their skillsets
+1. Read `engagements/{eng}/projects.json` for the list of projects and
+   their skillsets
 2. For each project, check whether the terminal gate artifact exists
-3. Check whether `{project}/review/review.md` already exists
+3. Check whether `engagements/{eng}/{project}/review/review.md` already
+   exists
 
 Present the list of reviewable projects to the consultant:
 - "These projects are complete but have not been reviewed: {list}"
@@ -49,9 +51,9 @@ If no projects require review, tell the consultant and stop.
 
 For each project being reviewed, build an evidence summary by reading:
 
-1. **`engagement.md`** — engagement history and planning decisions
-2. **`projects/index.md`** — project status and metadata
-3. **`{project}/decisions.md`** — full decision trail
+1. **`engagement-log.json`** — engagement history and planning decisions
+2. **`engagements/{eng}/projects.json`** — project status and metadata
+3. **`engagements/{eng}/{project}/decisions.json`** — full decision trail
 4. **All gate artifacts** — which gates were reached, in what order
 5. **Draft directories** — count drafts per stage to measure revision
    effort (e.g. `needs/drafts/`, `chain/chains/`, `evolve/assessments/`)
@@ -61,7 +63,7 @@ For each project being reviewed, build an evidence summary by reading:
 Produce an internal evidence summary covering:
 - Stages executed and their gate artifacts
 - Revision effort per stage (draft counts, superseded files)
-- Timeline (dates from `decisions.md` entries)
+- Timeline (dates from `decisions.json` entries)
 - What exists vs what the skillset pipeline defines
 - Any anomalies (skipped stages, out-of-order gates, missing artifacts)
 
@@ -126,7 +128,8 @@ Record all responses verbatim. Follow up on anything interesting.
 ## Step 3: Draft private review
 
 Combine evidence from Step 1 and interview responses from Step 2 into
-a review document. Write it to `projects/{slug}/review/review.md` using
+a review document. Write it to
+`engagements/{eng}/{slug}/review/review.md` using
 the template in [review-template.md](references/review-template.md).
 
 The review contains client-specific information and is **never shared
@@ -152,7 +155,7 @@ record.
 
 For each finding in the review that warrants a GitHub issue, write a
 sanitised version. Write all sanitised findings to
-`projects/{slug}/review/findings.md` using the template in
+`engagements/{eng}/{slug}/review/findings.md` using the template in
 [issue-template.md](references/issue-template.md).
 
 ### Sanitisation rules
@@ -221,7 +224,7 @@ Apply `post-review` to all issues plus a category label:
 
 1. **Record the review** for each reviewed project:
    ```
-   review/scripts/record-review.sh --client {org} --project {slug} \
+   review/scripts/record-review.sh --client {org} --engagement {eng} --project {slug} \
      --field "Projects reviewed={list}" \
      --field "Issues raised={count new} new, {count comments} comments on existing" \
      --field "Key findings={brief summary of top findings}"
@@ -241,8 +244,8 @@ Apply `post-review` to all issues plus a category label:
 - **No gate artifact.** Review is terminal. The `review/review.md` file
   is the record, not a gate for downstream skills.
 - **Per-project reviews, engagement-level synthesis.** Each project gets
-  its own `review/` directory. Cross-project patterns go in the
-  client-level `review.md`.
+  its own `review/` directory under its engagement path. Cross-project
+  patterns go in the client-level `review.md`.
 - **Three finding categories.** `process-fix` (existing skill needs
   improvement), `skill-gap` (existing skill is missing capability),
   `new-capability` (entirely new skill or deliverable type needed).

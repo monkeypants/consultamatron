@@ -3,12 +3,12 @@
 # Record that customer segments have been agreed for a BMC project.
 #
 # Usage:
-#   bmc-segments/scripts/record-agreement.sh --client CLIENT --project PROJECT \
-#     --field "Segments=..." --field "Scope=..."
+#   bmc-segments/scripts/record-agreement.sh --client CLIENT --engagement ENGAGEMENT \
+#     --project PROJECT --field "Segments=..." --field "Scope=..."
 #
 # Files modified by this script:
-#   clients/{client}/projects/{slug}/decisions.json  — Decision log (append:
-#                                                      "Stage 2: Customer segments agreed")
+#   clients/{client}/engagements/{engagement}/{slug}/decisions.json — Decision log (append:
+#                                                                      "Stage 2: Customer segments agreed")
 #
 # The files listed above are JSON documents managed by the consultamatron
 # CLI (bin/cli/). Agents may read these files directly for inspection.
@@ -20,24 +20,25 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-CLIENT="" PROJECT=""
+CLIENT="" ENGAGEMENT="" PROJECT=""
 FIELDS=()
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --client)  CLIENT="$2"; shift 2 ;;
-    --project) PROJECT="$2"; shift 2 ;;
+    --client)     CLIENT="$2"; shift 2 ;;
+    --engagement) ENGAGEMENT="$2"; shift 2 ;;
+    --project)    PROJECT="$2"; shift 2 ;;
     --field)   FIELDS+=("$2"); shift 2 ;;
     *) echo "Unknown option: $1" >&2; exit 1 ;;
   esac
 done
 
-if [[ -z "$CLIENT" || -z "$PROJECT" ]]; then
-  echo "Usage: $0 --client CLIENT --project PROJECT [--field Key=Value ...]" >&2
+if [[ -z "$CLIENT" || -z "$ENGAGEMENT" || -z "$PROJECT" ]]; then
+  echo "Usage: $0 --client CLIENT --engagement ENGAGEMENT --project PROJECT [--field Key=Value ...]" >&2
   exit 1
 fi
 
 CMD=(uv run --project "$REPO_DIR" consultamatron decision record \
-  --client "$CLIENT" --project "$PROJECT" \
+  --client "$CLIENT" --engagement "$ENGAGEMENT" --project "$PROJECT" \
   --title "Stage 2: Customer segments agreed" \
   --field "Agreed=Customer segments and value propositions signed off")
 for f in "${FIELDS[@]}"; do
