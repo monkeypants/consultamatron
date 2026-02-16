@@ -20,15 +20,14 @@ codebase is licensed.
 
 ## How to sign
 
-When you open your first pull request, the CLA Assistant bot will
-prompt you to sign the agreement. You sign by posting a comment in
-the pull request with the exact text:
+When you open your first pull request, the CLA Assistant will
+comment asking you to sign. You sign by posting a comment in the
+pull request with the exact text:
 
-> I have read the CLA document and I hereby sign the Contributor
-> Assignment Agreement.
+> I have read the CLA Document and I hereby sign the CLA
 
-This is recorded against your GitHub username. You only need to sign
-once — all future contributions are covered.
+Your signature is recorded against your GitHub username. You only
+need to sign once — all future contributions are covered.
 
 ### If your employer may own your work
 
