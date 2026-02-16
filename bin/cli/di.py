@@ -23,7 +23,11 @@ from bin.cli.infrastructure.json_repos import (
     JsonResearchTopicRepository,
     JsonTourManifestRepository,
 )
-from bin.cli.usecases import RenderSiteUseCase
+from bin.cli.usecases import (
+    ListSkillsetsUseCase,
+    RenderSiteUseCase,
+    ShowSkillsetUseCase,
+)
 from wardley_mapping.presenter import WardleyProjectPresenter
 from wardley_mapping.types import TourManifestRepository
 from wardley_mapping.usecases import RegisterTourUseCase
@@ -190,6 +194,12 @@ class Container:
         )
         self.list_research_topics_usecase = ListResearchTopicsUseCase(
             research=self.research,
+        )
+        self.list_skillsets_usecase = ListSkillsetsUseCase(
+            skillsets=self.skillsets,
+        )
+        self.show_skillset_usecase = ShowSkillsetUseCase(
+            skillsets=self.skillsets,
         )
         self.render_site_usecase = RenderSiteUseCase(
             projects=self.projects,
