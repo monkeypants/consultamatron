@@ -15,7 +15,7 @@ import click
 
 from bin.cli.config import Config
 from bin.cli.di import Container
-from bin.cli.dtos import RenderSiteRequest
+from bin.cli.dtos import ListSkillsetsRequest, RenderSiteRequest, ShowSkillsetRequest
 from bin.cli.introspect import generate_command
 
 import consulting.cli
@@ -33,6 +33,53 @@ def cli(ctx: click.Context) -> None:
 
 consulting.cli.register_commands(cli)
 wardley_mapping.cli.register_commands(cli)
+
+
+# ---------------------------------------------------------------------------
+# skillset (cross-BC, stays here)
+# ---------------------------------------------------------------------------
+
+
+@cli.group()
+def skillset() -> None:
+    """Browse registered skillsets."""
+
+
+def _format_skillset_list(resp: Any) -> None:
+    if not resp.skillsets:
+        click.echo("No skillsets registered.")
+        return
+    for s in resp.skillsets:
+        click.echo(f"  {s.name}  {s.display_name}  ({len(s.stages)} stages)")
+
+
+def _format_skillset_show(resp: Any) -> None:
+    s = resp.skillset
+    click.echo(f"Name:        {s.name}")
+    click.echo(f"Display:     {s.display_name}")
+    click.echo(f"Description: {s.description}")
+    click.echo(f"Slug:        {s.slug_pattern}")
+    click.echo(f"Pipeline:    {len(s.stages)} stages")
+    for st in s.stages:
+        click.echo(f"  {st.order}. {st.description} ({st.skill})")
+
+
+skillset.add_command(
+    generate_command(
+        name="list",
+        request_model=ListSkillsetsRequest,
+        usecase_attr="list_skillsets_usecase",
+        format_output=_format_skillset_list,
+    )
+)
+skillset.add_command(
+    generate_command(
+        name="show",
+        request_model=ShowSkillsetRequest,
+        usecase_attr="show_skillset_usecase",
+        format_output=_format_skillset_show,
+    )
+)
 
 
 # ---------------------------------------------------------------------------

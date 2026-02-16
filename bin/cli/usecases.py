@@ -4,8 +4,21 @@ and wardley_mapping.usecases, plus site usecase that remains in bin/cli.
 
 from __future__ import annotations
 
-from bin.cli.dtos import RenderSiteRequest, RenderSiteResponse
-from consulting.repositories import ProjectRepository, ResearchTopicRepository
+from bin.cli.dtos import (
+    ListSkillsetsRequest,
+    ListSkillsetsResponse,
+    RenderSiteRequest,
+    RenderSiteResponse,
+    ShowSkillsetRequest,
+    ShowSkillsetResponse,
+    SkillsetInfo,
+    SkillsetStageInfo,
+)
+from consulting.repositories import (
+    ProjectRepository,
+    ResearchTopicRepository,
+    SkillsetRepository,
+)
 from consulting.usecases import (
     AddEngagementEntryUseCase,
     GetProjectProgressUseCase,
@@ -19,6 +32,7 @@ from consulting.usecases import (
     RegisterResearchTopicUseCase,
     UpdateProjectStatusUseCase,
 )
+from practice.entities import Skillset
 from practice.exceptions import NotFoundError
 from practice.repositories import ProjectPresenter, SiteRenderer
 from wardley_mapping.usecases import RegisterTourUseCase
@@ -30,12 +44,14 @@ __all__ = [
     "InitializeWorkspaceUseCase",
     "ListDecisionsUseCase",
     "ListProjectsUseCase",
+    "ListSkillsetsUseCase",
     "ListResearchTopicsUseCase",
     "RecordDecisionUseCase",
     "RegisterProjectUseCase",
     "RegisterResearchTopicUseCase",
     "RegisterTourUseCase",
     "RenderSiteUseCase",
+    "ShowSkillsetUseCase",
     "UpdateProjectStatusUseCase",
 ]
 
@@ -93,3 +109,52 @@ class RenderSiteUseCase:
             site_path=str(site_path),
             page_count=page_count,
         )
+
+
+# ---------------------------------------------------------------------------
+# Skillset — stays here (cross-BC, aggregates from all BCs)
+# ---------------------------------------------------------------------------
+
+
+def _skillset_to_info(s: Skillset) -> SkillsetInfo:
+    return SkillsetInfo(
+        name=s.name,
+        display_name=s.display_name,
+        description=s.description,
+        slug_pattern=s.slug_pattern,
+        stages=[
+            SkillsetStageInfo(
+                order=st.order,
+                skill=st.skill,
+                description=st.description,
+                prerequisite_gate=st.prerequisite_gate,
+                produces_gate=st.produces_gate,
+            )
+            for st in s.pipeline
+        ],
+    )
+
+
+class ListSkillsetsUseCase:
+    """List all registered skillsets."""
+
+    def __init__(self, skillsets: SkillsetRepository) -> None:
+        self._skillsets = skillsets
+
+    def execute(self, request: ListSkillsetsRequest) -> ListSkillsetsResponse:
+        return ListSkillsetsResponse(
+            skillsets=[_skillset_to_info(s) for s in self._skillsets.list_all()],
+        )
+
+
+class ShowSkillsetUseCase:
+    """Show details of a registered skillset by name."""
+
+    def __init__(self, skillsets: SkillsetRepository) -> None:
+        self._skillsets = skillsets
+
+    def execute(self, request: ShowSkillsetRequest) -> ShowSkillsetResponse:
+        skillset = self._skillsets.get(request.name)
+        if skillset is None:
+            raise NotFoundError(f"Skillset not found: {request.name}")
+        return ShowSkillsetResponse(skillset=_skillset_to_info(skillset))

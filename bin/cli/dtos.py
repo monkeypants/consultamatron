@@ -61,8 +61,14 @@ __all__ = [
     "RegisterResearchTopicResponse",
     "RegisterTourRequest",
     "RegisterTourResponse",
+    "ListSkillsetsRequest",
+    "ListSkillsetsResponse",
     "RenderSiteRequest",
     "RenderSiteResponse",
+    "ShowSkillsetRequest",
+    "ShowSkillsetResponse",
+    "SkillsetInfo",
+    "SkillsetStageInfo",
     "ResearchTopicInfo",
     "StageProgress",
     "UpdateProjectStatusRequest",
@@ -85,3 +91,42 @@ class RenderSiteResponse(BaseModel):
     client: str
     site_path: str
     page_count: int
+
+
+# ---------------------------------------------------------------------------
+# Skillset — stays here (cross-BC, aggregates from all BCs)
+# ---------------------------------------------------------------------------
+
+
+class SkillsetStageInfo(BaseModel):
+    order: int
+    skill: str
+    description: str
+    prerequisite_gate: str
+    produces_gate: str
+
+
+class SkillsetInfo(BaseModel):
+    name: str
+    display_name: str
+    description: str
+    slug_pattern: str
+    stages: list[SkillsetStageInfo]
+
+
+class ListSkillsetsRequest(BaseModel):
+    """List all registered skillsets."""
+
+
+class ListSkillsetsResponse(BaseModel):
+    skillsets: list[SkillsetInfo]
+
+
+class ShowSkillsetRequest(BaseModel):
+    """Show details of a registered skillset."""
+
+    name: str = Field(description="Skillset name.")
+
+
+class ShowSkillsetResponse(BaseModel):
+    skillset: SkillsetInfo
