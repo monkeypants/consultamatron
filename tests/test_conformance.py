@@ -11,11 +11,14 @@ Conformance properties:
   4. Skillset discipline — field-level validation for all skillsets
   5. BC test ownership — implemented BCs own their test infrastructure
   6. Protocol smoke tests — runtime verification of BC plugin contracts
+  7. Skill file conformance — SKILL.md files match agentskills.io spec
 """
 
 from __future__ import annotations
 
 import importlib
+import os
+import re
 from pathlib import Path
 
 import pytest
@@ -402,4 +405,188 @@ class TestCliRegistrationProtocol:
         cli_mod.register_commands(group)
         assert len(group.commands) > 0, (
             f"{mod.__name__}.cli.register_commands added no commands"
+        )
+
+
+# ---------------------------------------------------------------------------
+# 7. Skill file conformance — agentskills.io spec
+# ---------------------------------------------------------------------------
+
+_NAME_RE = re.compile(r"^[a-z][a-z0-9]*(-[a-z][a-z0-9]*)*$")
+
+
+def _parse_skill_frontmatter(skill_md_path: Path) -> dict:
+    """Parse YAML frontmatter from a SKILL.md file.
+
+    Minimal parser — handles flat ``key: value`` pairs and the YAML
+    ``>`` folded-scalar continuation used for descriptions.  No
+    external YAML dependency required.
+    """
+    text = skill_md_path.read_text()
+    parts = text.split("---", 2)
+    if len(parts) < 3:
+        return {}
+
+    result = {}
+    current_key = None
+    folding = False
+    fold_lines: list[str] = []
+
+    for line in parts[1].splitlines():
+        stripped = line.strip()
+        if not stripped:
+            if folding:
+                fold_lines.append("")
+            continue
+
+        # Indented continuation of a folded scalar
+        if folding and line[0] in (" ", "\t"):
+            fold_lines.append(stripped)
+            continue
+
+        # Flush any accumulated folded text
+        if folding:
+            result[current_key] = " ".join(ln for ln in fold_lines if ln)
+            folding = False
+            fold_lines = []
+
+        if ":" not in stripped:
+            continue
+
+        key, _, value = stripped.partition(":")
+        key = key.strip()
+        value = value.strip()
+
+        if value == ">":
+            current_key = key
+            folding = True
+            fold_lines = []
+        elif value:
+            result[key] = value
+        else:
+            result[key] = ""
+
+    # Flush trailing folded scalar
+    if folding:
+        result[current_key] = " ".join(ln for ln in fold_lines if ln)
+
+    return result
+
+
+def _discover_skill_dirs():
+    """Return list of (name, resolved_path) for all skill directories."""
+    skills_dir = _REPO_ROOT / ".claude" / "skills"
+    results = []
+    for entry in sorted(skills_dir.iterdir()):
+        skill_md = entry / "SKILL.md"
+        if skill_md.is_file():
+            results.append((entry.name, entry.resolve()))
+    return results
+
+
+def _discover_pipeline_skills():
+    """Return sorted list of skill names referenced by implemented pipelines."""
+    names = set()
+    for skillset in _IMPLEMENTED:
+        for stage in skillset.pipeline:
+            names.add(stage.skill)
+    return sorted(names)
+
+
+def _discover_bash_scripts():
+    """Return list of (skill_name, script_path) for all scripts/ entries."""
+    results = []
+    for name, skill_dir in _discover_skill_dirs():
+        scripts_dir = skill_dir / "scripts"
+        if not scripts_dir.is_dir():
+            continue
+        for script in sorted(scripts_dir.iterdir()):
+            if script.suffix == ".sh" and script.is_file():
+                results.append((name, script))
+    return results
+
+
+_SKILL_DIRS = _discover_skill_dirs()
+_SKILL_DIR_IDS = [name for name, _ in _SKILL_DIRS]
+_PIPELINE_SKILLS = _discover_pipeline_skills()
+_BASH_SCRIPTS = _discover_bash_scripts()
+_BASH_SCRIPT_IDS = [f"{name}/{p.name}" for name, p in _BASH_SCRIPTS]
+
+
+@pytest.mark.doctrine
+class TestSkillFileConformance:
+    """Skill files conform to agentskills.io specification."""
+
+    # --- SKILL.md existence and structure ---
+
+    @pytest.mark.parametrize("skill_name", _PIPELINE_SKILLS)
+    def test_pipeline_skill_has_skill_file(self, skill_name):
+        """Every pipeline stage has a discoverable SKILL.md."""
+        skill_dir = _REPO_ROOT / ".claude" / "skills" / skill_name
+        assert skill_dir.exists(), f"No .claude/skills/{skill_name} directory/symlink"
+        assert (skill_dir / "SKILL.md").is_file(), (
+            f".claude/skills/{skill_name}/SKILL.md missing"
+        )
+
+    @pytest.mark.parametrize("skill_dir", _SKILL_DIRS, ids=_SKILL_DIR_IDS)
+    def test_name_matches_directory(self, skill_dir):
+        """SKILL.md name field matches parent directory name."""
+        dir_name, path = skill_dir
+        fm = _parse_skill_frontmatter(path / "SKILL.md")
+        assert "name" in fm, f"No name in frontmatter: {path / 'SKILL.md'}"
+        assert fm["name"] == dir_name, (
+            f"Frontmatter name {fm['name']!r} != directory name {dir_name!r}"
+        )
+
+    @pytest.mark.parametrize("skill_dir", _SKILL_DIRS, ids=_SKILL_DIR_IDS)
+    def test_name_format(self, skill_dir):
+        """name is <=64 chars, lowercase/hyphens, no leading/trailing/consecutive hyphens."""
+        _, path = skill_dir
+        fm = _parse_skill_frontmatter(path / "SKILL.md")
+        name = fm.get("name", "")
+        assert name, f"Empty name in {path / 'SKILL.md'}"
+        assert len(name) <= 64, f"Name {name!r} exceeds 64 chars ({len(name)})"
+        assert _NAME_RE.match(name), (
+            f"Name {name!r} does not match pattern ^[a-z][a-z0-9]*(-[a-z][a-z0-9]*)*$"
+        )
+
+    @pytest.mark.parametrize("skill_dir", _SKILL_DIRS, ids=_SKILL_DIR_IDS)
+    def test_description_length(self, skill_dir):
+        """description is <=1024 characters and non-empty."""
+        _, path = skill_dir
+        fm = _parse_skill_frontmatter(path / "SKILL.md")
+        desc = fm.get("description", "")
+        assert desc, f"Empty description in {path / 'SKILL.md'}"
+        assert len(desc) <= 1024, (
+            f"Description exceeds 1024 chars ({len(desc)}): {path / 'SKILL.md'}"
+        )
+
+    @pytest.mark.parametrize("skill_dir", _SKILL_DIRS, ids=_SKILL_DIR_IDS)
+    def test_line_count(self, skill_dir):
+        """SKILL.md is under 500 lines."""
+        _, path = skill_dir
+        skill_md = path / "SKILL.md"
+        line_count = len(skill_md.read_text().splitlines())
+        assert line_count < 500, f"{skill_md} has {line_count} lines (limit 500)"
+
+    # --- Bash wrappers ---
+
+    @pytest.mark.parametrize("script_entry", _BASH_SCRIPTS, ids=_BASH_SCRIPT_IDS)
+    def test_bash_scripts_executable(self, script_entry):
+        """Recording scripts are executable."""
+        _, script_path = script_entry
+        mode = os.stat(script_path).st_mode
+        assert mode & 0o111, f"{script_path} is not executable"
+
+    # --- Pipeline-specific checks ---
+
+    @pytest.mark.parametrize("skill_name", _PIPELINE_SKILLS)
+    def test_frontmatter_name_matches_pipeline_skill(self, skill_name):
+        """SKILL.md name field matches the pipeline stage skill field."""
+        skill_md = _REPO_ROOT / ".claude" / "skills" / skill_name / "SKILL.md"
+        if not skill_md.is_file():
+            pytest.skip(f"No SKILL.md for {skill_name}")
+        fm = _parse_skill_frontmatter(skill_md)
+        assert fm.get("name") == skill_name, (
+            f"Frontmatter name {fm.get('name')!r} != pipeline skill {skill_name!r}"
         )
