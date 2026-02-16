@@ -29,8 +29,8 @@ A project requires review when:
    `decisions.md` entries after the terminal gate), AND
 2. It has **no** `review/review.md` file
 
-To determine the terminal gate for each project, read the project's
-skillset manifest from `skillsets/`. Terminal gates by skillset:
+To determine the terminal gate for each project, check the project's
+skillset pipeline via `practice skillset show`. Terminal gates by skillset:
 - **Wardley Mapping**: `strategy/map.agreed.owm`
 - **Business Model Canvas**: `canvas.agreed.md`
 
@@ -55,7 +55,7 @@ For each project being reviewed, build an evidence summary by reading:
 4. **All gate artifacts** — which gates were reached, in what order
 5. **Draft directories** — count drafts per stage to measure revision
    effort (e.g. `needs/drafts/`, `chain/chains/`, `evolve/assessments/`)
-6. **The skillset manifest** (`skillsets/*.md`) — what was expected vs
+6. **The skillset pipeline** (`practice skillset show`) — what was expected vs
    what exists
 
 Produce an internal evidence summary covering:

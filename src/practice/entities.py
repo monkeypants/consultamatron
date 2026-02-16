@@ -24,7 +24,7 @@ from practice.discovery import PipelineStage
 
 
 class Skillset(BaseModel):
-    """A consulting product line. Discovered from skillsets/*.md."""
+    """A consulting product line declared in bounded context modules."""
 
     name: str
     display_name: str

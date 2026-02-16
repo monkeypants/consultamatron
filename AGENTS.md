@@ -15,8 +15,9 @@ org-research → engage → {skillset pipeline} → review
 3. Each project follows its skillset's pipeline
 4. **review** captures lessons learned and raises improvement issues
 
-Skills read from `skillsets/*.md` manifests to discover available
-products and their pipelines.
+Each bounded context declares its skillsets as Python data in its
+`__init__.py` module. Use `practice skillset list` to see registered
+skillsets and `practice skillset show --name <name>` for details.
 
 ## Available skillsets
 
@@ -27,8 +28,8 @@ products and their pipelines.
 | Wardley Mapping (tours) | wm-tour-investor, wm-tour-technical, wm-tour-executive, wm-tour-operations, wm-tour-onboarding, wm-tour-competitive | Curated presentations |
 | Business Model Canvas | bmc-research, bmc-segments, bmc-canvas, bmc-iterate | Structured markdown canvas |
 
-See `skillsets/` for full pipeline definitions, gates, and project
-directory structures.
+Run `practice skillset show --name <name>` for pipeline definitions
+and gates.
 
 ## Shared skills
 
@@ -76,14 +77,14 @@ partnership subdirectory is an independent git repository containing:
 
 ```
 partnerships/{name}/
-├── skillsets/{domain}.md             # skillset manifest (same format as commons)
+├── skillsets/{domain}.md             # skillset manifest
 ├── resources/{topic}.md              # proprietary domain knowledge
 ├── skills/{skill-name}/SKILL.md      # partnership skills (same format as commons)
 └── reviews/                          # de-cliented engagement findings
 ```
 
 The `engage` skill discovers partnership skillsets by reading
-`partnerships/*/skillsets/*.md` alongside commons `skillsets/*.md`.
+`partnerships/*/skillsets/*.md` alongside commons skillset declarations.
 Partnership skills are injected at three points in the engagement
 pipeline:
 
@@ -102,8 +103,8 @@ output is acceptable. Never create a gate artifact without client
 agreement.
 
 Each skillset defines its own gate sequence. Gates are relative to the
-project directory. See `skillsets/*.md` for the specific gates per
-skillset.
+project directory. Use `practice skillset show --name <name>` to see
+gates for a specific skillset.
 
 ## OWM rendering
 
