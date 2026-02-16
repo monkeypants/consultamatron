@@ -73,7 +73,9 @@ If no suitable engagement exists, create one:
 practice engagement create --client {org} --slug {eng-slug}
 ```
 
-This seeds the engagement with `allowed_sources: ["commons"]`.
+This seeds the engagement with `allowed_sources: ["commons", "personal"]`.
+Personal skillsets are always available, like commons — no `add-source`
+needed.
 
 If the engagement needs access to partnership skillsets, add sources:
 

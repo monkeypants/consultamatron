@@ -58,24 +58,31 @@ Read `resources/index.md` and sub-reports to understand:
 
 Ask the operator:
 
-> "Should this skillset be added to **the commons** (open, available
-> to all engagements) or to a **partnership source** (proprietary,
-> access-controlled per engagement)?"
+> "Where should this skillset live — **commons** (open, committed to
+> the repo), **personal** (operator-private, always available), or a
+> **partnership source** (proprietary, per-engagement access control)?"
+
+All three produce a full BC package with SKILLSETS, PRESENTER_FACTORY,
+conformance tests, and a presenter. The difference is visibility and
+access control:
 
 **Commons** means:
-- The skillset ships as a Python BC package in the public repo
-- It has SKILLSETS, PRESENTER_FACTORY, conformance tests
+- Lives in `commons/{bc_package}/`
+- Committed to the repo, available to all engagements
 - Anyone with the repo can use it
-- It appears in `practice skillset list` automatically
+
+**Personal** means:
+- Lives in `personal/{bc_package}/`
+- Operator-private (gitignored), always available like commons
+- No `add-source` needed — personal is included by default
 
 **Partnership** means:
-- The skillset lives in `partners/{source-slug}/`
-- It has skill files, a JSON manifest, and proprietary references
-- It only appears in engagements where the source is allowed
-- No Python BC or conformance tests required (lighter weight)
+- Lives in `partnerships/{source-slug}/{bc_package}/`
+- Only appears in engagements where the source is allowed
+- Requires `practice engagement add-source` to enable
 
 Record the decision in the brief under a **Source** heading:
-- Source: commons | {partnership-slug}
+- Source: commons | personal | {partnership-slug}
 - If partnership: which partnership repo, does it exist yet?
 
 ## Step 3: Propose the brief
@@ -134,7 +141,7 @@ How would it compose with them in an engagement?}
 
 ## Source
 
-**Placement**: {commons / partners/{slug}}
+**Placement**: {commons / personal / partnerships/{slug}}
 **Rationale**: {why this choice — IP sensitivity, reusability, etc.}
 
 ## Scope boundaries
