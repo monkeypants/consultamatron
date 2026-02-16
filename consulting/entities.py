@@ -44,6 +44,7 @@ class EngagementEntry(BaseModel):
 
     id: str
     client: str
+    engagement: str
     date: date
     timestamp: datetime
     title: str

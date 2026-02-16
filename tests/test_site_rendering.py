@@ -179,6 +179,7 @@ def rendered_site(tmp_path_factory):
     container.register_project_usecase.execute(
         RegisterProjectRequest(
             client=CLIENT,
+            engagement="strat-1",
             slug="maps-1",
             skillset="wardley-mapping",
             scope="Freight operations",
@@ -187,6 +188,7 @@ def rendered_site(tmp_path_factory):
     container.register_project_usecase.execute(
         RegisterProjectRequest(
             client=CLIENT,
+            engagement="strat-1",
             slug="bmc-1",
             skillset="business-model-canvas",
             scope="Business model analysis",

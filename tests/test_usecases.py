@@ -41,6 +41,7 @@ from bin.cli.di import Container
 # ---------------------------------------------------------------------------
 
 CLIENT = "holloway-group"
+ENGAGEMENT = "strat-1"
 
 
 @pytest.fixture
@@ -59,6 +60,7 @@ def _init(di, client=CLIENT):
 def _register(
     di,
     client=CLIENT,
+    engagement=ENGAGEMENT,
     slug="maps-1",
     scope="Freight operations and digital platform",
 ):
@@ -66,6 +68,7 @@ def _register(
     return di.register_project_usecase.execute(
         RegisterProjectRequest(
             client=client,
+            engagement=engagement,
             slug=slug,
             skillset="wardley-mapping",
             scope=scope,
@@ -73,11 +76,14 @@ def _register(
     )
 
 
-def _elaborate(di, client=CLIENT, slug="maps-1"):
+def _elaborate(di, client=CLIENT, engagement=ENGAGEMENT, slug="maps-1"):
     """Transition a project from planning to elaboration."""
     return di.update_project_status_usecase.execute(
         UpdateProjectStatusRequest(
-            client=client, project_slug=slug, status="elaboration"
+            client=client,
+            engagement=engagement,
+            project_slug=slug,
+            status="elaboration",
         )
     )
 
@@ -164,6 +170,7 @@ class TestRegisterProject:
             workspace.register_project_usecase.execute(
                 RegisterProjectRequest(
                     client=CLIENT,
+                    engagement=ENGAGEMENT,
                     slug="tarot-1",
                     skillset="tarot-reading",
                     scope="Divination services",
@@ -196,7 +203,10 @@ class TestUpdateProjectStatus:
         for status in ("elaboration", "implementation", "review"):
             project.update_project_status_usecase.execute(
                 UpdateProjectStatusRequest(
-                    client=CLIENT, project_slug="maps-1", status=status
+                    client=CLIENT,
+                    engagement=ENGAGEMENT,
+                    project_slug="maps-1",
+                    status=status,
                 )
             )
         assert project.projects.get(CLIENT, "maps-1").status.value == "review"
@@ -205,7 +215,10 @@ class TestUpdateProjectStatus:
         with pytest.raises(InvalidTransitionError, match="Invalid transition"):
             project.update_project_status_usecase.execute(
                 UpdateProjectStatusRequest(
-                    client=CLIENT, project_slug="maps-1", status="implementation"
+                    client=CLIENT,
+                    engagement=ENGAGEMENT,
+                    project_slug="maps-1",
+                    status="implementation",
                 )
             )
 
@@ -214,7 +227,10 @@ class TestUpdateProjectStatus:
         with pytest.raises(InvalidTransitionError, match="Invalid transition"):
             project.update_project_status_usecase.execute(
                 UpdateProjectStatusRequest(
-                    client=CLIENT, project_slug="maps-1", status="planning"
+                    client=CLIENT,
+                    engagement=ENGAGEMENT,
+                    project_slug="maps-1",
+                    status="planning",
                 )
             )
 
@@ -222,7 +238,10 @@ class TestUpdateProjectStatus:
         with pytest.raises(NotFoundError, match="not found"):
             workspace.update_project_status_usecase.execute(
                 UpdateProjectStatusRequest(
-                    client=CLIENT, project_slug="phantom-1", status="elaboration"
+                    client=CLIENT,
+                    engagement=ENGAGEMENT,
+                    project_slug="phantom-1",
+                    status="elaboration",
                 )
             )
 
@@ -239,6 +258,7 @@ class TestRecordDecision:
         resp = project.record_decision_usecase.execute(
             RecordDecisionRequest(
                 client=CLIENT,
+                engagement=ENGAGEMENT,
                 project_slug="maps-1",
                 title="Stage 1: Project brief agreed",
                 fields={"Scope": "Freight division"},
@@ -250,6 +270,7 @@ class TestRecordDecision:
         resp = project.record_decision_usecase.execute(
             RecordDecisionRequest(
                 client=CLIENT,
+                engagement=ENGAGEMENT,
                 project_slug="maps-1",
                 title="Stage 2: User needs agreed",
                 fields={
@@ -270,6 +291,7 @@ class TestRecordDecision:
             project.record_decision_usecase.execute(
                 RecordDecisionRequest(
                     client=CLIENT,
+                    engagement=ENGAGEMENT,
                     project_slug="maps-1",
                     title=title,
                     fields={},
@@ -283,6 +305,7 @@ class TestRecordDecision:
             workspace.record_decision_usecase.execute(
                 RecordDecisionRequest(
                     client=CLIENT,
+                    engagement=ENGAGEMENT,
                     project_slug="phantom-1",
                     title="Stage 1: Project brief agreed",
                     fields={},
@@ -302,6 +325,7 @@ class TestAddEngagementEntry:
         resp = workspace.add_engagement_entry_usecase.execute(
             AddEngagementEntryRequest(
                 client=CLIENT,
+                engagement=ENGAGEMENT,
                 title="Strategy workshop scheduled",
                 fields={
                     "Date": "2025-07-15",
@@ -315,6 +339,7 @@ class TestAddEngagementEntry:
         workspace.add_engagement_entry_usecase.execute(
             AddEngagementEntryRequest(
                 client=CLIENT,
+                engagement=ENGAGEMENT,
                 title="Research findings presented",
                 fields={},
             )
@@ -327,6 +352,7 @@ class TestAddEngagementEntry:
             di.add_engagement_entry_usecase.execute(
                 AddEngagementEntryRequest(
                     client="phantom-corp",
+                    engagement=ENGAGEMENT,
                     title="Meeting scheduled",
                     fields={},
                 )
@@ -477,12 +503,14 @@ class TestListProjects:
 
     def test_empty_registry(self, workspace):
         resp = workspace.list_projects_usecase.execute(
-            ListProjectsRequest(client=CLIENT)
+            ListProjectsRequest(client=CLIENT, engagement=ENGAGEMENT)
         )
         assert resp.projects == []
 
     def test_one_project(self, project):
-        resp = project.list_projects_usecase.execute(ListProjectsRequest(client=CLIENT))
+        resp = project.list_projects_usecase.execute(
+            ListProjectsRequest(client=CLIENT, engagement=ENGAGEMENT)
+        )
         assert len(resp.projects) == 1
         assert resp.projects[0].slug == "maps-1"
         assert resp.projects[0].skillset == "wardley-mapping"
@@ -493,7 +521,9 @@ class TestListProjects:
         _register(workspace, slug="maps-2", scope="Warehouse logistics")
         _elaborate(workspace, slug="maps-2")
         resp = workspace.list_projects_usecase.execute(
-            ListProjectsRequest(client=CLIENT, status="elaboration")
+            ListProjectsRequest(
+                client=CLIENT, engagement=ENGAGEMENT, status="elaboration"
+            )
         )
         assert len(resp.projects) == 1
         assert resp.projects[0].slug == "maps-2"
@@ -510,12 +540,12 @@ class TestGetProject:
     def test_not_found(self, workspace):
         with pytest.raises(NotFoundError):
             workspace.get_project_usecase.execute(
-                GetProjectRequest(client=CLIENT, slug="nonexistent")
+                GetProjectRequest(client=CLIENT, engagement=ENGAGEMENT, slug="nonexistent")
             )
 
     def test_found(self, project):
         resp = project.get_project_usecase.execute(
-            GetProjectRequest(client=CLIENT, slug="maps-1")
+            GetProjectRequest(client=CLIENT, engagement=ENGAGEMENT, slug="maps-1")
         )
         assert resp.project is not None
         assert resp.project.slug == "maps-1"
@@ -532,7 +562,9 @@ class TestGetProjectProgress:
 
     def test_no_decisions_all_stages_pending(self, project):
         resp = project.get_project_progress_usecase.execute(
-            GetProjectProgressRequest(client=CLIENT, project_slug="maps-1")
+            GetProjectProgressRequest(
+                client=CLIENT, engagement=ENGAGEMENT, project_slug="maps-1"
+            )
         )
         assert len(resp.stages) == 5
         assert all(not s.completed for s in resp.stages)
@@ -600,13 +632,16 @@ class TestGetProjectProgress:
             project.record_decision_usecase.execute(
                 RecordDecisionRequest(
                     client=CLIENT,
+                    engagement=ENGAGEMENT,
                     project_slug="maps-1",
                     title=title,
                     fields={},
                 )
             )
         resp = project.get_project_progress_usecase.execute(
-            GetProjectProgressRequest(client=CLIENT, project_slug="maps-1")
+            GetProjectProgressRequest(
+                client=CLIENT, engagement=ENGAGEMENT, project_slug="maps-1"
+            )
         )
         assert resp.current_stage == expected_current
         assert resp.next_prerequisite == expected_gate
@@ -614,7 +649,9 @@ class TestGetProjectProgress:
     def test_nonexistent_project_rejected(self, workspace):
         with pytest.raises(NotFoundError, match="not found"):
             workspace.get_project_progress_usecase.execute(
-                GetProjectProgressRequest(client=CLIENT, project_slug="phantom-1")
+                GetProjectProgressRequest(
+                    client=CLIENT, engagement=ENGAGEMENT, project_slug="phantom-1"
+                )
             )
 
 
@@ -628,7 +665,9 @@ class TestListDecisions:
 
     def test_registration_seeds_one_decision(self, project):
         resp = project.list_decisions_usecase.execute(
-            ListDecisionsRequest(client=CLIENT, project_slug="maps-1")
+            ListDecisionsRequest(
+                client=CLIENT, engagement=ENGAGEMENT, project_slug="maps-1"
+            )
         )
         assert len(resp.decisions) == 1
         assert resp.decisions[0].title == "Project created"
@@ -637,13 +676,16 @@ class TestListDecisions:
         project.record_decision_usecase.execute(
             RecordDecisionRequest(
                 client=CLIENT,
+                engagement=ENGAGEMENT,
                 project_slug="maps-1",
                 title="Stage 1: Project brief agreed",
                 fields={"Scope": "Freight division"},
             )
         )
         resp = project.list_decisions_usecase.execute(
-            ListDecisionsRequest(client=CLIENT, project_slug="maps-1")
+            ListDecisionsRequest(
+                client=CLIENT, engagement=ENGAGEMENT, project_slug="maps-1"
+            )
         )
         titles = [d.title for d in resp.decisions]
         assert "Project created" in titles
@@ -686,7 +728,9 @@ class TestListDecisions:
             )
         )
         resp = project.list_decisions_usecase.execute(
-            ListDecisionsRequest(client=CLIENT, project_slug="maps-1")
+            ListDecisionsRequest(
+                client=CLIENT, engagement=ENGAGEMENT, project_slug="maps-1"
+            )
         )
         # Skip the "Project created" decision seeded by registration
         titles = [d.title for d in resp.decisions]

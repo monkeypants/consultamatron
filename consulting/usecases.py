@@ -83,6 +83,7 @@ class InitializeWorkspaceUseCase:
             EngagementEntry(
                 id=self._id_gen.new_id(),
                 client=request.client,
+                engagement="",
                 date=self._clock.today(),
                 timestamp=self._clock.now(),
                 title="Client onboarded",
@@ -130,6 +131,7 @@ class RegisterProjectUseCase:
             Project(
                 slug=request.slug,
                 client=request.client,
+                engagement=request.engagement,
                 skillset=request.skillset,
                 status=ProjectStatus.PLANNING,
                 created=today,
@@ -153,6 +155,7 @@ class RegisterProjectUseCase:
             EngagementEntry(
                 id=self._id_gen.new_id(),
                 client=request.client,
+                engagement=request.engagement,
                 date=today,
                 timestamp=self._clock.now(),
                 title=f"Project registered: {request.slug}",
@@ -162,6 +165,7 @@ class RegisterProjectUseCase:
 
         return RegisterProjectResponse(
             client=request.client,
+            engagement=request.engagement,
             slug=request.slug,
             skillset=request.skillset,
         )
@@ -273,6 +277,7 @@ class AddEngagementEntryUseCase:
             EngagementEntry(
                 id=entry_id,
                 client=request.client,
+                engagement=request.engagement,
                 date=self._clock.today(),
                 timestamp=self._clock.now(),
                 title=request.title,

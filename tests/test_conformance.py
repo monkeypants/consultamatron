@@ -139,6 +139,7 @@ class TestDecisionTitleJoin:
         di.register_project_usecase.execute(
             RegisterProjectRequest(
                 client=CLIENT,
+                engagement="strat-1",
                 slug=slug,
                 skillset=skillset["name"],
                 scope="Conformance test",
@@ -152,6 +153,7 @@ class TestDecisionTitleJoin:
             di.record_decision_usecase.execute(
                 RecordDecisionRequest(
                     client=CLIENT,
+                    engagement="strat-1",
                     project_slug=slug,
                     title=stage["description"],
                     fields={},
@@ -159,7 +161,9 @@ class TestDecisionTitleJoin:
             )
 
             resp = di.get_project_progress_usecase.execute(
-                GetProjectProgressRequest(client=CLIENT, project_slug=slug)
+                GetProjectProgressRequest(
+                    client=CLIENT, engagement="strat-1", project_slug=slug
+                )
             )
 
             completed = [s for s in resp.stages if s.completed]
@@ -262,6 +266,7 @@ class TestPresenterContract:
         project = Project(
             slug=slug,
             client=client,
+            engagement="strat-1",
             skillset=skillset_name,
             status=ProjectStatus.ELABORATION,
             created=date(2025, 6, 1),
