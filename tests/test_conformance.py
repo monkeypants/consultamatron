@@ -4,13 +4,13 @@ These tests verify that skillsets compose correctly with the engagement
 lifecycle layer (the semantic waist). They run under the ``doctrine``
 marker, which is the pre-push gate defined in CLAUDE.md.
 
-Four conformance properties:
+Conformance properties:
   1. Pipeline coherence — structural validation of implemented skillset pipelines
   2. Decision-title join — the fragile string join that drives progress
   3. Entity round-trip — JSON serialisation fidelity for all entities
   4. Skillset discipline — field-level validation for all skillsets
-
-Presenter contract tests live in each BC's own test directory.
+  5. BC test ownership — implemented BCs own their test infrastructure
+  6. Protocol smoke tests — runtime verification of BC plugin contracts
 """
 
 from __future__ import annotations
@@ -323,3 +323,81 @@ class TestBoundedContextTestOwnership:
         if not any(s.is_implemented for s in mod.SKILLSETS):
             pytest.skip("Prospectus-only BC")
         assert hasattr(mod, "PRESENTER_FACTORY")
+
+
+# ---------------------------------------------------------------------------
+# 6. Protocol smoke tests — runtime verification of BC plugin contracts
+# ---------------------------------------------------------------------------
+
+
+_IMPLEMENTED_MODULES = [
+    m for m in _BC_MODULES if any(s.is_implemented for s in m.SKILLSETS)
+]
+
+
+@pytest.mark.doctrine
+class TestPresenterProtocol:
+    """PRESENTER_FACTORY produces a working ProjectPresenter."""
+
+    @pytest.mark.parametrize(
+        "mod", _IMPLEMENTED_MODULES, ids=[m.__name__ for m in _IMPLEMENTED_MODULES]
+    )
+    def test_presenter_returns_project_contribution(self, mod, tmp_path):
+        from datetime import date
+
+        from practice.content import ProjectContribution
+        from practice.entities import Project, ProjectStatus
+
+        skillset_name, create_fn = mod.PRESENTER_FACTORY
+        presenter = create_fn(tmp_path, _REPO_ROOT)
+
+        project = Project(
+            slug="smoke-1",
+            client="smoke-corp",
+            engagement="strat-1",
+            skillset=skillset_name,
+            status=ProjectStatus.ELABORATION,
+            created=date(2025, 6, 1),
+        )
+        result = presenter.present(project)
+        assert isinstance(result, ProjectContribution)
+        assert result.skillset == skillset_name
+
+
+@pytest.mark.doctrine
+class TestServiceRegistrationProtocol:
+    """register_services() hooks run without error."""
+
+    @pytest.mark.parametrize("mod", _BC_MODULES, ids=[m.__name__ for m in _BC_MODULES])
+    def test_register_services_callable(self, mod, tmp_path):
+        register = getattr(mod, "register_services", None)
+        if register is None:
+            pytest.skip("No register_services hook")
+        _write_pyproject(tmp_path)
+        config = Config(
+            repo_root=tmp_path,
+            workspace_root=tmp_path / "clients",
+            skillsets_root=tmp_path / "skillsets",
+        )
+        container = Container(config)
+        # Should not raise
+        register(container)
+
+
+@pytest.mark.doctrine
+class TestCliRegistrationProtocol:
+    """BC CLI modules register commands without error."""
+
+    @pytest.mark.parametrize("mod", _BC_MODULES, ids=[m.__name__ for m in _BC_MODULES])
+    def test_cli_register_commands(self, mod):
+        import click
+
+        try:
+            cli_mod = importlib.import_module(f"{mod.__name__}.cli")
+        except (ImportError, ModuleNotFoundError):
+            pytest.skip("No CLI module")
+        group = click.Group("test")
+        cli_mod.register_commands(group)
+        assert len(group.commands) > 0, (
+            f"{mod.__name__}.cli.register_commands added no commands"
+        )
