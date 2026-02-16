@@ -25,6 +25,7 @@ from bin.cli.di import Container
 from business_model_canvas.presenter import BmcProjectPresenter
 from bin.cli.infrastructure.json_repos import JsonTourManifestRepository
 from consulting.dtos import (
+    CreateEngagementRequest,
     GetProjectProgressRequest,
     InitializeWorkspaceRequest,
     RecordDecisionRequest,
@@ -131,9 +132,12 @@ class TestDecisionTitleJoin:
         )
         di = Container(config)
 
-        # Initialize workspace and register project
+        # Initialize workspace, create engagement, and register project
         di.initialize_workspace_usecase.execute(
             InitializeWorkspaceRequest(client=CLIENT)
+        )
+        di.create_engagement_usecase.execute(
+            CreateEngagementRequest(client=CLIENT, slug="strat-1")
         )
         slug = skillset["slug_pattern"].replace("{n}", "1")
         di.register_project_usecase.execute(

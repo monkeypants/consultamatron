@@ -73,6 +73,11 @@ __all__ = [
     "StageProgress",
     "UpdateProjectStatusRequest",
     "UpdateProjectStatusResponse",
+    "SourceInfo",
+    "ListSourcesRequest",
+    "ListSourcesResponse",
+    "ShowSourceRequest",
+    "ShowSourceResponse",
 ]
 
 
@@ -130,3 +135,32 @@ class ShowSkillsetRequest(BaseModel):
 
 class ShowSkillsetResponse(BaseModel):
     skillset: SkillsetInfo
+
+
+# ---------------------------------------------------------------------------
+# Source — stays here (cross-BC, lists installed sources)
+# ---------------------------------------------------------------------------
+
+
+class SourceInfo(BaseModel):
+    slug: str
+    source_type: str
+    skillset_names: list[str]
+
+
+class ListSourcesRequest(BaseModel):
+    """List all installed skillset sources."""
+
+
+class ListSourcesResponse(BaseModel):
+    sources: list[SourceInfo]
+
+
+class ShowSourceRequest(BaseModel):
+    """Show details of an installed source."""
+
+    slug: str = Field(description="Source slug.")
+
+
+class ShowSourceResponse(BaseModel):
+    source: SourceInfo

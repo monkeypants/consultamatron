@@ -115,10 +115,11 @@ class InitializeWorkspaceUseCase:
 class RegisterProjectUseCase:
     """Coordinate project creation across three repositories.
 
-    Validates the skillset exists and the slug is unique, then creates
-    the project, seeds the decision log with a "Project created" entry
-    using the scope as its field set, and records an engagement entry.
-    All three writes must succeed together.
+    Validates the engagement exists and is in PLANNING or ACTIVE status,
+    the skillset exists, the skillset's source is in the engagement's
+    allowed_sources, and the slug is unique.  Then creates the project,
+    seeds the decision log with a "Project created" entry using the scope
+    as its field set, and records an engagement entry.
     """
 
     def __init__(
@@ -126,20 +127,47 @@ class RegisterProjectUseCase:
         projects: ProjectRepository,
         decisions: DecisionRepository,
         engagement_log: EngagementLogRepository,
+        engagements: EngagementRepository,
         skillsets: SkillsetRepository,
+        sources: SourceRepository,
         clock: Clock,
         id_gen: IdGenerator,
     ) -> None:
         self._projects = projects
         self._decisions = decisions
         self._engagement_log = engagement_log
+        self._engagements = engagements
         self._skillsets = skillsets
+        self._sources = sources
         self._clock = clock
         self._id_gen = id_gen
 
     def execute(self, request: RegisterProjectRequest) -> RegisterProjectResponse:
+        # Validate engagement
+        engagement = self._engagements.get(request.client, request.engagement)
+        if engagement is None:
+            raise NotFoundError(
+                f"Engagement not found: {request.client}/{request.engagement}"
+            )
+        if engagement.status not in (
+            EngagementStatus.PLANNING,
+            EngagementStatus.ACTIVE,
+        ):
+            raise InvalidTransitionError(
+                f"Engagement '{request.engagement}' is {engagement.status.value}, "
+                f"must be planning or active to add projects"
+            )
+
+        # Validate skillset and source allowlist
         if self._skillsets.get(request.skillset) is None:
             raise NotFoundError(f"Unknown skillset: {request.skillset}")
+        source_slug = self._sources.skillset_source(request.skillset)
+        if source_slug is not None and source_slug not in engagement.allowed_sources:
+            raise InvalidTransitionError(
+                f"Source '{source_slug}' for skillset '{request.skillset}' "
+                f"is not in engagement's allowed sources"
+            )
+
         if (
             self._projects.get(request.client, request.engagement, request.slug)
             is not None

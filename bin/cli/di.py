@@ -14,9 +14,14 @@ import business_model_canvas
 import wardley_mapping as wardley_mapping_mod
 from bin.cli.config import Config
 from bin.cli.infrastructure.code_skillset_repository import CodeSkillsetRepository
+from bin.cli.infrastructure.composite_skillset_repository import (
+    CompositeSkillsetRepository,
+)
+from bin.cli.infrastructure.filesystem_source_repository import (
+    FilesystemSourceRepository,
+)
 from business_model_canvas.presenter import BmcProjectPresenter
 from bin.cli.infrastructure.jinja_renderer import JinjaSiteRenderer
-from bin.cli.infrastructure.commons_source_repository import CommonsSourceRepository
 from bin.cli.infrastructure.json_repos import (
     JsonDecisionRepository,
     JsonEngagementEntityRepository,
@@ -27,8 +32,10 @@ from bin.cli.infrastructure.json_repos import (
 )
 from bin.cli.usecases import (
     ListSkillsetsUseCase,
+    ListSourcesUseCase,
     RenderSiteUseCase,
     ShowSkillsetUseCase,
+    ShowSourceUseCase,
 )
 from wardley_mapping.presenter import WardleyProjectPresenter
 from wardley_mapping.types import TourManifestRepository
@@ -115,8 +122,11 @@ class Container:
         self.id_gen: IdGenerator = UuidGenerator()
 
         # -- Repositories --------------------------------------------------
-        self.skillsets: SkillsetRepository = CodeSkillsetRepository(
+        _commons_skillsets = CodeSkillsetRepository(
             [wardley_mapping_mod, business_model_canvas],
+        )
+        self.skillsets: SkillsetRepository = CompositeSkillsetRepository(
+            _commons_skillsets, config.repo_root
         )
         self.projects: ProjectRepository = JsonProjectRepository(
             config.workspace_root,
@@ -136,7 +146,9 @@ class Container:
         self.engagement_entities: EngagementRepository = JsonEngagementEntityRepository(
             config.workspace_root
         )
-        self.sources: SourceRepository = CommonsSourceRepository(self.skillsets)
+        self.sources: SourceRepository = FilesystemSourceRepository(
+            config.repo_root, _commons_skillsets
+        )
         self.site_renderer: SiteRenderer = JinjaSiteRenderer(
             workspace_root=config.workspace_root,
             repo_root=config.repo_root,
@@ -166,7 +178,9 @@ class Container:
             projects=self.projects,
             decisions=self.decisions,
             engagement_log=self.engagement_log,
+            engagements=self.engagement_entities,
             skillsets=self.skillsets,
+            sources=self.sources,
             clock=self.clock,
             id_gen=self.id_gen,
         )
@@ -246,6 +260,12 @@ class Container:
         )
         self.show_skillset_usecase = ShowSkillsetUseCase(
             skillsets=self.skillsets,
+        )
+        self.list_sources_usecase = ListSourcesUseCase(
+            sources=self.sources,
+        )
+        self.show_source_usecase = ShowSourceUseCase(
+            sources=self.sources,
         )
         self.render_site_usecase = RenderSiteUseCase(
             projects=self.projects,

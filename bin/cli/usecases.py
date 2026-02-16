@@ -7,12 +7,17 @@ from __future__ import annotations
 from bin.cli.dtos import (
     ListSkillsetsRequest,
     ListSkillsetsResponse,
+    ListSourcesRequest,
+    ListSourcesResponse,
     RenderSiteRequest,
     RenderSiteResponse,
     ShowSkillsetRequest,
     ShowSkillsetResponse,
+    ShowSourceRequest,
+    ShowSourceResponse,
     SkillsetInfo,
     SkillsetStageInfo,
+    SourceInfo,
 )
 from consulting.repositories import (
     ProjectRepository,
@@ -32,9 +37,9 @@ from consulting.usecases import (
     RegisterResearchTopicUseCase,
     UpdateProjectStatusUseCase,
 )
-from practice.entities import Skillset
+from practice.entities import Skillset, SkillsetSource
 from practice.exceptions import NotFoundError
-from practice.repositories import ProjectPresenter, SiteRenderer
+from practice.repositories import ProjectPresenter, SiteRenderer, SourceRepository
 from wardley_mapping.usecases import RegisterTourUseCase
 
 __all__ = [
@@ -45,6 +50,7 @@ __all__ = [
     "ListDecisionsUseCase",
     "ListProjectsUseCase",
     "ListSkillsetsUseCase",
+    "ListSourcesUseCase",
     "ListResearchTopicsUseCase",
     "RecordDecisionUseCase",
     "RegisterProjectUseCase",
@@ -52,6 +58,7 @@ __all__ = [
     "RegisterTourUseCase",
     "RenderSiteUseCase",
     "ShowSkillsetUseCase",
+    "ShowSourceUseCase",
     "UpdateProjectStatusUseCase",
 ]
 
@@ -158,3 +165,41 @@ class ShowSkillsetUseCase:
         if skillset is None:
             raise NotFoundError(f"Skillset not found: {request.name}")
         return ShowSkillsetResponse(skillset=_skillset_to_info(skillset))
+
+
+# ---------------------------------------------------------------------------
+# Source — stays here (cross-BC, lists installed sources)
+# ---------------------------------------------------------------------------
+
+
+def _source_to_info(s: SkillsetSource) -> SourceInfo:
+    return SourceInfo(
+        slug=s.slug,
+        source_type=s.source_type.value,
+        skillset_names=s.skillset_names,
+    )
+
+
+class ListSourcesUseCase:
+    """List all installed skillset sources."""
+
+    def __init__(self, sources: SourceRepository) -> None:
+        self._sources = sources
+
+    def execute(self, request: ListSourcesRequest) -> ListSourcesResponse:
+        return ListSourcesResponse(
+            sources=[_source_to_info(s) for s in self._sources.list_all()],
+        )
+
+
+class ShowSourceUseCase:
+    """Show details of an installed source by slug."""
+
+    def __init__(self, sources: SourceRepository) -> None:
+        self._sources = sources
+
+    def execute(self, request: ShowSourceRequest) -> ShowSourceResponse:
+        source = self._sources.get(request.slug)
+        if source is None:
+            raise NotFoundError(f"Source not found: {request.slug}")
+        return ShowSourceResponse(source=_source_to_info(source))
