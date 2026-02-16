@@ -260,7 +260,7 @@ class GetProjectRequest(BaseModel):
 class GetProjectResponse(BaseModel):
     client: str
     slug: str
-    project: ProjectInfo | None
+    project: ProjectInfo
 
 
 # ---------------------------------------------------------------------------

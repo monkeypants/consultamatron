@@ -508,10 +508,10 @@ class TestGetProject:
     """Retrieve a single project by slug."""
 
     def test_not_found(self, workspace):
-        resp = workspace.get_project_usecase.execute(
-            GetProjectRequest(client=CLIENT, slug="nonexistent")
-        )
-        assert resp.project is None
+        with pytest.raises(NotFoundError):
+            workspace.get_project_usecase.execute(
+                GetProjectRequest(client=CLIENT, slug="nonexistent")
+            )
 
     def test_found(self, project):
         resp = project.get_project_usecase.execute(

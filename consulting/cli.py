@@ -53,8 +53,6 @@ def _format_list_projects(resp: Any) -> None:
 
 
 def _format_get_project(resp: Any) -> None:
-    if resp.project is None:
-        raise click.ClickException(f"Project '{resp.slug}' not found.")
     p = resp.project
     click.echo(f"Slug:     {p.slug}")
     click.echo(f"Skillset: {p.skillset}")
