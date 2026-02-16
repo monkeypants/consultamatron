@@ -11,7 +11,7 @@ import uuid
 from datetime import date, datetime, timezone
 
 from bin.cli.config import Config
-from bin.cli.infrastructure.bmc_presenter import BmcProjectPresenter
+from business_model_canvas.presenter import BmcProjectPresenter
 from bin.cli.infrastructure.jinja_renderer import JinjaSiteRenderer
 from bin.cli.infrastructure.json_repos import (
     JsonDecisionRepository,

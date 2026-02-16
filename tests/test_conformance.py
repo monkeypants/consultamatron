@@ -30,7 +30,7 @@ from consulting.dtos import (
 )
 from practice.discovery import PipelineStage
 from practice.entities import Project, ProjectStatus
-from bin.cli.infrastructure.bmc_presenter import BmcProjectPresenter
+from business_model_canvas.presenter import BmcProjectPresenter
 from bin.cli.infrastructure.json_repos import JsonTourManifestRepository
 from wardley_mapping.presenter import WardleyProjectPresenter
 
