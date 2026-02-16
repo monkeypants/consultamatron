@@ -12,7 +12,7 @@ from pathlib import Path
 import pytest
 
 from practice.entities import Project, ProjectStatus
-from bin.cli.infrastructure.bmc_presenter import BmcProjectPresenter
+from business_model_canvas.presenter import BmcProjectPresenter
 
 CLIENT = "test-corp"
 SLUG = "bmc-1"
