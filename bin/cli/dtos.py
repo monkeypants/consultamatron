@@ -120,7 +120,10 @@ class SkillsetInfo(BaseModel):
 
 
 class ListSkillsetsRequest(BaseModel):
-    """List all registered skillsets."""
+    """List registered skillsets, optionally filtered by engagement."""
+
+    client: str | None = Field(default=None, description="Client slug.")
+    engagement: str | None = Field(default=None, description="Engagement slug.")
 
 
 class ListSkillsetsResponse(BaseModel):

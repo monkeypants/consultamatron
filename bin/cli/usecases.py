@@ -20,6 +20,7 @@ from bin.cli.dtos import (
     SourceInfo,
 )
 from consulting.repositories import (
+    EngagementRepository,
     ProjectRepository,
     ResearchTopicRepository,
     SkillsetRepository,
@@ -143,14 +144,41 @@ def _skillset_to_info(s: Skillset) -> SkillsetInfo:
 
 
 class ListSkillsetsUseCase:
-    """List all registered skillsets."""
+    """List registered skillsets, optionally filtered by engagement sources."""
 
-    def __init__(self, skillsets: SkillsetRepository) -> None:
+    def __init__(
+        self,
+        skillsets: SkillsetRepository,
+        engagements: EngagementRepository | None = None,
+        sources: SourceRepository | None = None,
+    ) -> None:
         self._skillsets = skillsets
+        self._engagements = engagements
+        self._sources = sources
 
     def execute(self, request: ListSkillsetsRequest) -> ListSkillsetsResponse:
+        all_skillsets = self._skillsets.list_all()
+
+        if (
+            request.client
+            and request.engagement
+            and self._engagements
+            and self._sources
+        ):
+            engagement = self._engagements.get(request.client, request.engagement)
+            if engagement is None:
+                raise NotFoundError(
+                    f"Engagement not found: {request.client}/{request.engagement}"
+                )
+            allowed_names: set[str] = set()
+            for source_slug in engagement.allowed_sources:
+                src = self._sources.get(source_slug)
+                if src:
+                    allowed_names.update(src.skillset_names)
+            all_skillsets = [s for s in all_skillsets if s.name in allowed_names]
+
         return ListSkillsetsResponse(
-            skillsets=[_skillset_to_info(s) for s in self._skillsets.list_all()],
+            skillsets=[_skillset_to_info(s) for s in all_skillsets],
         )
 
 
