@@ -40,6 +40,10 @@ class SkillsetScaffold:
     ) -> Path:
         """Create a stub BC package with a SKILLSETS declaration.
 
+        Also generates a stub presenter, PRESENTER_FACTORY export, and
+        test directory so the package passes all conformance tests from
+        the moment it is created.
+
         Returns the path to the created __init__.py.
         """
         pkg_dir = self._package_dir(name)
@@ -58,6 +62,23 @@ class SkillsetScaffold:
                 evidence=evidence or [],
             )
         )
+
+        # Stub presenter
+        presenter_py = pkg_dir / "presenter.py"
+        if not presenter_py.exists():
+            presenter_py.write_text(_render_presenter(name, display_name))
+
+        # Test directory
+        tests_dir = pkg_dir / "tests"
+        tests_dir.mkdir(exist_ok=True)
+        tests_init = tests_dir / "__init__.py"
+        if not tests_init.exists():
+            tests_init.write_text("")
+        test_presenter = tests_dir / "test_presenter.py"
+        if not test_presenter.exists():
+            pkg_python = name.replace("-", "_")
+            test_presenter.write_text(_render_test_presenter(name, pkg_python))
+
         self._add_to_pyproject(name)
         return init_py
 
@@ -158,10 +179,20 @@ def _render_init(
     evidence: list[str],
 ) -> str:
     """Render the __init__.py content for a skillset stub package."""
+    pkg_python = name.replace("-", "_")
     parts = [
         f'"""{display_name} bounded context."""\n',
         "",
         "from practice.entities import Skillset",
+        "",
+        "",
+        "def _create_presenter(workspace_root, repo_root):",
+        f"    from {pkg_python}.presenter import {_class_name(name)}Presenter",
+        "",
+        f"    return {_class_name(name)}Presenter(workspace_root=workspace_root)",
+        "",
+        "",
+        f"PRESENTER_FACTORY = ({name!r}, _create_presenter)",
         "",
         "SKILLSETS: list[Skillset] = [",
         "    Skillset(",
@@ -188,6 +219,81 @@ def _render_init(
         ]
     )
     return "\n".join(parts)
+
+
+def _class_name(kebab_name: str) -> str:
+    """Convert a kebab-case name to PascalCase."""
+    return "".join(word.capitalize() for word in kebab_name.split("-"))
+
+
+def _render_presenter(name: str, display_name: str) -> str:
+    """Render a stub presenter module."""
+    cls = _class_name(name)
+    return f'''"""{display_name} project presenter."""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+from practice.content import ProjectContribution
+from practice.entities import Project
+
+
+class {cls}Presenter:
+    """Assembles {display_name} workspace artifacts into structured content."""
+
+    def __init__(self, workspace_root: Path) -> None:
+        self._ws_root = workspace_root
+
+    def present(self, project: Project) -> ProjectContribution:
+        return ProjectContribution(
+            slug=project.slug,
+            title=project.slug,
+            skillset=project.skillset,
+            status=project.status.value,
+            hero_figure=None,
+            overview_md="",
+            sections=[],
+        )
+'''
+
+
+def _render_test_presenter(name: str, pkg_python: str) -> str:
+    """Render a stub presenter test module."""
+    cls = _class_name(name)
+    return f'''"""Tests for {cls}Presenter."""
+
+from __future__ import annotations
+
+from datetime import date
+
+import pytest
+
+from practice.content import ProjectContribution
+from practice.entities import Project, ProjectStatus
+from {pkg_python}.presenter import {cls}Presenter
+
+
+@pytest.mark.doctrine
+class TestPresenterContract:
+    """{cls}Presenter produces valid ProjectContribution."""
+
+    def test_produces_project_contribution(self, tmp_path):
+        presenter = {cls}Presenter(workspace_root=tmp_path)
+        project = Project(
+            slug="test-1",
+            client="test-corp",
+            engagement="strat-1",
+            skillset={name!r},
+            status=ProjectStatus.ELABORATION,
+            created=date(2025, 6, 1),
+        )
+        result = presenter.present(project)
+        assert isinstance(result, ProjectContribution)
+        assert result.slug == "test-1"
+        assert result.skillset == {name!r}
+        assert isinstance(result.sections, list)
+'''
 
 
 def _parse_current_skillset(init_py: Path, name: str):
