@@ -15,7 +15,7 @@ jobs:
         with:
           enable-cache: true
 
-      - run: uv sync --group test
+      - run: uv sync --group test --group lint
 
       - name: Lint
         run: uv run ruff check .
