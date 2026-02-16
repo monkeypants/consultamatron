@@ -162,10 +162,11 @@ class Container:
                 continue
             factory = getattr(mod, "PRESENTER_FACTORY", None)
             if factory is not None:
-                skillset_name, create_fn = factory
-                self.presenters[skillset_name] = create_fn(
-                    config.workspace_root, config.repo_root
-                )
+                entries = factory if isinstance(factory, list) else [factory]
+                for skillset_name, create_fn in entries:
+                    self.presenters[skillset_name] = create_fn(
+                        config.workspace_root, config.repo_root
+                    )
             register = getattr(mod, "register_services", None)
             if register is not None:
                 register(self)

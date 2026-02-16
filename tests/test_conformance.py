@@ -348,20 +348,22 @@ class TestPresenterProtocol:
         from practice.content import ProjectContribution
         from practice.entities import Project, ProjectStatus
 
-        skillset_name, create_fn = mod.PRESENTER_FACTORY
-        presenter = create_fn(tmp_path, _REPO_ROOT)
+        factory = mod.PRESENTER_FACTORY
+        entries = factory if isinstance(factory, list) else [factory]
+        for skillset_name, create_fn in entries:
+            presenter = create_fn(tmp_path, _REPO_ROOT)
 
-        project = Project(
-            slug="smoke-1",
-            client="smoke-corp",
-            engagement="strat-1",
-            skillset=skillset_name,
-            status=ProjectStatus.ELABORATION,
-            created=date(2025, 6, 1),
-        )
-        result = presenter.present(project)
-        assert isinstance(result, ProjectContribution)
-        assert result.skillset == skillset_name
+            project = Project(
+                slug="smoke-1",
+                client="smoke-corp",
+                engagement="strat-1",
+                skillset=skillset_name,
+                status=ProjectStatus.ELABORATION,
+                created=date(2025, 6, 1),
+            )
+            result = presenter.present(project)
+            assert isinstance(result, ProjectContribution)
+            assert result.skillset == skillset_name
 
 
 @pytest.mark.doctrine
