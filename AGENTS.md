@@ -16,20 +16,23 @@ org-research → engage → {skillset pipeline} → review
 4. **review** captures lessons learned and raises improvement issues
 
 Each bounded context declares its skillsets as Python data in its
-`__init__.py` module. Use `practice skillset list` to see registered
-skillsets and `practice skillset show --name <name>` for details.
+`__init__.py` module. The skillset list is dynamic — new skillsets
+can be registered as prospectuses (empty pipeline) or implemented
+(with a pipeline of stages and gates).
 
-## Available skillsets
+## Discovering skillsets
 
-| Skillset | Skills | Output |
-|----------|--------|--------|
-| Wardley Mapping (core) | wm-research, wm-needs, wm-chain, wm-evolve, wm-strategy, wm-iterate | OWM map files |
-| Wardley Mapping (atlas) | wm-atlas-overview, wm-atlas-anchor-chains, wm-atlas-need-traces, wm-atlas-bottlenecks, wm-atlas-shared-components, wm-atlas-layers, wm-atlas-plays, wm-atlas-sourcing, wm-atlas-movement, wm-atlas-inertia, wm-atlas-flows, wm-atlas-forces, wm-atlas-doctrine, wm-atlas-risk, wm-atlas-teams, wm-atlas-pipelines, wm-atlas-evolution-mismatch | Focused OWM maps + analysis |
-| Wardley Mapping (tours) | wm-tour-investor, wm-tour-technical, wm-tour-executive, wm-tour-operations, wm-tour-onboarding, wm-tour-competitive | Curated presentations |
-| Business Model Canvas | bmc-research, bmc-segments, bmc-canvas, bmc-iterate | Structured markdown canvas |
+Do not assume you know which skillsets exist. Use the practice CLI:
 
-Run `practice skillset show --name <name>` for pipeline definitions
-and gates.
+```bash
+uv run practice skillset list                    # all registered skillsets
+uv run practice skillset list --implemented true # only implemented skillsets
+uv run practice skillset show --name <name>      # pipeline, gates, and details
+```
+
+Each implemented skillset defines a pipeline of skills (stages) with
+gate artifacts. Use `skillset show` to discover the specific skills,
+their ordering, and prerequisites for any skillset.
 
 ## Shared skills
 
@@ -50,9 +53,16 @@ consultamatron/                       # commons (public repo)
 ├── clients/                          # operator-private client workspaces
 │   └── {org-slug}/
 │       ├── resources/                # Shared research (managed by org-research)
-│       ├── projects/                 # One directory per project
-│       ├── review.md                 # Engagement-level review synthesis
-│       └── engagement.md            # Cross-project engagement history
+│       │   ├── index.md              # Manifest + synthesis (gate artifact)
+│       │   └── {topic}.md            # Sub-reports with citations
+│       ├── engagements/
+│       │   ├── index.json            # Engagement registry
+│       │   └── {engagement-slug}/    # One engagement = one unit of contracted work
+│       │       ├── projects.json     # Project registry for this engagement
+│       │       └── {project-slug}/   # One directory per project
+│       │           └── decisions.json
+│       ├── engagement-log.json       # Cross-engagement audit trail
+│       └── review.md                 # Engagement-level review synthesis
 └── partnerships/                     # operator-private partnership repos
     ├── {personal-vault}/             # personal proprietary skills
     └── {partnership}/                # shared proprietary skills
@@ -62,13 +72,39 @@ consultamatron/                       # commons (public repo)
 cloned into these `.gitignored` directories. See `GETTING_STARTED.md`
 for setup instructions.
 
+Research is client-scoped (you research the org, not the engagement).
+Projects are engagement-scoped. The audit log spans all engagements.
+
 See `org-research/assets/workspace-layout.md` for the full client
 workspace directory structure including per-skillset project layouts.
 
+## Engagement lifecycle
+
+An engagement is a unit of contracted work with a client. It scopes
+which skillset sources are permitted and contains projects.
+
+```
+planning → active → review → closed
+```
+
+Each engagement has an `allowed_sources` list controlling which
+skillset sources (commons, partnerships) can be used for projects
+within that engagement. Commons is always present.
+
 Before starting any skill, check `clients/` for existing engagements.
 If work already exists for an organisation, resume from where it left
-off. Read `engagement.md` and project `decisions.md` files to understand
+off. Read the engagement log and project decision logs to understand
 what has already been agreed.
+
+## Source discovery
+
+Skillset sources determine where skillset definitions come from:
+
+- **commons** — built-in skillsets declared in bounded context modules
+- **partnerships** — external skillset definitions in `partnerships/{slug}/skillsets/index.json`
+
+Use `practice source list` to see installed sources and
+`practice source show --slug <slug>` for detail.
 
 ## Partnership skillsets
 
@@ -83,10 +119,9 @@ partnerships/{name}/
 └── reviews/                          # de-cliented engagement findings
 ```
 
-The `engage` skill discovers partnership skillsets by reading
-`partnerships/*/skillsets/*.md` alongside commons skillset declarations.
-Partnership skills are injected at three points in the engagement
-pipeline:
+The `engage` skill discovers partnership skillsets alongside commons
+skillset declarations. Partnership skills are injected at three points
+in the engagement pipeline:
 
 - **Partner-1** (after plan, before execute): domain enrichment
 - **Partner-2** (after synthesis, before delivery): domain enhancement
@@ -108,7 +143,7 @@ gates for a specific skillset.
 
 ## OWM rendering
 
-Wardley Mapping stages 4+ produce `.owm` map files. To render to SVG:
+Some skillsets produce `.owm` map files. To render to SVG:
 ```
 bin/ensure-owm.sh path/to/map.owm
 ```
@@ -120,19 +155,15 @@ visual map.
 
 ## Artifact format discipline
 
-- **Organisation research**: Markdown with citations
-- **Wardley Mapping stages 1-3**: Markdown only. The evolution axis is
-  unknown, so OWM would impose false precision.
-- **Wardley Mapping stage 1 exception**: `landscape.owm` is a coarse
-  sketch acknowledged as approximate.
-- **Wardley Mapping stages 4-5**: OWM files. Both axes have grounded
-  meaning.
-- **Wardley Mapping atlas**: OWM projections of the strategy map plus
-  analytical markdown. Same coordinates as the comprehensive map.
-- **Wardley Mapping tours**: Markdown prose in the Consultamatron
-  editorial voice. Tours reference atlas content, not duplicate it.
-- **Business Model Canvas**: Markdown throughout. BMC has no meaningful
-  second axis.
+- **Organisation research**: Markdown with citations.
+- **OWM maps**: Only produce `.owm` files when both axes (visibility
+  and evolution) have grounded meaning. Early pipeline stages that
+  lack evolution data use markdown only. Each skillset's pipeline
+  documents which stages produce OWM output.
+- **Presentations and tours**: Markdown prose in the Consultamatron
+  editorial voice. Tours reference analytical content, not duplicate it.
+- **General rule**: Use the simplest format that honestly represents
+  what is known. Do not impose false precision.
 
 ## Site generation
 
@@ -156,56 +187,25 @@ output is "good enough" on its own.
 
 ## Choosing the right skill
 
-- "Research this organisation" / "What do we know about X?" →
-  **org-research**
-- "What should we do for this client?" / "Plan the engagement" →
-  **engage**
-- "Start a Wardley Map" / "Map this organisation" →
-  **wm-research** (after org-research)
-- "What are the user needs?" →
-  **wm-needs**
-- "How does the organisation deliver this?" →
-  **wm-chain**
-- "Where are these components on the evolution axis?" →
-  **wm-evolve**
-- "What strategic moves should we make?" →
-  **wm-strategy**
-- "Update the map" / "This component feels wrong" →
-  **wm-iterate**
-- "Generate the atlas" / "Produce all derived views" →
-  **wm-atlas-*** (run all applicable atlas skills)
-- "Create the investor presentation" / "Make a tour for the board" →
-  **wm-tour-{audience}**
-- "Generate all presentations" →
-  **wm-tour-*** (run all applicable tour skills)
-- "Start a Business Model Canvas" / "What's their business model?" →
-  **bmc-research** (after org-research)
-- "Who are the customer segments?" →
-  **bmc-segments**
-- "Build the full canvas" →
-  **bmc-canvas**
-- "Update the canvas" →
-  **bmc-iterate**
-- "Rewrite this in the right voice" →
-  **editorial-voice**
-- "How did that go?" / "Review the project" / "Lessons learned" →
-  **review**
+Shared skills (not part of any skillset pipeline):
+
+- "Research this organisation" → **org-research**
+- "Plan the engagement" / "What should we do?" → **engage**
+- "Rewrite this in the right voice" → **editorial-voice**
+- "Review the project" / "Lessons learned" → **review**
+
+For skillset-specific work, use `practice skillset show --name <name>`
+to discover the pipeline stages and their skill names. Each stage has
+a skill name, a prerequisite gate, and a produces gate — use the
+pipeline to determine which skill applies next.
 
 If the user's request is ambiguous, check which gate artifacts exist in
-the workspace to determine where the engagement is and which skill applies.
+the workspace to determine where the engagement is and which skill
+applies. Use `practice project progress` to see pipeline status.
 
-## What is Wardley Mapping
+## Background knowledge
 
-Wardley Mapping is a strategy method that maps the components needed to
-serve user needs, positioned by visibility (how visible to the user) on
-the Y-axis and evolution (how mature, from genesis to commodity) on the
-X-axis. The method was created by Simon Wardley. The Wardley Mapping
-skillset encodes a structured approach to producing these maps.
-
-## What is Business Model Canvas
-
-The Business Model Canvas is a strategic management tool that describes
-a business model through nine building blocks: Customer Segments, Value
-Propositions, Channels, Customer Relationships, Revenue Streams, Key
-Resources, Key Activities, Key Partnerships, and Cost Structure. It was
-developed by Alexander Osterwalder and Yves Pigneur.
+Agents executing skillset pipelines should understand the methodology
+behind each skillset. Use `practice skillset show --name <name>` to
+read the skillset's description and value proposition, then consult
+the skill files themselves for detailed methodology references.
