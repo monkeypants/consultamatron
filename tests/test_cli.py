@@ -773,3 +773,48 @@ class TestTourRegister:
         assert result.exit_code != 0
         assert "Invalid" in result.output
         assert "JSON" in result.output
+
+
+# ---------------------------------------------------------------------------
+# skillset list (with engagement filtering)
+# ---------------------------------------------------------------------------
+
+
+class TestSkillsetList:
+    """List skillsets, optionally filtered by engagement allowed sources."""
+
+    def test_unfiltered_lists_all(self, run):
+        result = run("skillset", "list")
+        assert result.exit_code == 0
+        assert "wardley-mapping" in result.output
+        assert "business-model-canvas" in result.output
+
+    def test_filtered_by_engagement(self, run):
+        _init(run)
+        _create_engagement(run)
+        # Default engagement has allowed_sources=["commons"], which
+        # includes both skillsets, so both should appear.
+        result = run(
+            "skillset",
+            "list",
+            "--client",
+            CLIENT,
+            "--engagement",
+            ENGAGEMENT,
+        )
+        assert result.exit_code == 0
+        assert "wardley-mapping" in result.output
+        assert "business-model-canvas" in result.output
+
+    def test_nonexistent_engagement_error(self, run):
+        _init(run)
+        result = run(
+            "skillset",
+            "list",
+            "--client",
+            CLIENT,
+            "--engagement",
+            "nonexistent",
+        )
+        assert result.exit_code == 1
+        assert "not found" in result.output.lower()

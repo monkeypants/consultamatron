@@ -257,6 +257,8 @@ class Container:
         )
         self.list_skillsets_usecase = ListSkillsetsUseCase(
             skillsets=self.skillsets,
+            engagements=self.engagement_entities,
+            sources=self.sources,
         )
         self.show_skillset_usecase = ShowSkillsetUseCase(
             skillsets=self.skillsets,
