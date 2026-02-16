@@ -39,30 +39,60 @@ directory structures.
 | editorial-voice | Rewrite artifacts in Consultamatron's editorial voice |
 | review | Post-implementation review of completed projects, producing sanitised GitHub issues |
 
-## Client workspace
+## Operator workspace
 
-All skills operate on a shared workspace at `./clients/{org-slug}/`
-(the user may specify an alternative).
+The operator's working directory has three layers, each `.gitignored`
+by the commons repository:
 
 ```
-clients/{org-slug}/
-├── resources/          # Shared research (managed by org-research)
-│   ├── index.md        # Manifest + synthesis (gate artifact)
-│   └── {topic}.md      # Sub-reports with citations
-├── projects/
-│   ├── index.md        # Project registry
-│   └── {project-slug}/ # One directory per project
-├── review.md               # Engagement-level review synthesis
-└── engagement.md           # Cross-project engagement history
+consultamatron/                       # commons (public repo)
+├── clients/                          # operator-private client workspaces
+│   └── {org-slug}/
+│       ├── resources/                # Shared research (managed by org-research)
+│       ├── projects/                 # One directory per project
+│       ├── review.md                 # Engagement-level review synthesis
+│       └── engagement.md            # Cross-project engagement history
+└── partnerships/                     # operator-private partnership repos
+    ├── {personal-vault}/             # personal proprietary skills
+    └── {partnership}/                # shared proprietary skills
 ```
 
-See `org-research/assets/workspace-layout.md` for the full directory
-structure including per-skillset project layouts.
+`clients/` and `partnerships/` are typically private git repositories
+cloned into these `.gitignored` directories. See `GETTING_STARTED.md`
+for setup instructions.
+
+See `org-research/assets/workspace-layout.md` for the full client
+workspace directory structure including per-skillset project layouts.
 
 Before starting any skill, check `clients/` for existing engagements.
 If work already exists for an organisation, resume from where it left
 off. Read `engagement.md` and project `decisions.md` files to understand
 what has already been agreed.
+
+## Partnership skillsets
+
+Operators may have proprietary skillsets in `partnerships/`. Each
+partnership subdirectory is an independent git repository containing:
+
+```
+partnerships/{name}/
+├── skillsets/{domain}.md             # skillset manifest (same format as commons)
+├── resources/{topic}.md              # proprietary domain knowledge
+├── skills/{skill-name}/SKILL.md      # partnership skills (same format as commons)
+└── reviews/                          # de-cliented engagement findings
+```
+
+The `engage` skill discovers partnership skillsets by reading
+`partnerships/*/skillsets/*.md` alongside commons `skillsets/*.md`.
+Partnership skills are injected at three points in the engagement
+pipeline:
+
+- **Partner-1** (after plan, before execute): domain enrichment
+- **Partner-2** (after synthesis, before delivery): domain enhancement
+- **Partner-3** (after delivery): domain-specific finishing
+
+If no partnerships are configured, these injection points are skipped
+and the pipeline matches the commons-only flow.
 
 ## Gate protocol
 
