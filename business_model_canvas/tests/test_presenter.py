@@ -11,6 +11,7 @@ from pathlib import Path
 
 import pytest
 
+from practice.content import ProjectContribution
 from practice.entities import Project, ProjectStatus
 from business_model_canvas.presenter import BmcProjectPresenter
 
@@ -33,6 +34,45 @@ def _make_project(**overrides) -> Project:
         created=date(2025, 6, 1),
     )
     return Project(**(defaults | overrides))
+
+
+# ---------------------------------------------------------------------------
+# Presenter contract (doctrine gate)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.doctrine
+class TestPresenterContract:
+    """BmcProjectPresenter produces valid ProjectContribution."""
+
+    def test_produces_project_contribution(self, tmp_path):
+        client = "presenter-test"
+        slug = "test-1"
+
+        proj_dir = tmp_path / client / "engagements" / "strat-1" / slug
+        _write(proj_dir / "brief.agreed.md", "# Brief\n\nMinimal conformance test.")
+
+        presenter = BmcProjectPresenter(workspace_root=tmp_path)
+        project = Project(
+            slug=slug,
+            client=client,
+            engagement="strat-1",
+            skillset="business-model-canvas",
+            status=ProjectStatus.ELABORATION,
+            created=date(2025, 6, 1),
+        )
+
+        result = presenter.present(project)
+
+        assert isinstance(result, ProjectContribution)
+        assert result.slug == slug
+        assert result.skillset == "business-model-canvas"
+        assert isinstance(result.sections, list)
+
+
+# ---------------------------------------------------------------------------
+# Fully equipped workspace
+# ---------------------------------------------------------------------------
 
 
 @pytest.fixture

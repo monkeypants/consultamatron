@@ -12,8 +12,9 @@ from pathlib import Path
 
 import pytest
 
+from practice.content import ProjectContribution
 from practice.entities import Project, ProjectStatus
-from bin.cli.infrastructure.json_repos import JsonTourManifestRepository
+from wardley_mapping.infrastructure import JsonTourManifestRepository
 from wardley_mapping.presenter import WardleyProjectPresenter
 from wardley_mapping.types import TourManifest, TourStop
 
@@ -66,6 +67,40 @@ def _make_presenter(ws_root: Path) -> WardleyProjectPresenter:
         ensure_owm_script=script,
         tours=JsonTourManifestRepository(ws_root),
     )
+
+
+# ---------------------------------------------------------------------------
+# Presenter contract (doctrine gate)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.doctrine
+class TestPresenterContract:
+    """WardleyProjectPresenter produces valid ProjectContribution."""
+
+    def test_produces_project_contribution(self, tmp_path):
+        client = "presenter-test"
+        slug = "test-1"
+
+        proj_dir = tmp_path / client / "engagements" / "strat-1" / slug
+        _write(proj_dir / "brief.agreed.md", "# Brief\n\nMinimal conformance test.")
+
+        presenter = _make_presenter(tmp_path)
+        project = Project(
+            slug=slug,
+            client=client,
+            engagement="strat-1",
+            skillset="wardley-mapping",
+            status=ProjectStatus.ELABORATION,
+            created=date(2025, 6, 1),
+        )
+
+        result = presenter.present(project)
+
+        assert isinstance(result, ProjectContribution)
+        assert result.slug == slug
+        assert result.skillset == "wardley-mapping"
+        assert isinstance(result.sections, list)
 
 
 # ---------------------------------------------------------------------------

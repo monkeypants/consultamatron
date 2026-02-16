@@ -1,7 +1,23 @@
 """Wardley Mapping bounded context."""
 
+from __future__ import annotations
+
 from practice.discovery import PipelineStage
 from practice.entities import Skillset
+
+
+def _create_presenter(workspace_root, repo_root):
+    from wardley_mapping.infrastructure import JsonTourManifestRepository
+    from wardley_mapping.presenter import WardleyProjectPresenter
+
+    return WardleyProjectPresenter(
+        workspace_root=workspace_root,
+        ensure_owm_script=repo_root / "bin" / "ensure-owm.sh",
+        tours=JsonTourManifestRepository(workspace_root),
+    )
+
+
+PRESENTER_FACTORY = ("wardley-mapping", _create_presenter)
 
 SKILLSETS: list[Skillset] = [
     Skillset(

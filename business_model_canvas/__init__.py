@@ -1,7 +1,18 @@
 """Business Model Canvas bounded context."""
 
+from __future__ import annotations
+
 from practice.discovery import PipelineStage
 from practice.entities import Skillset
+
+
+def _create_presenter(workspace_root, repo_root):
+    from business_model_canvas.presenter import BmcProjectPresenter
+
+    return BmcProjectPresenter(workspace_root=workspace_root)
+
+
+PRESENTER_FACTORY = ("business-model-canvas", _create_presenter)
 
 SKILLSETS: list[Skillset] = [
     Skillset(
