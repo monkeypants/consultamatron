@@ -19,7 +19,7 @@ from practice.entities import (
     ResearchTopic,
     Skillset,
 )
-from bin.cli.wm_types import TourManifest, TourStop
+from wardley_mapping.types import TourManifest, TourStop
 from bin.cli.infrastructure.json_entity_store import JsonEntityStore
 from bin.cli.infrastructure.json_repos import (
     JsonDecisionRepository,

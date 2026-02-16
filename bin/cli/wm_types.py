@@ -1,56 +1,5 @@
-"""Wardley Mapping domain types.
+"""Re-export shim — WM types have moved to wardley_mapping.types."""
 
-Types specific to the Wardley Mapping skillset that do not belong in
-the generic practice layer. Temporary home until #29 creates a proper
-wardley_mapping/ package.
-"""
+from wardley_mapping.types import TourManifest, TourManifestRepository, TourStop
 
-from __future__ import annotations
-
-from typing import Protocol, runtime_checkable
-
-from pydantic import BaseModel
-
-
-class TourStop(BaseModel):
-    """One stop in a curated presentation tour."""
-
-    order: str
-    title: str
-    atlas_source: str
-    map_file: str = "map.svg"
-    analysis_file: str = "analysis.md"
-
-
-class TourManifest(BaseModel):
-    """A complete tour definition for a specific audience."""
-
-    name: str
-    client: str
-    project_slug: str
-    title: str
-    stops: list[TourStop]
-
-
-@runtime_checkable
-class TourManifestRepository(Protocol):
-    """Repository for audience tour manifests.
-
-    Tour manifests use replace semantics — each save overwrites
-    the entire manifest. The name is the natural key, scoped to
-    a client and project.
-    """
-
-    def get(
-        self, client: str, project_slug: str, tour_name: str
-    ) -> TourManifest | None:
-        """Retrieve a tour manifest by client, project, and name."""
-        ...
-
-    def list_all(self, client: str, project_slug: str) -> list[TourManifest]:
-        """List all tour manifests for a project."""
-        ...
-
-    def save(self, manifest: TourManifest) -> None:
-        """Save a tour manifest (creates or replaces)."""
-        ...
+__all__ = ["TourManifest", "TourManifestRepository", "TourStop"]

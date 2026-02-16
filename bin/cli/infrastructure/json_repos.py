@@ -30,7 +30,7 @@ from pathlib import Path
 
 from consulting.entities import DecisionEntry, EngagementEntry
 from practice.entities import Project, ProjectStatus, ResearchTopic, Skillset
-from bin.cli.wm_types import TourManifest
+from wardley_mapping.types import TourManifest
 from bin.cli.infrastructure.json_store import (
     JsonArrayStore,
     read_json_object,

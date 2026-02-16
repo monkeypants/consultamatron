@@ -32,7 +32,7 @@ from practice.discovery import PipelineStage
 from practice.entities import Project, ProjectStatus
 from bin.cli.infrastructure.bmc_presenter import BmcProjectPresenter
 from bin.cli.infrastructure.json_repos import JsonTourManifestRepository
-from bin.cli.infrastructure.wardley_presenter import WardleyProjectPresenter
+from wardley_mapping.presenter import WardleyProjectPresenter
 
 from .conftest import (
     make_decision,

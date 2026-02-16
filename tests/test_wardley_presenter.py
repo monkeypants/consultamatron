@@ -13,9 +13,9 @@ from pathlib import Path
 import pytest
 
 from practice.entities import Project, ProjectStatus
-from bin.cli.wm_types import TourManifest, TourStop
 from bin.cli.infrastructure.json_repos import JsonTourManifestRepository
-from bin.cli.infrastructure.wardley_presenter import WardleyProjectPresenter
+from wardley_mapping.presenter import WardleyProjectPresenter
+from wardley_mapping.types import TourManifest, TourStop
 
 CLIENT = "test-corp"
 SLUG = "maps-1"
