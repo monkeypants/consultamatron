@@ -92,8 +92,8 @@ The short version:
 
 1. Clone this repository.
 2. Set up a private repo for your client workspaces in `clients/`.
-3. Set up a private repo for your personal vault in `partnerships/`.
-4. Clone any partnership repos into `partnerships/`.
+3. Set up a private repo for your personal vault in `partners/`.
+4. Clone any partnership repos into `partners/`.
 5. Start a session with your agent:
 
    > Research Acme Corp for me.

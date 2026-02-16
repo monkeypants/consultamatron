@@ -3,7 +3,7 @@
 Wraps the code-declared commons skillsets from CodeSkillsetRepository
 and adds any skillsets discovered in partnership directories on the
 filesystem.  Partnership skillsets are loaded from
-``partnerships/{slug}/skillsets/index.json``.
+``partners/{slug}/skillsets/index.json``.
 """
 
 from __future__ import annotations
@@ -41,7 +41,7 @@ class CompositeSkillsetRepository:
     @staticmethod
     def _load_partnerships(repo_root: Path) -> list[Skillset]:
         result: list[Skillset] = []
-        partnerships_dir = repo_root / "partnerships"
+        partnerships_dir = repo_root / "partners"
         if not partnerships_dir.is_dir():
             return result
         for subdir in sorted(partnerships_dir.iterdir()):

@@ -26,7 +26,7 @@ from practice.entities import SourceType
 
 def _write_partnership(repo_root, slug, skillsets):
     """Create a partnership directory with a skillsets/index.json."""
-    index = repo_root / "partnerships" / slug / "skillsets" / "index.json"
+    index = repo_root / "partners" / slug / "skillsets" / "index.json"
     index.parent.mkdir(parents=True, exist_ok=True)
     index.write_text(json.dumps(skillsets, indent=2) + "\n")
 
@@ -201,12 +201,12 @@ class TestFilesystemSourceIgnoresInvalid:
     """Directories without skillsets/index.json are skipped."""
 
     def test_dir_without_index_ignored(self, tmp_path, commons_repo):
-        (tmp_path / "partnerships" / "empty-partner").mkdir(parents=True)
+        (tmp_path / "partners" / "empty-partner").mkdir(parents=True)
         repo = FilesystemSourceRepository(tmp_path, commons_repo)
         assert len(repo.list_all()) == 1
 
     def test_file_in_partnerships_ignored(self, tmp_path, commons_repo):
-        partnerships_dir = tmp_path / "partnerships"
+        partnerships_dir = tmp_path / "partners"
         partnerships_dir.mkdir(parents=True)
         (partnerships_dir / "README.md").write_text("Not a partnership")
         repo = FilesystemSourceRepository(tmp_path, commons_repo)
