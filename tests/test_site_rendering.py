@@ -19,6 +19,7 @@ from bin.cli.dtos import (
     RegisterTourRequest,
     RenderSiteRequest,
 )
+from consulting.dtos import CreateEngagementRequest
 from bin.cli.wm_types import TourStop
 
 from .conftest import seed_all_skillsets
@@ -162,9 +163,12 @@ def rendered_site(tmp_path_factory):
     seed_all_skillsets(config.skillsets_root)
     container = Container(config)
 
-    # Initialize workspace
+    # Initialize workspace and create engagement
     container.initialize_workspace_usecase.execute(
         InitializeWorkspaceRequest(client=CLIENT)
+    )
+    container.create_engagement_usecase.execute(
+        CreateEngagementRequest(client=CLIENT, slug="strat-1")
     )
 
     ws = config.workspace_root / CLIENT

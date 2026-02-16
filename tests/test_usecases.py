@@ -62,6 +62,14 @@ def _init(di, client=CLIENT):
     )
 
 
+def _ensure_engagement(di, client=CLIENT, engagement=ENGAGEMENT):
+    """Create the engagement if it does not already exist."""
+    if di.engagement_entities.get(client, engagement) is None:
+        di.create_engagement_usecase.execute(
+            CreateEngagementRequest(client=client, slug=engagement)
+        )
+
+
 def _register(
     di,
     client=CLIENT,
@@ -70,6 +78,7 @@ def _register(
     scope="Freight operations and digital platform",
 ):
     """Register a wardley-mapping project. Workspace must exist."""
+    _ensure_engagement(di, client, engagement)
     return di.register_project_usecase.execute(
         RegisterProjectRequest(
             client=client,
@@ -171,6 +180,7 @@ class TestRegisterProject:
         assert len(workspace.projects.list_all(CLIENT)) == 2
 
     def test_unknown_skillset_rejected(self, workspace):
+        _ensure_engagement(workspace)
         with pytest.raises(NotFoundError, match="Unknown skillset"):
             workspace.register_project_usecase.execute(
                 RegisterProjectRequest(
@@ -186,6 +196,41 @@ class TestRegisterProject:
         _register(workspace)
         with pytest.raises(DuplicateError, match="already exists"):
             _register(workspace)
+
+    def test_nonexistent_engagement_rejected(self, workspace):
+        with pytest.raises(NotFoundError, match="Engagement not found"):
+            workspace.register_project_usecase.execute(
+                RegisterProjectRequest(
+                    client=CLIENT,
+                    engagement="phantom",
+                    slug="maps-1",
+                    skillset="wardley-mapping",
+                    scope="Test",
+                )
+            )
+
+    def test_closed_engagement_rejected(self, workspace):
+        from practice.entities import Engagement, EngagementStatus
+
+        workspace.engagement_entities.save(
+            Engagement(
+                slug="closed-eng",
+                client=CLIENT,
+                status=EngagementStatus.CLOSED,
+                allowed_sources=["commons"],
+                created=workspace.clock.today(),
+            )
+        )
+        with pytest.raises(InvalidTransitionError, match="must be planning or active"):
+            workspace.register_project_usecase.execute(
+                RegisterProjectRequest(
+                    client=CLIENT,
+                    engagement="closed-eng",
+                    slug="maps-1",
+                    skillset="wardley-mapping",
+                    scope="Test",
+                )
+            )
 
 
 # ---------------------------------------------------------------------------

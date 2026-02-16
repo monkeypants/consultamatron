@@ -48,8 +48,14 @@ def _init(run):
     return run("project", "init", "--client", CLIENT)
 
 
+def _create_engagement(run, slug=ENGAGEMENT):
+    """Create an engagement via CLI."""
+    return run("engagement", "create", "--client", CLIENT, "--slug", slug)
+
+
 def _register(run, slug="maps-1"):
-    """Register a wardley-mapping project via CLI."""
+    """Register a wardley-mapping project via CLI. Creates engagement if needed."""
+    _create_engagement(run)
     return run(
         "project",
         "register",
@@ -141,6 +147,7 @@ class TestProjectRegister:
 
     def test_explicit_notes_preserved(self, run):
         _init(run)
+        _create_engagement(run)
         result = run(
             "project",
             "register",

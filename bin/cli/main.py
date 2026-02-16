@@ -15,7 +15,13 @@ import click
 
 from bin.cli.config import Config
 from bin.cli.di import Container
-from bin.cli.dtos import ListSkillsetsRequest, RenderSiteRequest, ShowSkillsetRequest
+from bin.cli.dtos import (
+    ListSkillsetsRequest,
+    ListSourcesRequest,
+    RenderSiteRequest,
+    ShowSkillsetRequest,
+    ShowSourceRequest,
+)
 from bin.cli.introspect import generate_command
 
 import consulting.cli
@@ -78,6 +84,49 @@ skillset.add_command(
         request_model=ShowSkillsetRequest,
         usecase_attr="show_skillset_usecase",
         format_output=_format_skillset_show,
+    )
+)
+
+
+# ---------------------------------------------------------------------------
+# source (cross-BC, stays here)
+# ---------------------------------------------------------------------------
+
+
+@cli.group()
+def source() -> None:
+    """Browse installed skillset sources."""
+
+
+def _format_source_list(resp: Any) -> None:
+    if not resp.sources:
+        click.echo("No sources installed.")
+        return
+    for s in resp.sources:
+        click.echo(f"  {s.slug}  {s.source_type}  ({len(s.skillset_names)} skillsets)")
+
+
+def _format_source_show(resp: Any) -> None:
+    s = resp.source
+    click.echo(f"Slug:      {s.slug}")
+    click.echo(f"Type:      {s.source_type}")
+    click.echo(f"Skillsets: {', '.join(s.skillset_names)}")
+
+
+source.add_command(
+    generate_command(
+        name="list",
+        request_model=ListSourcesRequest,
+        usecase_attr="list_sources_usecase",
+        format_output=_format_source_list,
+    )
+)
+source.add_command(
+    generate_command(
+        name="show",
+        request_model=ShowSourceRequest,
+        usecase_attr="show_source_usecase",
+        format_output=_format_source_show,
     )
 )
 
