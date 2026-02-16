@@ -119,13 +119,9 @@ Compare against the baseline:
 - No new failures
 - All planned acceptance criteria met
 
-If the target skillset is a **partnership** skillset (lives in
-`partners/`), doctrine tests do not cover it. Verify skill files
-manually against the agentskills.io spec:
-- `name` matches directory, ≤64 chars, lowercase/hyphens only
-- `description` ≤1024 chars, non-empty
-- SKILL.md under 500 lines
-- Scripts executable
+All skillsets — commons, personal, and partnership — are full BC
+packages with doctrine test coverage. The conformance suite applies
+uniformly regardless of source.
 
 ## Step 4: Write iteration report
 

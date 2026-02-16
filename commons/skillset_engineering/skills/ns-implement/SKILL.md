@@ -32,47 +32,24 @@ If missing, tell the operator to complete `ns-design` first.
 
 Read all four inputs. The design document is your specification.
 
-## Step 1: Determine implementation path
+## Step 1: Determine scaffold location
 
-Read `brief.agreed.md` and check the **Source** section.
+Read `brief.agreed.md` and check the **Source** section to determine
+where the BC package will be created:
 
-### Commons path
+| Source | Location | Notes |
+|--------|----------|-------|
+| commons | `commons/{bc_package}/` | Committed to repo, always available |
+| personal | `personal/{bc_package}/` | Operator-private, always available |
+| partnership | `partnerships/{slug}/{bc_package}/` | Per-engagement access control |
 
-If the source is **commons**, follow the full BC implementation
-(steps 2–13 below). The skillset becomes a Python package with
-SKILLSETS, PRESENTER_FACTORY, presenter, tests, and conformance
-coverage.
+The implementation process is the same regardless of source — all
+three produce a full BC package with `__init__.py` exporting SKILLSETS,
+a presenter, tests, and conformance coverage. The only difference is
+the filesystem location.
 
-### Partnership path
-
-If the source is a **partnership**, the implementation is lighter:
-
-1. Create or verify the partnership directory:
-   ```
-   partners/{slug}/
-   ├── skillsets/index.json
-   ├── skills/{skill-name}/SKILL.md
-   ├── skills/{skill-name}/scripts/
-   ├── skills/{skill-name}/references/
-   └── resources/
-   ```
-
-2. Write skill files (same SKILL.md format as commons)
-
-3. Register the skillset in `partners/{slug}/skillsets/index.json`:
-   ```json
-   [{"name": "{skillset-name}", "display_name": "...", "stages": [...]}]
-   ```
-
-4. Create symlinks from `.claude/skills/` to `partners/{slug}/skills/`
-
-5. Verify: `uv run practice source show --slug {slug}`
-
-No Python BC, no presenter, no conformance tests (partnership
-skillsets are not discoverable by the test suite). The lighter
-weight is intentional — partnership IP stays private.
-
-Skip to step 12 (present to operator) after this path completes.
+Set `{source_dir}` to the appropriate container path and proceed to
+Step 2.
 
 ## Step 2: Study the target
 

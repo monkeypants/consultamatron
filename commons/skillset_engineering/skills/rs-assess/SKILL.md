@@ -57,7 +57,7 @@ Additional context to gather before starting:
   what has been agreed previously
 - Read any review documents from prior `review` skill outputs
 - Check the target's source: `uv run practice source list` to
-  determine whether it is commons or partnership
+  determine whether it is commons, personal, or partnership
 
 If the target skillset does not exist or is not implemented, this
 skill cannot proceed.
