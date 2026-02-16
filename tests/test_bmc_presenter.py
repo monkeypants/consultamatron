@@ -27,6 +27,7 @@ def _make_project(**overrides) -> Project:
     defaults = dict(
         slug=SLUG,
         client=CLIENT,
+        engagement="strat-1",
         skillset="business-model-canvas",
         status=ProjectStatus.ELABORATION,
         created=date(2025, 6, 1),

@@ -71,6 +71,7 @@ class Project(BaseModel):
 
     slug: str
     client: str
+    engagement: str
     skillset: str
     status: ProjectStatus
     created: date

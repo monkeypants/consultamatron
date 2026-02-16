@@ -160,6 +160,7 @@ def make_project(**overrides) -> Project:
     defaults = dict(
         slug=DEFAULT_PROJECT,
         client=DEFAULT_CLIENT,
+        engagement=DEFAULT_ENGAGEMENT,
         skillset="wardley-mapping",
         status=ProjectStatus.PLANNING,
         created=DEFAULT_DATE,
@@ -184,6 +185,7 @@ def make_engagement(**overrides) -> EngagementEntry:
     defaults = dict(
         id=str(uuid.uuid4()),
         client=DEFAULT_CLIENT,
+        engagement=DEFAULT_ENGAGEMENT,
         date=DEFAULT_DATE,
         timestamp=DEFAULT_TIMESTAMP,
         title="Client onboarded",

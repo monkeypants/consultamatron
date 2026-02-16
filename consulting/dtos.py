@@ -28,6 +28,7 @@ class ProjectInfo(BaseModel):
     """Project summary returned by list and get queries."""
 
     slug: str
+    engagement: str
     skillset: str
     status: str
     created: date
@@ -37,6 +38,7 @@ class ProjectInfo(BaseModel):
     def from_entity(cls, p: Project) -> ProjectInfo:
         return cls(
             slug=p.slug,
+            engagement=p.engagement,
             skillset=p.skillset,
             status=p.status.value,
             created=p.created,
@@ -112,6 +114,7 @@ class RegisterProjectRequest(BaseModel):
     """
 
     client: str = Field(description="Client slug.")
+    engagement: str = Field(description="Engagement slug.")
     slug: str = Field(description="Project slug (e.g. maps-1).")
     skillset: str = Field(description="Skillset name (must match a manifest).")
     scope: str = Field(description="Project scope description.")
@@ -120,6 +123,7 @@ class RegisterProjectRequest(BaseModel):
 
 class RegisterProjectResponse(BaseModel):
     client: str
+    engagement: str
     slug: str
     skillset: str
 
@@ -133,6 +137,7 @@ class UpdateProjectStatusRequest(BaseModel):
     """Transition a project to the next lifecycle status."""
 
     client: str = Field(description="Client slug.")
+    engagement: str = Field(description="Engagement slug.")
     project_slug: str = Field(
         description="Project slug.",
         json_schema_extra={"cli_name": "project"},
@@ -158,6 +163,7 @@ class RecordDecisionRequest(BaseModel):
     """Record a timestamped decision against a project."""
 
     client: str = Field(description="Client slug.")
+    engagement: str = Field(description="Engagement slug.")
     project_slug: str = Field(
         description="Project slug.",
         json_schema_extra={"cli_name": "project"},
@@ -186,6 +192,7 @@ class AddEngagementEntryRequest(BaseModel):
     """Add a timestamped entry to the client engagement log."""
 
     client: str = Field(description="Client slug.")
+    engagement: str = Field(description="Engagement slug.")
     title: str = Field(description="Entry title.")
     fields: dict[str, str] = Field(
         default_factory=dict,
@@ -229,9 +236,10 @@ class RegisterResearchTopicResponse(BaseModel):
 
 
 class ListProjectsRequest(BaseModel):
-    """List projects for a client, with optional filters."""
+    """List projects for a client engagement, with optional filters."""
 
     client: str = Field(description="Client slug.")
+    engagement: str = Field(description="Engagement slug.")
     skillset: str | None = Field(default=None, description="Filter by skillset.")
     status: str | None = Field(
         default=None,
@@ -251,9 +259,10 @@ class ListProjectsResponse(BaseModel):
 
 
 class GetProjectRequest(BaseModel):
-    """Retrieve a single project by client and slug."""
+    """Retrieve a single project by client, engagement, and slug."""
 
     client: str = Field(description="Client slug.")
+    engagement: str = Field(description="Engagement slug.")
     slug: str = Field(description="Project slug.")
 
 
@@ -272,6 +281,7 @@ class GetProjectProgressRequest(BaseModel):
     """Show pipeline progress for a project."""
 
     client: str = Field(description="Client slug.")
+    engagement: str = Field(description="Engagement slug.")
     project_slug: str = Field(
         description="Project slug.",
         json_schema_extra={"cli_name": "project"},
@@ -296,6 +306,7 @@ class ListDecisionsRequest(BaseModel):
     """List all decisions recorded for a project."""
 
     client: str = Field(description="Client slug.")
+    engagement: str = Field(description="Engagement slug.")
     project_slug: str = Field(
         description="Project slug.",
         json_schema_extra={"cli_name": "project"},
