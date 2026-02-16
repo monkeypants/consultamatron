@@ -57,8 +57,8 @@ valuable.
 # Create a private repo for your personal vault
 gh repo create my-consultamatron-vault --private
 
-# Clone it into the gitignored partnerships/ directory
-git clone git@github.com:you/my-consultamatron-vault.git partnerships/my-vault
+# Clone it into the gitignored partners/ directory
+git clone git@github.com:you/my-consultamatron-vault.git partners/my-vault
 ```
 
 The vault starts empty. Over time it accumulates:
@@ -87,17 +87,17 @@ might be:
   frameworks
 
 Each partnership is a private git repository cloned into
-`partnerships/`:
+`partners/`:
 
 ```bash
 # Clone a partnership repo you've been given access to
-git clone git@github.com:some-org/consultamatron-partnership.git partnerships/some-org
+git clone git@github.com:some-org/consultamatron-partnership.git partners/some-org
 ```
 
 You can have as many partnerships as you need:
 
 ```
-partnerships/
+partners/
 ├── my-vault/           # your personal vault (Step 3)
 ├── acme-corp/          # organisational partnership
 └── strategy-guild/     # collaborative group
@@ -140,7 +140,7 @@ consultamatron/                       # commons (public repo)
 ├── clients/                          # gitignored, your private repo
 │   ├── .git/
 │   └── {org-slug}/                   # one workspace per client
-└── partnerships/                     # gitignored, one or more private repos
+└── partners/                     # gitignored, one or more private repos
     ├── {your-vault}/                 # your personal vault
     │   ├── .git/
     │   ├── skillsets/                # your proprietary skillset manifests
@@ -197,13 +197,13 @@ the pipeline matches the commons-only flow.
 cd consultamatron && git pull
 
 # Pull partnership updates
-cd partnerships/some-org && git pull
+cd partners/some-org && git pull
 
 # Your client workspace is yours to commit and push as you see fit
 cd clients && git add -A && git commit -m "Progress on acme-corp maps-1"
 ```
 
-Commons updates never touch your `clients/` or `partnerships/`
+Commons updates never touch your `clients/` or `partners/`
 directories. Partnership updates never touch your client work. The
 three layers are independent.
 
@@ -222,5 +222,5 @@ separation:
   plain local directory with no git repo, relying on the structured
   data files as the record of truth
 
-The `partnerships/` directory supports the same granularity choices.
+The `partners/` directory supports the same granularity choices.
 Start simple; split when you have a reason to.

@@ -1,6 +1,6 @@
 """SourceRepository that discovers partnerships from the filesystem.
 
-Scans ``{repo_root}/partnerships/`` for subdirectories.  Each subdir
+Scans ``{repo_root}/partners/`` for subdirectories.  Each subdir
 containing a ``skillsets/index.json`` is treated as a partnership source.
 The commons source is synthesised from the injected SkillsetRepository.
 """
@@ -61,7 +61,7 @@ class FilesystemSourceRepository:
     def _scan_partnerships(self) -> dict[str, list[str]]:
         """Scan partnerships directory, returning {slug: [skillset_names]}."""
         result: dict[str, list[str]] = {}
-        partnerships_dir = self._repo_root / "partnerships"
+        partnerships_dir = self._repo_root / "partners"
         if not partnerships_dir.is_dir():
             return result
         for subdir in sorted(partnerships_dir.iterdir()):

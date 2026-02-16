@@ -63,12 +63,12 @@ consultamatron/                       # commons (public repo)
 │       │           └── decisions.json
 │       ├── engagement-log.json       # Cross-engagement audit trail
 │       └── review.md                 # Engagement-level review synthesis
-└── partnerships/                     # operator-private partnership repos
+└── partners/                     # operator-private partnership repos
     ├── {personal-vault}/             # personal proprietary skills
     └── {partnership}/                # shared proprietary skills
 ```
 
-`clients/` and `partnerships/` are typically private git repositories
+`clients/` and `partners/` are typically private git repositories
 cloned into these `.gitignored` directories. See `GETTING_STARTED.md`
 for setup instructions.
 
@@ -101,18 +101,18 @@ what has already been agreed.
 Skillset sources determine where skillset definitions come from:
 
 - **commons** — built-in skillsets declared in bounded context modules
-- **partnerships** — external skillset definitions in `partnerships/{slug}/skillsets/index.json`
+- **partnerships** — external skillset definitions in `partners/{slug}/skillsets/index.json`
 
 Use `practice source list` to see installed sources and
 `practice source show --slug <slug>` for detail.
 
 ## Partnership skillsets
 
-Operators may have proprietary skillsets in `partnerships/`. Each
+Operators may have proprietary skillsets in `partners/`. Each
 partnership subdirectory is an independent git repository containing:
 
 ```
-partnerships/{name}/
+partners/{name}/
 ├── skillsets/{domain}.md             # skillset manifest
 ├── resources/{topic}.md              # proprietary domain knowledge
 ├── skills/{skill-name}/SKILL.md      # partnership skills (same format as commons)
