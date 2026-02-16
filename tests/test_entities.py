@@ -25,8 +25,6 @@ from .conftest import (
     make_research,
     make_skillset,
     make_skillset_source,
-    make_tour,
-    make_tour_stop,
 )
 
 
@@ -39,14 +37,6 @@ class TestDefaults:
     def test_project_notes_defaults_empty(self):
         p = make_project()
         assert p.notes == ""
-
-    def test_tour_stop_map_file_default(self):
-        s = make_tour_stop()
-        assert s.map_file == "map.svg"
-
-    def test_tour_stop_analysis_file_default(self):
-        s = make_tour_stop()
-        assert s.analysis_file == "analysis.md"
 
     def test_engagement_notes_defaults_empty(self):
         e = make_engagement_entity()
@@ -70,8 +60,6 @@ class TestRoundTrip:
             pytest.param(make_decision(), id="DecisionEntry"),
             pytest.param(make_engagement(), id="EngagementEntry"),
             pytest.param(make_research(), id="ResearchTopic"),
-            pytest.param(make_tour_stop(), id="TourStop"),
-            pytest.param(make_tour(), id="TourManifest"),
             pytest.param(make_skillset(), id="Skillset"),
             pytest.param(make_prospectus(), id="Skillset-prospectus"),
             pytest.param(make_engagement_entity(), id="Engagement"),
@@ -130,18 +118,6 @@ class TestSkillsetImplementation:
     def test_empty_pipeline_is_not_implemented(self):
         s = make_skillset(pipeline=[])
         assert s.is_implemented is False
-
-
-class TestTourStopOrder:
-    """TourStop.order is str to support hierarchical numbering."""
-
-    def test_integer_order(self):
-        s = make_tour_stop(order="3")
-        assert s.order == "3"
-
-    def test_letter_suffix_order(self):
-        s = make_tour_stop(order="4a")
-        assert s.order == "4a"
 
 
 class TestEngagementStatus:

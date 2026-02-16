@@ -12,11 +12,10 @@ import json
 from bin.cli.infrastructure.json_repos import (
     JsonProjectRepository,
     JsonResearchTopicRepository,
-    JsonTourManifestRepository,
 )
 from bin.cli.infrastructure.json_store import read_json_array, read_json_object
 
-from .conftest import make_project, make_research, make_tour
+from .conftest import make_project, make_research
 
 ENGAGEMENT = "strat-1"
 
@@ -69,23 +68,6 @@ class TestPathConventions:
         repo.save(make_research(client="holloway-group"))
         expected = (
             tmp_config.workspace_root / "holloway-group" / "resources" / "index.json"
-        )
-        assert expected.exists()
-
-    def test_tour_manifest(self, tmp_config):
-        repo = JsonTourManifestRepository(tmp_config.workspace_root)
-        repo.save(
-            make_tour(client="holloway-group", project_slug="maps-1", name="investor")
-        )
-        expected = (
-            tmp_config.workspace_root
-            / "holloway-group"
-            / "engagements"
-            / ENGAGEMENT
-            / "maps-1"
-            / "presentations"
-            / "investor"
-            / "manifest.json"
         )
         assert expected.exists()
 
@@ -162,22 +144,6 @@ class TestJsonFormat:
         text = path.read_text(encoding="utf-8")
         assert text.endswith("\n")
 
-    def test_tour_manifest_is_object_not_array(self, tmp_config):
-        repo = JsonTourManifestRepository(tmp_config.workspace_root)
-        repo.save(make_tour())
-        path = (
-            tmp_config.workspace_root
-            / "holloway-group"
-            / "engagements"
-            / ENGAGEMENT
-            / "maps-1"
-            / "presentations"
-            / "investor"
-            / "manifest.json"
-        )
-        data = json.loads(path.read_text(encoding="utf-8"))
-        assert isinstance(data, dict)
-
 
 # ---------------------------------------------------------------------------
 # Missing file resilience
@@ -192,20 +158,3 @@ class TestMissingFileResilience:
     def testread_json_object_missing_file(self, tmp_path):
         result = read_json_object(tmp_path / "does-not-exist.json")
         assert result is None
-
-    def test_mkdir_p_on_deep_save(self, tmp_config):
-        """Saving to a deeply nested path creates all intermediates."""
-        repo = JsonTourManifestRepository(tmp_config.workspace_root)
-        repo.save(make_tour())
-        # If we got here without error, mkdir -p worked.
-        path = (
-            tmp_config.workspace_root
-            / "holloway-group"
-            / "engagements"
-            / ENGAGEMENT
-            / "maps-1"
-            / "presentations"
-            / "investor"
-            / "manifest.json"
-        )
-        assert path.exists()

@@ -46,7 +46,6 @@ from consulting.usecases import (
 from practice.entities import Skillset, SkillsetSource
 from practice.exceptions import DuplicateError, NotFoundError
 from practice.repositories import ProjectPresenter, SiteRenderer, SourceRepository
-from wardley_mapping.usecases import RegisterTourUseCase
 
 __all__ = [
     "AddEngagementEntryUseCase",
@@ -62,7 +61,6 @@ __all__ = [
     "RegisterProjectUseCase",
     "RegisterProspectusUseCase",
     "RegisterResearchTopicUseCase",
-    "RegisterTourUseCase",
     "RenderSiteUseCase",
     "ShowSkillsetUseCase",
     "ShowSourceUseCase",

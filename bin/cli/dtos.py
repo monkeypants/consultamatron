@@ -34,7 +34,6 @@ from consulting.dtos import (
     UpdateProjectStatusRequest,
     UpdateProjectStatusResponse,
 )
-from wardley_mapping.dtos import RegisterTourRequest, RegisterTourResponse
 
 __all__ = [
     "AddEngagementEntryRequest",
@@ -61,8 +60,6 @@ __all__ = [
     "RegisterProspectusResponse",
     "RegisterResearchTopicRequest",
     "RegisterResearchTopicResponse",
-    "RegisterTourRequest",
-    "RegisterTourResponse",
     "ListSkillsetsRequest",
     "ListSkillsetsResponse",
     "RenderSiteRequest",

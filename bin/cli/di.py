@@ -7,11 +7,15 @@ on implementations directly.
 
 from __future__ import annotations
 
+import importlib
 import uuid
 from datetime import date, datetime, timezone
 
 from bin.cli.config import Config
-from bin.cli.infrastructure.code_skillset_repository import CodeSkillsetRepository
+from bin.cli.infrastructure.code_skillset_repository import (
+    CodeSkillsetRepository,
+    _read_pyproject_packages,
+)
 from bin.cli.infrastructure.composite_skillset_repository import (
     CompositeSkillsetRepository,
 )
@@ -19,7 +23,6 @@ from bin.cli.infrastructure.filesystem_source_repository import (
     FilesystemSourceRepository,
 )
 from bin.cli.infrastructure.skillset_scaffold import SkillsetScaffold
-from business_model_canvas.presenter import BmcProjectPresenter
 from bin.cli.infrastructure.jinja_renderer import JinjaSiteRenderer
 from bin.cli.infrastructure.json_repos import (
     JsonDecisionRepository,
@@ -27,8 +30,8 @@ from bin.cli.infrastructure.json_repos import (
     JsonEngagementLogRepository,
     JsonProjectRepository,
     JsonResearchTopicRepository,
-    JsonTourManifestRepository,
 )
+from wardley_mapping.infrastructure import JsonTourManifestRepository
 from bin.cli.usecases import (
     ListSkillsetsUseCase,
     ListSourcesUseCase,
@@ -38,7 +41,6 @@ from bin.cli.usecases import (
     ShowSourceUseCase,
     UpdateProspectusUseCase,
 )
-from wardley_mapping.presenter import WardleyProjectPresenter
 from wardley_mapping.types import TourManifestRepository
 from wardley_mapping.usecases import RegisterTourUseCase
 from consulting.repositories import (
@@ -155,17 +157,19 @@ class Container:
             repo_root=config.repo_root,
         )
 
-        # -- Project presenters ------------------------------------------------
-        self.presenters: dict[str, ProjectPresenter] = {
-            "wardley-mapping": WardleyProjectPresenter(
-                workspace_root=config.workspace_root,
-                ensure_owm_script=config.repo_root / "bin" / "ensure-owm.sh",
-                tours=self.tours,
-            ),
-            "business-model-canvas": BmcProjectPresenter(
-                workspace_root=config.workspace_root,
-            ),
-        }
+        # -- Project presenters (discovered from BC modules) -------------------
+        self.presenters: dict[str, ProjectPresenter] = {}
+        for pkg_name in _read_pyproject_packages(config.repo_root / "pyproject.toml"):
+            try:
+                mod = importlib.import_module(pkg_name)
+            except ImportError:
+                continue
+            factory = getattr(mod, "PRESENTER_FACTORY", None)
+            if factory is not None:
+                skillset_name, create_fn = factory
+                self.presenters[skillset_name] = create_fn(
+                    config.workspace_root, config.repo_root
+                )
 
         # -- Write usecases ------------------------------------------------
         self.initialize_workspace_usecase = InitializeWorkspaceUseCase(
