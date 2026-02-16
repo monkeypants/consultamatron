@@ -16,8 +16,10 @@ from bin.cli.config import Config
 from bin.cli.infrastructure.code_skillset_repository import CodeSkillsetRepository
 from business_model_canvas.presenter import BmcProjectPresenter
 from bin.cli.infrastructure.jinja_renderer import JinjaSiteRenderer
+from bin.cli.infrastructure.commons_source_repository import CommonsSourceRepository
 from bin.cli.infrastructure.json_repos import (
     JsonDecisionRepository,
+    JsonEngagementEntityRepository,
     JsonEngagementLogRepository,
     JsonProjectRepository,
     JsonResearchTopicRepository,
@@ -34,24 +36,36 @@ from wardley_mapping.usecases import RegisterTourUseCase
 from consulting.repositories import (
     DecisionRepository,
     EngagementLogRepository,
+    EngagementRepository,
     ProjectRepository,
     ResearchTopicRepository,
     SkillsetRepository,
 )
 from consulting.usecases import (
     AddEngagementEntryUseCase,
+    AddEngagementSourceUseCase,
+    CreateEngagementUseCase,
+    GetEngagementUseCase,
     GetProjectProgressUseCase,
     GetProjectUseCase,
     InitializeWorkspaceUseCase,
     ListDecisionsUseCase,
+    ListEngagementsUseCase,
     ListProjectsUseCase,
     ListResearchTopicsUseCase,
     RecordDecisionUseCase,
     RegisterProjectUseCase,
     RegisterResearchTopicUseCase,
+    RemoveEngagementSourceUseCase,
     UpdateProjectStatusUseCase,
 )
-from practice.repositories import Clock, IdGenerator, ProjectPresenter, SiteRenderer
+from practice.repositories import (
+    Clock,
+    IdGenerator,
+    ProjectPresenter,
+    SiteRenderer,
+    SourceRepository,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -119,6 +133,10 @@ class Container:
         self.tours: TourManifestRepository = JsonTourManifestRepository(
             config.workspace_root,
         )
+        self.engagement_entities: EngagementRepository = JsonEngagementEntityRepository(
+            config.workspace_root
+        )
+        self.sources: SourceRepository = CommonsSourceRepository(self.skillsets)
         self.site_renderer: SiteRenderer = JinjaSiteRenderer(
             workspace_root=config.workspace_root,
             repo_root=config.repo_root,
@@ -176,6 +194,28 @@ class Container:
             projects=self.projects,
             tours=self.tours,
         )
+        self.create_engagement_usecase = CreateEngagementUseCase(
+            projects=self.projects,
+            engagements=self.engagement_entities,
+            engagement_log=self.engagement_log,
+            clock=self.clock,
+            id_gen=self.id_gen,
+        )
+        self.add_engagement_source_usecase = AddEngagementSourceUseCase(
+            engagements=self.engagement_entities,
+            engagement_log=self.engagement_log,
+            sources=self.sources,
+            clock=self.clock,
+            id_gen=self.id_gen,
+        )
+        self.remove_engagement_source_usecase = RemoveEngagementSourceUseCase(
+            engagements=self.engagement_entities,
+            engagement_log=self.engagement_log,
+            projects=self.projects,
+            sources=self.sources,
+            clock=self.clock,
+            id_gen=self.id_gen,
+        )
 
         # -- Read usecases -------------------------------------------------
         self.list_projects_usecase = ListProjectsUseCase(
@@ -194,6 +234,12 @@ class Container:
         )
         self.list_research_topics_usecase = ListResearchTopicsUseCase(
             research=self.research,
+        )
+        self.get_engagement_usecase = GetEngagementUseCase(
+            engagements=self.engagement_entities,
+        )
+        self.list_engagements_usecase = ListEngagementsUseCase(
+            engagements=self.engagement_entities,
         )
         self.list_skillsets_usecase = ListSkillsetsUseCase(
             skillsets=self.skillsets,

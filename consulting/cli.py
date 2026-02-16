@@ -12,15 +12,20 @@ import click
 from bin.cli.introspect import generate_command
 from consulting.dtos import (
     AddEngagementEntryRequest,
+    AddEngagementSourceRequest,
+    CreateEngagementRequest,
+    GetEngagementRequest,
     GetProjectProgressRequest,
     GetProjectRequest,
     InitializeWorkspaceRequest,
     ListDecisionsRequest,
+    ListEngagementsRequest,
     ListProjectsRequest,
     ListResearchTopicsRequest,
     RecordDecisionRequest,
     RegisterProjectRequest,
     RegisterResearchTopicRequest,
+    RemoveEngagementSourceRequest,
     UpdateProjectStatusRequest,
 )
 
@@ -96,6 +101,48 @@ def _format_engagement_add(resp: Any) -> None:
     click.echo(
         f"Added engagement entry '{resp.title}' for '{resp.client}' ({resp.entry_id})"
     )
+
+
+def _format_engagement_create(resp: Any) -> None:
+    click.echo(
+        f"Created engagement '{resp.slug}' for '{resp.client}' (status: {resp.status})"
+    )
+
+
+def _format_engagement_get(resp: Any) -> None:
+    e = resp.engagement
+    click.echo(f"Slug:     {e.slug}")
+    click.echo(f"Client:   {e.client}")
+    click.echo(f"Status:   {e.status}")
+    click.echo(f"Sources:  {', '.join(e.allowed_sources)}")
+    click.echo(f"Created:  {e.created}")
+    if e.notes:
+        click.echo(f"Notes:    {e.notes}")
+
+
+def _format_engagement_list(resp: Any) -> None:
+    if not resp.engagements:
+        click.echo("No engagements found.")
+        return
+    for e in resp.engagements:
+        click.echo(
+            f"  {e.slug}  {e.status}  {', '.join(e.allowed_sources)}  {e.created}"
+        )
+
+
+def _format_engagement_add_source(resp: Any) -> None:
+    click.echo(
+        f"Added source '{resp.source}' to engagement '{resp.client}/{resp.engagement}'"
+    )
+    click.echo(f"Allowed sources: {', '.join(resp.allowed_sources)}")
+
+
+def _format_engagement_remove_source(resp: Any) -> None:
+    click.echo(
+        f"Removed source '{resp.source}' from engagement "
+        f"'{resp.client}/{resp.engagement}'"
+    )
+    click.echo(f"Allowed sources: {', '.join(resp.allowed_sources)}")
 
 
 def _format_research_add(resp: Any) -> None:
@@ -206,10 +253,50 @@ def register_commands(cli: click.Group) -> None:
 
     engagement.add_command(
         generate_command(
+            name="create",
+            request_model=CreateEngagementRequest,
+            usecase_attr="create_engagement_usecase",
+            format_output=_format_engagement_create,
+        )
+    )
+    engagement.add_command(
+        generate_command(
+            name="get",
+            request_model=GetEngagementRequest,
+            usecase_attr="get_engagement_usecase",
+            format_output=_format_engagement_get,
+        )
+    )
+    engagement.add_command(
+        generate_command(
+            name="list",
+            request_model=ListEngagementsRequest,
+            usecase_attr="list_engagements_usecase",
+            format_output=_format_engagement_list,
+        )
+    )
+    engagement.add_command(
+        generate_command(
             name="add",
             request_model=AddEngagementEntryRequest,
             usecase_attr="add_engagement_entry_usecase",
             format_output=_format_engagement_add,
+        )
+    )
+    engagement.add_command(
+        generate_command(
+            name="add-source",
+            request_model=AddEngagementSourceRequest,
+            usecase_attr="add_engagement_source_usecase",
+            format_output=_format_engagement_add_source,
+        )
+    )
+    engagement.add_command(
+        generate_command(
+            name="remove-source",
+            request_model=RemoveEngagementSourceRequest,
+            usecase_attr="remove_engagement_source_usecase",
+            format_output=_format_engagement_remove_source,
         )
     )
 

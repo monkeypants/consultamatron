@@ -21,15 +21,20 @@ from wardley_mapping.dtos import RegisterTourRequest
 from wardley_mapping.types import TourStop
 from consulting.dtos import (
     AddEngagementEntryRequest,
+    AddEngagementSourceRequest,
+    CreateEngagementRequest,
+    GetEngagementRequest,
     GetProjectProgressRequest,
     GetProjectRequest,
     InitializeWorkspaceRequest,
     ListDecisionsRequest,
+    ListEngagementsRequest,
     ListProjectsRequest,
     ListResearchTopicsRequest,
     RecordDecisionRequest,
     RegisterProjectRequest,
     RegisterResearchTopicRequest,
+    RemoveEngagementSourceRequest,
     UpdateProjectStatusRequest,
 )
 from consulting.entities import DecisionEntry
@@ -780,3 +785,183 @@ class TestListResearchTopics:
         assert len(resp.topics) == 1
         assert resp.topics[0].topic == "Partnerships and fleet suppliers"
         assert resp.topics[0].confidence == "Medium-High"
+
+
+# ---------------------------------------------------------------------------
+# CreateEngagement
+# ---------------------------------------------------------------------------
+
+
+class TestCreateEngagement:
+    """Create a new engagement with default commons source."""
+
+    def test_echoes_details(self, workspace):
+        resp = workspace.create_engagement_usecase.execute(
+            CreateEngagementRequest(client=CLIENT, slug="strat-2")
+        )
+        assert resp.client == CLIENT
+        assert resp.slug == "strat-2"
+        assert resp.status == "planning"
+
+    def test_persists_with_commons(self, workspace):
+        workspace.create_engagement_usecase.execute(
+            CreateEngagementRequest(client=CLIENT, slug="strat-2")
+        )
+        eng = workspace.engagement_entities.get(CLIENT, "strat-2")
+        assert eng is not None
+        assert eng.allowed_sources == ["commons"]
+
+    def test_logs_entry(self, workspace):
+        workspace.create_engagement_usecase.execute(
+            CreateEngagementRequest(client=CLIENT, slug="strat-2")
+        )
+        titles = [e.title for e in workspace.engagement_log.list_all(CLIENT)]
+        assert "Engagement created" in titles
+
+    def test_duplicate_rejected(self, workspace):
+        workspace.create_engagement_usecase.execute(
+            CreateEngagementRequest(client=CLIENT, slug="strat-2")
+        )
+        with pytest.raises(DuplicateError, match="already exists"):
+            workspace.create_engagement_usecase.execute(
+                CreateEngagementRequest(client=CLIENT, slug="strat-2")
+            )
+
+    def test_nonexistent_client_rejected(self, di):
+        with pytest.raises(NotFoundError, match="not found"):
+            di.create_engagement_usecase.execute(
+                CreateEngagementRequest(client="phantom-corp", slug="strat-1")
+            )
+
+
+# ---------------------------------------------------------------------------
+# GetEngagement
+# ---------------------------------------------------------------------------
+
+
+class TestGetEngagement:
+    """Retrieve a single engagement."""
+
+    def test_found(self, workspace):
+        workspace.create_engagement_usecase.execute(
+            CreateEngagementRequest(client=CLIENT, slug="strat-2")
+        )
+        resp = workspace.get_engagement_usecase.execute(
+            GetEngagementRequest(client=CLIENT, slug="strat-2")
+        )
+        assert resp.engagement.slug == "strat-2"
+        assert resp.engagement.status == "planning"
+        assert resp.engagement.allowed_sources == ["commons"]
+
+    def test_not_found(self, workspace):
+        with pytest.raises(NotFoundError):
+            workspace.get_engagement_usecase.execute(
+                GetEngagementRequest(client=CLIENT, slug="nonexistent")
+            )
+
+
+# ---------------------------------------------------------------------------
+# ListEngagements
+# ---------------------------------------------------------------------------
+
+
+class TestListEngagements:
+    """List engagements for a client."""
+
+    def test_empty(self, workspace):
+        resp = workspace.list_engagements_usecase.execute(
+            ListEngagementsRequest(client=CLIENT)
+        )
+        assert resp.engagements == []
+
+    def test_one(self, workspace):
+        workspace.create_engagement_usecase.execute(
+            CreateEngagementRequest(client=CLIENT, slug="strat-2")
+        )
+        resp = workspace.list_engagements_usecase.execute(
+            ListEngagementsRequest(client=CLIENT)
+        )
+        assert len(resp.engagements) == 1
+        assert resp.engagements[0].slug == "strat-2"
+
+    def test_many(self, workspace):
+        workspace.create_engagement_usecase.execute(
+            CreateEngagementRequest(client=CLIENT, slug="strat-2")
+        )
+        workspace.create_engagement_usecase.execute(
+            CreateEngagementRequest(client=CLIENT, slug="strat-3")
+        )
+        resp = workspace.list_engagements_usecase.execute(
+            ListEngagementsRequest(client=CLIENT)
+        )
+        assert len(resp.engagements) == 2
+
+
+# ---------------------------------------------------------------------------
+# AddEngagementSource
+# ---------------------------------------------------------------------------
+
+
+class TestAddEngagementSource:
+    """Add sources to an engagement's allowlist."""
+
+    def test_already_present_rejected(self, workspace):
+        workspace.create_engagement_usecase.execute(
+            CreateEngagementRequest(client=CLIENT, slug="strat-2")
+        )
+        with pytest.raises(DuplicateError, match="already allowed"):
+            workspace.add_engagement_source_usecase.execute(
+                AddEngagementSourceRequest(
+                    client=CLIENT, engagement="strat-2", source="commons"
+                )
+            )
+
+    def test_unknown_source_rejected(self, workspace):
+        workspace.create_engagement_usecase.execute(
+            CreateEngagementRequest(client=CLIENT, slug="strat-2")
+        )
+        with pytest.raises(NotFoundError, match="Source not found"):
+            workspace.add_engagement_source_usecase.execute(
+                AddEngagementSourceRequest(
+                    client=CLIENT, engagement="strat-2", source="nonexistent"
+                )
+            )
+
+    def test_nonexistent_engagement_rejected(self, workspace):
+        with pytest.raises(NotFoundError, match="Engagement not found"):
+            workspace.add_engagement_source_usecase.execute(
+                AddEngagementSourceRequest(
+                    client=CLIENT, engagement="phantom", source="commons"
+                )
+            )
+
+
+# ---------------------------------------------------------------------------
+# RemoveEngagementSource
+# ---------------------------------------------------------------------------
+
+
+class TestRemoveEngagementSource:
+    """Remove sources from an engagement's allowlist."""
+
+    def test_commons_cannot_be_removed(self, workspace):
+        workspace.create_engagement_usecase.execute(
+            CreateEngagementRequest(client=CLIENT, slug="strat-2")
+        )
+        with pytest.raises(InvalidTransitionError, match="Cannot remove commons"):
+            workspace.remove_engagement_source_usecase.execute(
+                RemoveEngagementSourceRequest(
+                    client=CLIENT, engagement="strat-2", source="commons"
+                )
+            )
+
+    def test_source_not_in_list_rejected(self, workspace):
+        workspace.create_engagement_usecase.execute(
+            CreateEngagementRequest(client=CLIENT, slug="strat-2")
+        )
+        with pytest.raises(NotFoundError, match="not in allowlist"):
+            workspace.remove_engagement_source_usecase.execute(
+                RemoveEngagementSourceRequest(
+                    client=CLIENT, engagement="strat-2", source="partner-x"
+                )
+            )

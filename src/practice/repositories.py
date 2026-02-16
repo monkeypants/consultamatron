@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Protocol, runtime_checkable
 
 from practice.content import ProjectContribution
-from practice.entities import Project, ResearchTopic
+from practice.entities import Project, ResearchTopic, SkillsetSource
 
 
 @runtime_checkable
@@ -57,6 +57,28 @@ class ProjectPresenter(Protocol):
         self,
         project: Project,
     ) -> ProjectContribution: ...
+
+
+@runtime_checkable
+class SourceRepository(Protocol):
+    """Read-only repository for skillset sources.
+
+    Sources represent where skillsets come from — commons, partnerships,
+    or a personal vault.  The repository tracks which skillsets belong
+    to which source, enabling engagement-level access control.
+    """
+
+    def get(self, slug: str) -> SkillsetSource | None:
+        """Retrieve a source by slug."""
+        ...
+
+    def list_all(self) -> list[SkillsetSource]:
+        """List all installed sources."""
+        ...
+
+    def skillset_source(self, skillset_name: str) -> str | None:
+        """Return the source slug that provides a given skillset, or None."""
+        ...
 
 
 @runtime_checkable

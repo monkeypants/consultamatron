@@ -16,7 +16,7 @@ from practice.entities import Confidence, ProjectStatus
 
 if TYPE_CHECKING:
     from consulting.entities import DecisionEntry
-    from practice.entities import Project, ResearchTopic
+    from practice.entities import Engagement, Project, ResearchTopic
 
 
 # ---------------------------------------------------------------------------
@@ -74,6 +74,28 @@ class ResearchTopicInfo(BaseModel):
             topic=t.topic,
             date=t.date,
             confidence=t.confidence.value,
+        )
+
+
+class EngagementInfo(BaseModel):
+    """Engagement summary returned by list and get queries."""
+
+    slug: str
+    client: str
+    status: str
+    allowed_sources: list[str]
+    created: date
+    notes: str
+
+    @classmethod
+    def from_entity(cls, e: Engagement) -> EngagementInfo:
+        return cls(
+            slug=e.slug,
+            client=e.client,
+            status=e.status.value,
+            allowed_sources=e.allowed_sources,
+            created=e.created,
+            notes=e.notes,
         )
 
 
@@ -333,3 +355,96 @@ class ListResearchTopicsRequest(BaseModel):
 class ListResearchTopicsResponse(BaseModel):
     client: str
     topics: list[ResearchTopicInfo]
+
+
+# ---------------------------------------------------------------------------
+# 12. CreateEngagement
+# ---------------------------------------------------------------------------
+
+
+class CreateEngagementRequest(BaseModel):
+    """Create a new engagement for a client."""
+
+    client: str = Field(description="Client slug.")
+    slug: str = Field(description="Engagement slug.")
+    notes: str = Field(default="", description="Additional notes.")
+
+
+class CreateEngagementResponse(BaseModel):
+    client: str
+    slug: str
+    status: str
+
+
+# ---------------------------------------------------------------------------
+# 13. GetEngagement
+# ---------------------------------------------------------------------------
+
+
+class GetEngagementRequest(BaseModel):
+    """Retrieve a single engagement by client and slug."""
+
+    client: str = Field(description="Client slug.")
+    slug: str = Field(description="Engagement slug.")
+
+
+class GetEngagementResponse(BaseModel):
+    client: str
+    slug: str
+    engagement: EngagementInfo
+
+
+# ---------------------------------------------------------------------------
+# 14. ListEngagements
+# ---------------------------------------------------------------------------
+
+
+class ListEngagementsRequest(BaseModel):
+    """List all engagements for a client."""
+
+    client: str = Field(description="Client slug.")
+
+
+class ListEngagementsResponse(BaseModel):
+    client: str
+    engagements: list[EngagementInfo]
+
+
+# ---------------------------------------------------------------------------
+# 15. AddEngagementSource
+# ---------------------------------------------------------------------------
+
+
+class AddEngagementSourceRequest(BaseModel):
+    """Add a skillset source to an engagement's allowlist."""
+
+    client: str = Field(description="Client slug.")
+    engagement: str = Field(description="Engagement slug.")
+    source: str = Field(description="Source slug to add.")
+
+
+class AddEngagementSourceResponse(BaseModel):
+    client: str
+    engagement: str
+    source: str
+    allowed_sources: list[str]
+
+
+# ---------------------------------------------------------------------------
+# 16. RemoveEngagementSource
+# ---------------------------------------------------------------------------
+
+
+class RemoveEngagementSourceRequest(BaseModel):
+    """Remove a skillset source from an engagement's allowlist."""
+
+    client: str = Field(description="Client slug.")
+    engagement: str = Field(description="Engagement slug.")
+    source: str = Field(description="Source slug to remove.")
+
+
+class RemoveEngagementSourceResponse(BaseModel):
+    client: str
+    engagement: str
+    source: str
+    allowed_sources: list[str]
