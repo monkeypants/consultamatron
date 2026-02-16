@@ -84,24 +84,28 @@ had.
 
 ## Getting started
 
+See `GETTING_STARTED.md` for the full setup guide, including how to
+configure private repositories for your client workspaces and
+partnership skillsets.
+
+The short version:
+
 1. Clone this repository.
-2. Start a session with your agent:
+2. Set up a private repo for your client workspaces in `clients/`.
+3. Set up a private repo for your personal vault in `partnerships/`.
+4. Clone any partnership repos into `partnerships/`.
+5. Start a session with your agent:
 
    > Research Acme Corp for me.
 
-3. The `org-research` skill will gather information and create a client
-   workspace at `./clients/acme-corp/`.
-4. When research is complete:
+6. When research is complete:
 
    > Plan an engagement for Acme Corp.
 
-5. The `engage` skill will propose projects based on available skillsets
-   and your research. Agree on a plan.
-6. Follow the recommended skill sequence. At each stage I present my
-   output and wait for your agreement before proceeding. Your agreement
-   is recorded for auditability.
+7. The `engage` skill proposes projects using both commons and
+   partnership skillsets. Follow the recommended skill sequence.
 
-All artifacts are written to `./clients/{org-slug}/`.
+All client artifacts are written to `./clients/{org-slug}/`.
 
 ## What I produce
 
