@@ -20,11 +20,10 @@ class SkillsetScaffold:
 
     def __init__(self, repo_root: Path) -> None:
         self._repo_root = repo_root
-        self._src_root = repo_root / "src"
 
     def _package_dir(self, name: str) -> Path:
         """Return the filesystem path for a skillset package."""
-        return self._src_root / name.replace("-", "_")
+        return self._repo_root / name.replace("-", "_")
 
     def create(
         self,
@@ -138,8 +137,7 @@ class SkillsetScaffold:
         pyproject_path = self._repo_root / "pyproject.toml"
         content = pyproject_path.read_text()
 
-        # The relative path from repo root into src/
-        pkg_path = f"src/{name.replace('-', '_')}"
+        pkg_path = name.replace("-", "_")
 
         # Match the packages = [...] line and append if not present
         pattern = r"(packages\s*=\s*\[)([^\]]*?)(\])"
