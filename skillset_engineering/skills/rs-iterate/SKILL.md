@@ -70,6 +70,12 @@ uv run ruff format --check .
 uv run pytest -m doctrine
 ```
 
+The doctrine suite includes `TestSkillFileConformance` which
+validates SKILL.md frontmatter (name format, description length,
+directory name match), symlink existence, and bash wrapper
+executability. If you modified any skill files, bash scripts, or
+symlinks, these tests will catch violations.
+
 If any acceptance criterion fails, fix the change before proceeding.
 Do not accumulate failures.
 
@@ -112,6 +118,14 @@ Compare against the baseline:
 - Test count must not decrease
 - No new failures
 - All planned acceptance criteria met
+
+If the target skillset is a **partnership** skillset (lives in
+`partners/`), doctrine tests do not cover it. Verify skill files
+manually against the agentskills.io spec:
+- `name` matches directory, ≤64 chars, lowercase/hyphens only
+- `description` ≤1024 chars, non-empty
+- SKILL.md under 500 lines
+- Scripts executable
 
 ## Step 4: Write iteration report
 
