@@ -17,7 +17,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["bin", "src/practice"]
+packages = ["bin", "consulting", "src/practice"]
 
 [project.scripts]
 consultamatron = "bin.cli.main:cli"

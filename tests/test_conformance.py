@@ -22,7 +22,7 @@ import pytest
 from bin.cli.config import Config
 from practice.content import ProjectContribution
 from bin.cli.di import Container
-from bin.cli.dtos import (
+from consulting.dtos import (
     GetProjectProgressRequest,
     InitializeWorkspaceRequest,
     RecordDecisionRequest,

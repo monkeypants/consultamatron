@@ -15,7 +15,8 @@ import click
 
 from bin.cli.config import Config
 from bin.cli.di import Container
-from bin.cli.dtos import (
+from bin.cli.dtos import RegisterTourRequest, RenderSiteRequest
+from consulting.dtos import (
     AddEngagementEntryRequest,
     GetProjectProgressRequest,
     GetProjectRequest,
@@ -26,8 +27,6 @@ from bin.cli.dtos import (
     RecordDecisionRequest,
     RegisterProjectRequest,
     RegisterResearchTopicRequest,
-    RegisterTourRequest,
-    RenderSiteRequest,
     UpdateProjectStatusRequest,
 )
 from bin.cli.introspect import generate_command

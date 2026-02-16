@@ -12,7 +12,7 @@ from datetime import date
 
 import pytest
 
-from bin.cli.entities import DecisionEntry
+from consulting.entities import DecisionEntry
 from practice.discovery import PipelineStage
 from practice.entities import ProjectStatus
 
