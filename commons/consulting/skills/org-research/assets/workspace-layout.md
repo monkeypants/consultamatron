@@ -13,13 +13,19 @@ project root. The user may specify an alternative path.
 ```
 clients/{org-slug}/
 ├── resources/                     # Shared research, refreshed over time
-│   ├── index.md                   # Manifest + synthesis (gate artifact)
-│   ├── corporate-overview.md
-│   ├── products-services.md
-│   ├── technology-landscape.md
-│   ├── market-position.md
-│   ├── regulatory-environment.md
-│   └── partnerships-suppliers.md
+│   ├── index.md                   # L0 semantic bytecode root (gate artifact)
+│   ├── strategy.agreed.md         # Agreed research strategy (Gate 1)
+│   ├── summary_prose.md           # Human-friendly synthesis → reports/
+│   ├── reports/                   # Primary research (token-inefficient)
+│   │   ├── corporate-overview.md
+│   │   ├── products-services.md
+│   │   ├── technology-landscape.md
+│   │   ├── market-position.md
+│   │   ├── regulatory-environment.md
+│   │   └── partnerships-suppliers.md
+│   └── bytecode/                  # Semantic bytecode (token-efficient)
+│       ├── {cluster}.md           # L1 cluster summaries → L2
+│       └── {detail}.md            # L2 compressed detail → reports/
 │
 ├── engagements/
 │   ├── index.json                 # Engagement registry (status, sources, dates)
@@ -107,7 +113,7 @@ skills check for their prerequisite gates before proceeding.
 
 | Skill | Requires | Produces |
 |-------|----------|----------|
-| org-research | (nothing) | `resources/index.md` |
+| org-research | (nothing) | `resources/index.md` (via `strategy.agreed.md` internal gate) |
 | engage | `resources/index.md` | engagement + project directories |
 
 ### Wardley Mapping gates (project-relative)
@@ -134,7 +140,9 @@ skills check for their prerequisite gates before proceeding.
 
 ## Artifact Formats
 
-- **Research**: Markdown with citations.
+- **Research primary reports**: Markdown with citations (token-inefficient).
+- **Research bytecode**: Compressed semantic hierarchy L0/L1/L2 (token-efficient).
+  Downstream skills consume the bytecode; primary reports are for evidence tracing.
 - **Wardley Mapping stages 1-3** (needs, chain): Markdown only. The
   evolution axis is unknown, so OWM would impose false precision.
 - **Wardley Mapping project kickoff exception**: `landscape.owm` is a

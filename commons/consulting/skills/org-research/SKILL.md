@@ -1,31 +1,36 @@
 ---
 name: org-research
 description: >
-  Research a real organisation for strategic consulting. Gathers publicly
-  available information about an organisation's users, products, technology,
-  market position, partnerships, and regulatory environment through parallel
-  sub-tasks. Produces sub-reports with citations and a synthesis. Creates
-  the client workspace if it does not exist. Use when onboarding a new
-  client or refreshing research for an existing one.
+  Research a real organisation for strategic consulting. Negotiates a
+  research strategy with the operator, executes research tasks, confirms
+  findings are sufficient, then compresses results into a token-efficient
+  semantic bytecode hierarchy. Creates the client workspace if it does
+  not exist. Use when onboarding a new client or refreshing research.
 metadata:
   author: monkeypants
-  version: "0.2"
+  version: "0.3"
 ---
 
 # Organisation Research
 
 You are conducting **organisation research** for a consulting engagement.
-Your goal is to gather as much publicly available information as possible
-about a real organisation, structured for use by any downstream skillset.
+Your goal is to gather publicly available information about a real
+organisation, structured for use by any downstream skillset.
+
+Research produces two parallel outputs:
+- A **human-friendly tree**: prose synthesis pointing to primary
+  research reports (token-inefficient, for the operator)
+- A **semantic bytecode hierarchy**: L0/L1/L2 compressed
+  representation derived from the primary research (token-efficient,
+  for downstream agent processes)
 
 ## Before you start
 
 Check `clients/` for existing workspaces. If one exists for this
-organisation, you are refreshing research, not starting over. Read the
-existing `resources/index.md` to understand what has already been gathered
-and when.
+organisation, you may be refreshing research — see
+[Refreshing research](#refreshing-research).
 
-If no workspace exists, ask the user for:
+If no workspace exists, ask the operator for:
 1. **Organisation name** (and URL if available)
 2. **Workspace path** (default: `./clients/{org-slug}/`)
 
@@ -34,197 +39,164 @@ Initialize the workspace:
 org-research/scripts/init-workspace.sh --client {org-slug}
 ```
 
-Then create the `resources/` directory for research sub-reports:
+Then create the resources directory structure:
 ```
-mkdir -p clients/{org-slug}/resources
+mkdir -p clients/{org-slug}/resources/reports
+mkdir -p clients/{org-slug}/resources/bytecode
 ```
 
 See [workspace-layout.md](assets/workspace-layout.md) for the full
 workspace convention.
 
-## Research tasks
+## Step 1: Propose research strategy (Gate 1)
 
-Run these research sub-tasks. Where possible, run them **in parallel**
-to maximise throughput. Each sub-task produces a separate file in
-`resources/`.
+Before any research work begins, negotiate a research strategy with
+the operator.
 
-### 1. Corporate Overview (`corporate-overview.md`)
+### Assess initial signals
 
-Search for and gather:
-- Mission, vision, and stated strategy
-- Organisational structure (divisions, business units)
-- Size (employees, revenue, market cap if public)
-- History and major milestones
-- Recent news (last 12 months)
+Gather preliminary information about the organisation's public
+presence. Check whether a corporate website exists, whether there
+is recent press coverage, job postings, regulatory filings, and
+whether sources are consistent.
 
-Sources: corporate website, Wikipedia, annual reports, press releases.
+### Select and propose strategy
 
-### 2. Products and Services (`products-services.md`)
+Read [research-strategies.md](references/research-strategies.md) for
+available strategies. Based on initial signals, propose:
 
-Search for and gather:
-- Complete product/service portfolio
-- Customer segments for each
-- Pricing models (if publicly available)
-- Recent launches or discontinuations
-- How the organisation describes its own value proposition
+1. **Which strategy** to use and why
+2. **Which research tasks** to execute (elaborated from the strategy)
+3. **Expected sources** for each task
+4. **Any modifications** to the default task list (additions,
+   removals, or scope changes based on what the signals suggest)
 
-Sources: product pages, marketing material, press releases, review sites.
+Present to the operator. This is a negotiation — the operator may:
+- Change the strategy
+- Add, remove, or modify research tasks
+- Narrow or expand scope for specific tasks
+- Provide insider knowledge that changes the approach
 
-### 3. Technology Landscape (`technology-landscape.md`)
+### Agree and record
 
-Search for and gather:
-- Known technology stack (from job postings, tech blogs, conference talks)
-- Key platforms and infrastructure
-- Build vs buy decisions that are publicly visible
-- Technology partnerships
-- Patents or research publications
+When the operator confirms the strategy, write
+`resources/strategy.agreed.md` recording:
+- Chosen strategy and rationale
+- Agreed research tasks (the specific list to execute)
+- Any operator-provided context that shapes the research
 
-Sources: job postings, engineering blogs, conference presentations,
-patent databases, GitHub organisation.
+**Do not begin research until the strategy is agreed.**
 
-### 4. Market Position (`market-position.md`)
+## Step 2: Execute research
 
-Search for and gather:
-- Direct competitors and market share (if available)
-- Industry classification and market size
-- Competitive advantages and differentiators
-- Industry trends affecting this organisation
-- Analyst coverage or industry reports
+Run the agreed research tasks. Where possible, run them **in
+parallel** to maximise throughput. Each task produces a report in
+`resources/reports/`.
 
-Sources: industry reports, news coverage, analyst notes, financial filings.
-
-### 5. Regulatory Environment (`regulatory-environment.md`)
-
-Search for and gather:
-- Applicable regulations and standards
-- Regulatory bodies with oversight
-- Compliance requirements
-- Recent regulatory changes affecting the organisation
-- Industry certifications held or required
-
-Sources: government websites, regulatory body publications, industry
-standards bodies, compliance documentation.
-
-### 6. Partnerships and Suppliers (`partnerships-suppliers.md`)
-
-Search for and gather:
-- Key partnerships and alliances
-- Major suppliers and vendors
-- Supply chain structure (if visible)
-- Outsourcing arrangements
-- Joint ventures or consortia
-
-Sources: press releases, annual reports, partner directories, SEC filings.
-
-## Sub-report format
-
-Each sub-report must follow the template in
-[research-template.md](references/research-template.md). Key requirements:
+Reports must follow the template in
+[research-template.md](references/research-template.md):
 
 - Every factual claim must have a citation with URL
 - Include a confidence level (High / Medium / Low) with reasoning
-- Include a "Strategic Relevance" section connecting findings to
-  potential strategic insights
+- Include a "Strategic Relevance" section
 - Use direct quotes where possible
+- Each report must reference at least 3 distinct sources
 
-## Research strategy selection
-
-Not every organisation has a public presence sufficient for the standard
-research tasks above. Before beginning sub-tasks, assess whether
-standard research will work. If early signals suggest it will not,
-propose an alternative strategy to the client.
-
-### Detection heuristics
-
-Standard research is likely to fail when:
-- **No corporate website** or only a placeholder / landing page
-- **No press coverage** in the last 24 months
-- **No job postings** on major platforms
-- **No regulatory filings** or public financial records
-- **Contradictory information** across sources suggesting a recent
-  pivot or rebrand
-
-If two or more of these conditions hold, standard research will produce
-thin sub-reports with low confidence. Switch to an alternative strategy.
-
-### Alternative strategies
-
-**Market landscape** — for stealth-mode, pre-launch, or early-stage
-organisations with minimal public presence. Instead of researching the
-organisation directly, research the market they operate in: competitors,
-adjacent players, market structure, technology trends, regulatory
-landscape, and customer problems in the space. The organisation's
-position is inferred from the negative space and whatever fragments
-are available (founder backgrounds, patent filings, domain registrations,
-conference appearances).
-
-**Recent pivot** — for organisations where public information
-contradicts itself because the organisation has recently changed
-direction. Separate sources by date. Research the pre-pivot and
-post-pivot states independently. Flag the pivot as a structural finding
-and note which information likely reflects current reality.
-
-**Operator-mediated briefing** — for organisations where the operator
-has direct access to principals (founders, executives). The operator
-conducts interviews or provides internal documents. The skill structures
-and synthesises this material into the standard sub-report format. Public
-research fills gaps around the operator-provided core.
-
-### Recording strategy choice
-
-Record the chosen strategy and rationale in `resources/index.md` under
-a "Research strategy" heading. This allows the review skill to evaluate
-whether the strategy was appropriate with the benefit of hindsight.
-
-## Synthesis
-
-After all sub-reports are complete, write `resources/index.md`:
-
-1. Read all sub-reports
-2. Identify themes that cut across multiple topics
-3. Note contradictions or gaps in the research
-4. Highlight the most important findings for strategic work:
-   - Who the organisation's users likely are
-   - What the organisation's core capabilities appear to be
-   - Where technology or market evolution is happening
-   - What constraints (regulatory, contractual, technical) exist
-5. Cross-reference sub-reports but do not duplicate their detail
-6. **Verify citation density** before producing the gate artifact:
-   - Every factual claim in every sub-report must have an inline
-     citation with a URL
-   - Each sub-report must reference at least 3 distinct sources
-   - If any sub-report falls below this threshold, return to it and
-     add citations before proceeding. Do not produce the gate artifact
-     with uncited claims.
-7. Include a manifest listing each sub-report, its date, and confidence
-
-After each sub-report is written, register it in the structured manifest:
+After each report is written, register it:
 ```
 org-research/scripts/register-topic.sh --client {org-slug} \
   --topic "{topic name}" --filename "{filename}.md" --confidence "{level}"
 ```
 
-### Index format
+## Step 3: Review findings (Gate 2)
 
-The synthesis document `resources/index.md` is still written as markdown
-(it is research content, not accounting data). Include the synthesis of
-findings across all topics. The structured topic manifest in
-`resources/index.json` is maintained by the register-topic script above.
+After all research tasks are complete, write
+`resources/summary_prose.md` — a human-readable synthesis that:
 
-The index is the primary input for downstream skills. It is the gate
+1. Summarises findings across all research tasks
+2. Identifies themes that cut across topics
+3. Notes contradictions or gaps
+4. Highlights strategic implications:
+   - Who the organisation's users likely are
+   - What core capabilities appear to be
+   - Where technology or market evolution is happening
+   - What constraints exist (regulatory, contractual, technical)
+5. Points to each report in `resources/reports/` for detail
+
+### Verify citation density
+
+Before presenting to the operator:
+- Every factual claim in every report must have an inline citation
+- Each report must reference at least 3 distinct sources
+- If any report falls below threshold, fix it before proceeding
+
+### Present and negotiate
+
+Present `summary_prose.md` to the operator. The operator decides:
+
+- **Research is sufficient** — proceed to compression
+- **Specific areas need more depth** — return to Step 2 for those
+  areas, then present again
+- **New tasks needed** — agree additional tasks, execute, present again
+
+**Do not proceed to Step 4 until the operator confirms primary
+research is complete.**
+
+## Step 4: Compress into semantic bytecode
+
+Derive a token-efficient three-tier representation from the primary
+research. All three tiers are token-efficient. This is the **narrow
+semantic waist** that downstream skills consume.
+
+### L2: Compressed detail
+
+For each semantic cluster of related findings, write a compressed
+detail file to `resources/bytecode/`. Each L2 file:
+- Summarises the findings from one cluster of related reports
+- Uses precise vocabulary aligned with downstream consumer needs
+- Routes to the specific reports in `resources/reports/` for evidence
+
+### L1: Cluster summaries
+
+For each group of related L2 files, write an L1 summary to
+`resources/bytecode/`. Each L1 file:
+- Summarises and routes to its L2 files
+- Characterises what kinds of questions the cluster answers
+- Uses vocabulary that downstream skills search for
+
+### L0: Index
+
+Write `resources/index.md` — the root of the semantic bytecode
+hierarchy and the gate artifact for this skill. The index:
+
+- Provides a compressed summary of all research findings
+- Routes to each L1 cluster summary with a characterisation of
+  what it contains and what questions it answers
+- Points to `summary_prose.md` for human-readable access
+- Records the research strategy used and task manifest
+
+**Design priorities for L0**: The index serves two purposes equally —
+compressing information into a token-efficient summary, and making
+information findable by routing downstream skills to the right L1
+resources. Neither purpose is subordinate to the other.
+
+The index is the primary input for downstream skills and the gate
 artifact for this skill.
 
 ## Refreshing research
 
 When research already exists:
 1. Read `resources/index.md` for existing state
-2. Check dates in the manifest. Re-run sub-tasks for stale topics
-3. Update the sub-reports and rewrite the synthesis
-4. Note in `engagement.md` that research was refreshed
+2. Check dates in the manifest — identify stale topics
+3. Return to Step 1 to negotiate a refresh strategy with the
+   operator (which topics to re-research, whether the strategy
+   itself should change)
+4. Execute the agreed refresh tasks, update reports and synthesis
+5. Recompress the semantic bytecode hierarchy
 
 ## Completion
 
-When all artifacts are written, summarise what you found and tell the
-user to use the `engage` skill to plan their consulting engagement, or
-to invoke a specific skillset skill directly if they already know what
-they want.
+When all artifacts are written, summarise what you found and tell
+the operator to use the `engage` skill to plan their consulting
+engagement, or to invoke a specific skillset skill directly if they
+already know what they want.
