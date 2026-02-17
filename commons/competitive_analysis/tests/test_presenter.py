@@ -21,12 +21,12 @@ class TestPresenterContract:
             slug="test-1",
             client="test-corp",
             engagement="strat-1",
-            skillset='competitive-analysis',
+            skillset="competitive-analysis",
             status=ProjectStatus.ELABORATION,
             created=date(2025, 6, 1),
         )
         result = presenter.present(project)
         assert isinstance(result, ProjectContribution)
         assert result.slug == "test-1"
-        assert result.skillset == 'competitive-analysis'
+        assert result.skillset == "competitive-analysis"
         assert isinstance(result.sections, list)
