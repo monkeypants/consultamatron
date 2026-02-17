@@ -14,6 +14,7 @@ from consulting.dtos import (
     AddEngagementEntryRequest,
     AddEngagementSourceRequest,
     CreateEngagementRequest,
+    EngagementStatusRequest,
     GetEngagementRequest,
     GetProjectProgressRequest,
     GetProjectRequest,
@@ -22,6 +23,7 @@ from consulting.dtos import (
     ListEngagementsRequest,
     ListProjectsRequest,
     ListResearchTopicsRequest,
+    NextActionRequest,
     RecordDecisionRequest,
     RegisterProjectRequest,
     RegisterResearchTopicRequest,
@@ -95,6 +97,27 @@ def _format_decision_list(resp: Any) -> None:
         click.echo(f"  {d.date}  {d.title}")
         for k, v in d.fields.items():
             click.echo(f"           {k}: {v}")
+
+
+def _format_engagement_status(resp: Any) -> None:
+    d = resp.dashboard
+    click.echo(f"{d.engagement_slug} ({d.status})")
+    if not d.projects:
+        click.echo("  No projects.")
+        return
+    click.echo()
+    for p in d.projects:
+        completed = len(p.completed_gates)
+        label = f"stage {p.current_stage}/{p.total_stages}"
+        click.echo(f"  {p.project_slug} ({p.skillset}): {label}")
+        if completed == p.total_stages:
+            click.echo("    All stages complete.")
+        elif p.next_gate:
+            click.echo(f"    Next gate: {p.next_gate}")
+
+
+def _format_next_action(resp: Any) -> None:
+    click.echo(resp.reason)
 
 
 def _format_engagement_add(resp: Any) -> None:
@@ -251,6 +274,22 @@ def register_commands(cli: click.Group) -> None:
     def engagement() -> None:
         """Manage client engagement history."""
 
+    engagement.add_command(
+        generate_command(
+            name="status",
+            request_model=EngagementStatusRequest,
+            usecase_attr="get_engagement_status_usecase",
+            format_output=_format_engagement_status,
+        )
+    )
+    engagement.add_command(
+        generate_command(
+            name="next",
+            request_model=NextActionRequest,
+            usecase_attr="get_next_action_usecase",
+            format_output=_format_next_action,
+        )
+    )
     engagement.add_command(
         generate_command(
             name="create",
