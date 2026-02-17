@@ -9,6 +9,7 @@ description: >
 metadata:
   author: monkeypants
   version: "0.2"
+  freedom: high
 ---
 
 # Engagement Planning

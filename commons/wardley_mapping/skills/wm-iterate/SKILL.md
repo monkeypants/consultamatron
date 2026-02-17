@@ -12,6 +12,7 @@ metadata:
   version: "0.2"
   skillset: wardley-mapping
   stage: "6+"
+  freedom: medium
 ---
 
 # Wardley Map Iteration and Refinement

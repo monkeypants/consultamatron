@@ -10,6 +10,7 @@ description: >
 metadata:
   author: monkeypants
   version: "0.1"
+  freedom: medium
 ---
 
 # Post-Implementation Review

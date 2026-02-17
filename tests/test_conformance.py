@@ -559,6 +559,18 @@ class TestSkillFileConformance:
         line_count = len(skill_md.read_text().splitlines())
         assert line_count < 500, f"{skill_md} has {line_count} lines (limit 500)"
 
+    # --- Freedom levels ---
+
+    @pytest.mark.parametrize("skill_dir", _SKILL_DIRS, ids=_SKILL_DIR_IDS)
+    def test_freedom_declared(self, skill_dir):
+        """Every SKILL.md must declare a freedom level (high/medium/low)."""
+        _, path = skill_dir
+        fm = _parse_skill_frontmatter(path / "SKILL.md")
+        freedom = fm.get("freedom", "")
+        assert freedom in {"high", "medium", "low"}, (
+            f"freedom must be high/medium/low, got {freedom!r}: {path / 'SKILL.md'}"
+        )
+
     # --- Bash wrappers ---
 
     @pytest.mark.parametrize("script_entry", _BASH_SCRIPTS, ids=_BASH_SCRIPT_IDS)

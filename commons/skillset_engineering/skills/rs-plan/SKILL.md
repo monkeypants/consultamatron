@@ -11,6 +11,7 @@ metadata:
   version: "0.1"
   skillset: refine-skillset
   stage: "2"
+  freedom: medium
 ---
 
 # Improvement Planning

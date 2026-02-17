@@ -10,6 +10,7 @@ metadata:
   version: "0.1"
   skillset: new-skillset
   stage: "1"
+  freedom: high
 ---
 
 # Skillset Brief

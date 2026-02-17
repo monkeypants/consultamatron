@@ -10,6 +10,7 @@ metadata:
   version: "0.1"
   skillset: wardley-mapping
   stage: "tour"
+  freedom: medium
 ---
 
 # Tour: Competitive

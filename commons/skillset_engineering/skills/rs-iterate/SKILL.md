@@ -11,6 +11,7 @@ metadata:
   version: "0.1"
   skillset: refine-skillset
   stage: "3"
+  freedom: low
 ---
 
 # Skillset Iteration

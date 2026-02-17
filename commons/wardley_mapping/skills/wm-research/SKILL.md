@@ -11,6 +11,7 @@ metadata:
   version: "0.2"
   skillset: wardley-mapping
   stage: "1"
+  freedom: medium
 ---
 
 # Wardley Mapping Project Kickoff

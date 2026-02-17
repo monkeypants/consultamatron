@@ -9,6 +9,7 @@ description: >
 metadata:
   author: monkeypants
   version: "0.1"
+  freedom: high
 ---
 
 # Editorial Voice: Consultamatron

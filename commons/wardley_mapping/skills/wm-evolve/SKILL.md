@@ -13,6 +13,7 @@ metadata:
   version: "0.2"
   skillset: wardley-mapping
   stage: "4"
+  freedom: medium
 ---
 
 # Evolution Positioning for Wardley Maps
