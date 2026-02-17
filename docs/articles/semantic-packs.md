@@ -1,11 +1,12 @@
 # Semantic Packs
 
-A general-purpose knowledge artifact type for managing bodies of
-knowledge at dual fidelity. Observed first in org-research output,
-the pattern recurs wherever Consultamatron maintains a corpus of
-content that agents consume and humans audit.
+A general-purpose content convention for managing bodies of knowledge
+at dual fidelity. Any directory of markdown files becomes a knowledge
+pack when it gets a manifest. The convention is protocol-agnostic — it
+knows how to store, describe, and compress knowledge, not how
+knowledge is consumed.
 
-## 1. The pattern
+## 1. The convention
 
 A semantic pack is a convention applied to a directory of markdown
 files. Three things make a directory a knowledge pack:
@@ -84,14 +85,38 @@ controlled or gitignored depending on context.
 - **Summary** lives in `_bytecode/` (generated prose)
 - **Manifest** lives on `index.md` (purpose, actor-goals, triggers)
 
-Use cases read type from item frontmatter and summary from
-`_bytecode/`, assembling a complete view when structured operations
-are needed. Agents browsing `_bytecode/` don't need type info — they
-navigate summaries to decide what to drill into. Type matters to
-domain-specific use cases (jedi council selecting luminaries, research
-checking citations) that know where to look.
+The convention places type on items so that domain-specific use cases
+can match on it. But the convention itself does not define what types
+mean — that is the concern of knowledge protocols (see
+[Knowledge Protocols](knowledge-protocols.md)).
 
-## 3. Progressive disclosure through nesting
+## 3. Topic and protocol: separate concerns
+
+Every node in a knowledge tree has two orthogonal properties:
+
+- **Topic**: what the knowledge is about (software engineering,
+  restaurant management, Wardley Mapping)
+- **Protocol**: what shape the knowledge takes and what use case
+  consumes it (pantheon, patterns, principles)
+
+The semantic pack convention operates on topics. It stores, compresses,
+and navigates knowledge regardless of protocol. A pack of design
+patterns and a pack of restaurant health codes use the same convention
+— `index.md`, items with `type:` frontmatter, `_bytecode/` mirror.
+
+Protocols are a use-case-layer concern. When a body of knowledge grows
+a use case that consumes items structurally (a jedi council selecting
+luminaries, a diagnostic skill matching anti-patterns), a protocol
+emerges. The protocol defines the contract between content and
+consumer. See [Knowledge Protocols](knowledge-protocols.md) for the
+full treatment.
+
+The convention supports protocols through the `type:` field in item
+frontmatter. Pack-and-wrap compiles `_bytecode/` regardless of type.
+Use cases filter by type when they need to. The convention is closed;
+protocols are open to extension.
+
+## 4. Progressive disclosure through nesting
 
 Items can be leaves (files) or composites (directories with their
 own `index.md`). This is recursive — a composite item is itself a
@@ -127,7 +152,21 @@ The tree is lopsided because knowledge is lopsided. Reorganisation
 is cheap — moving an item means moving a file and recompiling the
 immediate parent.
 
-## 4. The pack-and-wrap operation
+### Promotion path
+
+A flat file that grows large can be promoted to a directory:
+
+1. `patterns.md` (flat, 40 patterns) → `patterns/index.md` + one
+   file per pattern clustered into subdirectories
+2. Pack-and-wrap recompiles `_bytecode/` at the parent level
+3. Nothing else changes — the parent manifest still routes to the
+   same topic
+
+The growth path is: flat file → directory with items → directory
+with clustered subdirectories. Each step is an independent promotion
+that recompiles one level of `_bytecode/`.
+
+## 5. The pack-and-wrap operation
 
 Pack-and-wrap reads item bodies and generates `_bytecode/` entries.
 Items are never modified.
@@ -147,6 +186,10 @@ compilation step (writing to `_bytecode/`) is mechanical. Detecting
 staleness: if an item's modification time is newer than its
 `_bytecode/` mirror, it needs recompilation.
 
+Pack-and-wrap is protocol-agnostic. It compresses any item regardless
+of type. Protocol-aware operations (selecting luminaries, matching
+anti-patterns) are use case concerns, not pack-and-wrap concerns.
+
 ### Incremental adoption
 
 Any existing directory of markdown files can become a knowledge pack
@@ -159,7 +202,7 @@ incrementally:
 Each step adds value independently. Step 1 alone is enough for an
 agent to decide "should I look in here?"
 
-## 5. The manifest
+## 6. The manifest
 
 The `index.md` frontmatter is the pack's self-description. It carries
 the metadata needed to decide whether to consume the pack without
@@ -205,9 +248,10 @@ my goal?"
 The index.md body contains routing instructions: "humans read
 `summary.md`, agents read `_bytecode/`."
 
-## 6. The PackItem protocol
+## 7. The PackItem protocol
 
-Items declare their type in frontmatter. The protocol is minimal:
+Items declare their type in frontmatter. The infrastructure protocol
+is minimal:
 
 ```python
 class PackItem(Protocol):
@@ -217,17 +261,16 @@ class PackItem(Protocol):
 ```
 
 Name is derived from the filename. Type is the frontmatter `type:`
-field. Use cases read item frontmatter for type when they need
-structured operations (selecting luminaries, filtering by type).
-Agents browsing `_bytecode/` don't interact with the protocol — they
-just read summaries.
+field. This is the narrow interface between the convention layer and
+the use case layer.
 
-Concrete item types add their own semantics but items remain simple
-markdown files. A pantheon's items have `type: luminary`. A docs
-pack's items have `type: article`. A pack can declare a default type
-in its manifest for packs where all items share a type.
+Pack-and-wrap sees PackItem. It does not need to know what the types
+mean. Use cases see domain-specific types (luminary, pattern,
+anti-pattern) by reading the `item_type` field and applying their own
+contract. The convention is closed to modification; domain-specific
+types are open to extension.
 
-## 7. Two lifecycle contexts
+## 8. Two lifecycle contexts
 
 Semantic packs appear in two distinct contexts with different
 ownership and lifecycle characteristics.
@@ -284,112 +327,29 @@ Each method file has type frontmatter. The research use case reads
 Pack-and-wrap does not distinguish between these contexts. It operates
 on the convention, not on content semantics or storage location.
 
-## 8. Knowledge packs as pluggable adapters
-
-A skill may declare one or more knowledge packs that it requires. The
-use case that executes the skill loads those packs and makes them
-available during execution. This is dependency injection for knowledge.
-
-### Multiple packs per skill
-
-A skill is not limited to a single knowledge pack. Different aspects
-of a skill's execution may draw on different bodies of knowledge:
-
-```
-{skill}/references/
-├── research-strategies/     ← plugged into research use cases
-│   ├── index.md
-│   ├── summary.md
-│   ├── _bytecode/
-│   └── methods/
-├── messaging-patterns/      ← plugged into engagement polishing use cases
-│   ├── index.md
-│   ├── summary.md
-│   ├── _bytecode/
-│   └── patterns/
-└── analytical-frameworks/   ← plugged into analysis use cases
-    ├── index.md
-    ├── summary.md
-    ├── _bytecode/
-    └── frameworks/
-```
-
-Each pack serves a different adapter. The packs share the same
-convention; the adapters that consume them are different.
-
-### Strategy selection
-
-One common adapter pattern is strategy selection: given a knowledge
-pack of methodologies, select the appropriate one (or synthesise a
-hybrid) for the current context.
-
-The agent reads `_bytecode/` summaries to understand available
-strategies, selects or combines based on engagement context, and
-the operator approves the selection. New strategies are added to
-the pack (open to extension) without modifying the use case or
-SKILL.md (closed to modification).
-
-### The adapter is not the pack
-
-The semantic pack is a content convention — it knows how to describe
-and compress knowledge. The adapter is the use case behaviour that
-consumes the pack for a specific purpose. Strategy selection is one
-adapter. Others might include:
-
-- **Reference lookup**: find the relevant framework for a problem domain
-- **Template selection**: select a communication pattern for a deliverable
-- **Jedi council**: select luminaries whose perspectives to invoke
-  for multi-perspective analysis
-
-The pack provides uniform access to knowledge. The adapter provides
-domain-specific interpretation.
-
 ## 9. The Open/Closed Principle applied
 
-The semantic pack pattern embodies OCP at two levels.
+The semantic pack convention embodies OCP at two levels.
 
 ### Pack content is open to extension
 
-Adding a new research strategy, analytical framework, or luminary
-means adding a markdown file with `type:` frontmatter and re-running
-pack-and-wrap to generate its `_bytecode/` summary. No code changes.
-No SKILL.md modifications.
+Adding a new item means adding a markdown file with `type:` frontmatter
+and re-running pack-and-wrap to generate its `_bytecode/` summary. No
+code changes. No SKILL.md modifications.
 
 ### Pack consumption is open to extension
 
-New adapters can consume existing packs without modifying the pack
+New use cases can consume existing packs without modifying the pack
 or the pack-and-wrap use case. A research strategy pack authored for
 `wm-research` can be consumed by a hypothetical `scenario-planning`
 skill — it reads the same `_bytecode/` through a different adapter.
 
-The core defines the pack convention (closed). Skills define how they
-consume packs (open).
+The core defines the pack convention (closed). Skills and use cases
+define how they consume packs (open). Knowledge protocols define what
+types mean (open). See [Knowledge Protocols](knowledge-protocols.md)
+for the consumption side of this contract.
 
-## 10. Relationship to the research protocol
-
-Issue #34 proposes structured research entities (Source,
-LiteratureNote, Topic, Report) to make citation density a
-deterministic business rule. The semantic pack convention provides
-the content infrastructure those entities inhabit.
-
-- `Source` maps to a typed item (`type: source`)
-- `LiteratureNote` maps to the evidence relationship in item content
-- `Topic` maps to a composite item grouping related sources
-- `Report` maps to a leaf item with full prose
-
-The research domain model (#34) defines what research IS — the
-entities and their invariants. The semantic pack defines how research
-is STORED and DESCRIBED — the content convention. The research
-protocol defines how research is CONSUMED — the adapter contracts
-between packs and skills.
-
-These three concerns compose without coupling:
-
-1. **Domain model** (entities, invariants) — `practice.entities`
-2. **Content convention** (items, `_bytecode/`, manifest) — semantic packs
-3. **Consumption contracts** (adapter protocols) — research protocol
-
-## 11. Structural enforcement
+## 10. Structural enforcement
 
 ### Doctrine test: pack shape
 
@@ -407,33 +367,37 @@ content but forgets to re-run pack-and-wrap.
 
 These tests apply uniformly to both runtime and design-time packs.
 The test fixture discovers packs by the presence of `index.md` with
-manifest frontmatter, not by hard-coded paths.
+manifest frontmatter, not by hard-coded paths. The tests are
+protocol-agnostic — they verify the convention, not the content.
 
-## 12. Current state and next steps
+## 11. Current state and next steps
 
-The pattern exists implicitly in org-research output. It has not been
-extracted as a named concept with structural enforcement.
+The pattern exists implicitly in org-research output and in the SWE
+skillset docs. It has not been extracted as a named concept with
+structural enforcement.
 
 **What exists today:**
 - org-research produces research with reports, summary, and index —
   but compression is encoded in SKILL.md prose, not in a protocol
   or use case
-- org-research has a single `research-strategies.md` reference file —
-  not yet a design-time pack
+- `personal/swe/docs/` is a design-time pack with manifest, four
+  protocol item types (pantheon, patterns, principles, anti-patterns),
+  and no `_bytecode/` yet
 - `docs/` is a half-formed design-time pack: articles and conventions
   about the platform, consumed by skill authors, contributors, and
   human/AI dyads
 
-**What this article proposes (Option B: note the pattern, build
-incrementally):**
-1. Name the pattern (done — this article)
+**What this article proposes:**
+1. Name the convention (done — this article)
 2. Define the KnowledgePack entity model and PackItem protocol (#98)
 3. Implement pack-and-wrap use cases, test on `docs/` (#99)
-4. Build the research domain model (#34), using pack infrastructure
+4. Build knowledge protocols as use cases emerge (see
+   [Knowledge Protocols](knowledge-protocols.md))
 5. Extract design-time packs when skillsets need them
 
 Any directory of markdown files becomes a knowledge pack the moment
 it gets an `index.md` with manifest frontmatter and its files get
 `type:` frontmatter. Pack-and-wrap compiles `_bytecode/` summaries.
 Agents navigate `_bytecode/` for cheap progressive disclosure, read
-full items only when needed.
+full items only when needed. What the types *mean* — which use cases
+consume them and how — is a separate concern.
