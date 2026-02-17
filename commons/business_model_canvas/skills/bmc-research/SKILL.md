@@ -11,6 +11,7 @@ metadata:
   version: "0.1"
   skillset: business-model-canvas
   stage: "1"
+  freedom: medium
 ---
 
 # Business Model Canvas Project Kickoff

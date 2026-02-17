@@ -11,6 +11,7 @@ metadata:
   version: "0.1"
   skillset: new-skillset
   stage: "2"
+  freedom: high
 ---
 
 # Domain Research for New Skillset

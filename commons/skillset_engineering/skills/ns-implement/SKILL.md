@@ -12,6 +12,7 @@ metadata:
   version: "0.1"
   skillset: new-skillset
   stage: "4"
+  freedom: low
 ---
 
 # Skillset Implementation

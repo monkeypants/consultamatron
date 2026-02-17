@@ -12,6 +12,7 @@ metadata:
   version: "0.2"
   skillset: refine-skillset
   stage: "1"
+  freedom: medium
 ---
 
 # Skillset Quality Assessment

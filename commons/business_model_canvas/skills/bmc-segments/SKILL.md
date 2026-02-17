@@ -12,6 +12,7 @@ metadata:
   version: "0.1"
   skillset: business-model-canvas
   stage: "2"
+  freedom: medium
 ---
 
 # Customer Segments and Value Propositions

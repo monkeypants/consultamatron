@@ -10,6 +10,7 @@ metadata:
   version: "0.1"
   skillset: wardley-mapping
   stage: "atlas"
+  freedom: medium
 ---
 
 # Atlas: Shared Components

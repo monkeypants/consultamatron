@@ -11,6 +11,7 @@ metadata:
   version: "0.2"
   skillset: wardley-mapping
   stage: "2"
+  freedom: medium
 ---
 
 # User Needs Identification for Wardley Mapping

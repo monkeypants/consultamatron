@@ -9,6 +9,7 @@ description: >
 metadata:
   author: monkeypants
   version: "0.3"
+  freedom: high
 ---
 
 # Organisation Research

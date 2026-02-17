@@ -10,6 +10,7 @@ metadata:
   version: "0.1"
   skillset: business-model-canvas
   stage: "3"
+  freedom: medium
 ---
 
 # Business Model Canvas Construction

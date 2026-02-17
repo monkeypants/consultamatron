@@ -13,6 +13,7 @@ metadata:
   version: "0.2"
   skillset: wardley-mapping
   stage: "5"
+  freedom: medium
 ---
 
 # Strategic Annotation for Wardley Maps

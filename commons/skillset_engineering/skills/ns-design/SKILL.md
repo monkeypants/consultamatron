@@ -11,6 +11,7 @@ metadata:
   version: "0.1"
   skillset: new-skillset
   stage: "3"
+  freedom: medium
 ---
 
 # Pipeline Design for New Skillset

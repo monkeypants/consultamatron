@@ -11,6 +11,7 @@ metadata:
   version: "0.1"
   skillset: business-model-canvas
   stage: "4+"
+  freedom: medium
 ---
 
 # Business Model Canvas Iteration and Refinement
