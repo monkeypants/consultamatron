@@ -3,7 +3,6 @@
 Scans three source containers for BC packages:
 
 - **commons** — skillsets from the injected SkillsetRepository
-  (discovered via pyproject.toml)
 - **personal** — BC packages in ``{repo_root}/personal/``
 - **partnerships** — BC packages in ``{repo_root}/partnerships/{slug}/``
 
@@ -15,8 +14,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from bin.cli.infrastructure.code_skillset_repository import _scan_directory
 from consulting.repositories import SkillsetRepository
+from practice.bc_discovery import collect_skillsets
 from practice.entities import SkillsetSource, SourceType
 
 
@@ -74,7 +73,7 @@ class FilesystemSourceRepository:
 
     def _scan_personal(self) -> list[str]:
         """Scan personal/ for BC packages, returning skillset names."""
-        skillsets = _scan_directory(self._repo_root / "personal")
+        skillsets = collect_skillsets(self._repo_root / "personal")
         return [s.name for s in skillsets]
 
     def _scan_partnerships(self) -> dict[str, list[str]]:
@@ -86,7 +85,7 @@ class FilesystemSourceRepository:
         for subdir in sorted(partnerships_dir.iterdir()):
             if not subdir.is_dir():
                 continue
-            skillsets = _scan_directory(subdir)
+            skillsets = collect_skillsets(subdir)
             if skillsets:
                 result[subdir.name] = [s.name for s in skillsets]
         return result

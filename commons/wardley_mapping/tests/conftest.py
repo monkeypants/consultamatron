@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import shutil
 from datetime import date
 from pathlib import Path
 
@@ -28,10 +27,9 @@ DEFAULT_DATE = date(2025, 6, 1)
 
 @pytest.fixture
 def tmp_config(tmp_path):
-    """Config pointing at a fresh temp directory."""
-    shutil.copy(_REPO_ROOT / "pyproject.toml", tmp_path / "pyproject.toml")
+    """Config with real repo_root for BC discovery, temp workspace for isolation."""
     return Config(
-        repo_root=tmp_path,
+        repo_root=_REPO_ROOT,
         workspace_root=tmp_path / "clients",
         skillsets_root=tmp_path / "skillsets",
     )

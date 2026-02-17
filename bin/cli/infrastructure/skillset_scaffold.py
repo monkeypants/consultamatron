@@ -1,12 +1,11 @@
 """Scaffold infrastructure for creating and updating skillset stub packages.
 
 Creates bounded context packages with __init__.py files that export
-SKILLSETS declarations and registers them in pyproject.toml.
+SKILLSETS declarations.  New packages are placed under ``commons/``.
 """
 
 from __future__ import annotations
 
-import re
 from pathlib import Path
 
 
@@ -14,8 +13,7 @@ class SkillsetScaffold:
     """Creates and updates skillset stub packages.
 
     A stub package is a Python package with __init__.py that exports
-    a SKILLSETS list. The scaffold also manages the pyproject.toml
-    packages list to ensure new packages are discoverable.
+    a SKILLSETS list.  New packages are placed under ``commons/``.
     """
 
     def __init__(self, repo_root: Path) -> None:
@@ -23,7 +21,7 @@ class SkillsetScaffold:
 
     def _package_dir(self, name: str) -> Path:
         """Return the filesystem path for a skillset package."""
-        return self._repo_root / name.replace("-", "_")
+        return self._repo_root / "commons" / name.replace("-", "_")
 
     def create(
         self,
@@ -78,7 +76,6 @@ class SkillsetScaffold:
             pkg_python = name.replace("-", "_")
             test_presenter.write_text(_render_test_presenter(name, pkg_python))
 
-        self._add_to_pyproject(name)
         return init_py
 
     def update(
@@ -131,38 +128,6 @@ class SkillsetScaffold:
             )
         )
         return init_py
-
-    def _add_to_pyproject(self, name: str) -> None:
-        """Add the package to pyproject.toml's packages list."""
-        pyproject_path = self._repo_root / "pyproject.toml"
-        content = pyproject_path.read_text()
-
-        pkg_path = name.replace("-", "_")
-
-        # Match the packages = [...] line and append if not present
-        pattern = r"(packages\s*=\s*\[)([^\]]*?)(\])"
-        match = re.search(pattern, content)
-        if match is None:
-            return
-
-        existing = match.group(2)
-        if pkg_path in existing:
-            return
-
-        # Add the new package before the closing bracket
-        if existing.rstrip().endswith('"'):
-            new_packages = existing.rstrip() + f', "{pkg_path}"'
-        else:
-            new_packages = existing + f'"{pkg_path}"'
-
-        content = (
-            content[: match.start()]
-            + match.group(1)
-            + new_packages
-            + match.group(3)
-            + content[match.end() :]
-        )
-        pyproject_path.write_text(content)
 
 
 def _render_init(

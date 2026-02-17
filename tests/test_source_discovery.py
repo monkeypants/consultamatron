@@ -9,9 +9,7 @@ from __future__ import annotations
 
 import pytest
 
-from bin.cli.infrastructure.code_skillset_repository import (
-    _scan_directory,
-)
+from practice.bc_discovery import collect_skillsets
 from bin.cli.infrastructure.filesystem_source_repository import (
     FilesystemSourceRepository,
 )
@@ -321,33 +319,33 @@ class TestFilesystemSourceIgnoresInvalid:
 
 
 # ---------------------------------------------------------------------------
-# _scan_directory — BC package scanning
+# collect_skillsets — BC package scanning
 # ---------------------------------------------------------------------------
 
 
-class TestScanDirectory:
+class TestCollectSkillsets:
     """Unit tests for the BC package scanner."""
 
     def test_empty_directory(self, tmp_path):
-        assert _scan_directory(tmp_path) == []
+        assert collect_skillsets(tmp_path) == []
 
     def test_nonexistent_directory(self, tmp_path):
-        assert _scan_directory(tmp_path / "nope") == []
+        assert collect_skillsets(tmp_path / "nope") == []
 
     def test_discovers_bc_package(self, tmp_path):
         _write_bc_package(tmp_path, "test_pkg", [_make_skillset_def("test-skillset")])
-        skillsets = _scan_directory(tmp_path)
+        skillsets = collect_skillsets(tmp_path)
         assert len(skillsets) == 1
         assert skillsets[0].name == "test-skillset"
 
     def test_ignores_dirs_without_init(self, tmp_path):
         (tmp_path / "no_init").mkdir()
-        assert _scan_directory(tmp_path) == []
+        assert collect_skillsets(tmp_path) == []
 
     def test_multiple_packages(self, tmp_path):
         _write_bc_package(tmp_path, "pkg_a", [_make_skillset_def("alpha")])
         _write_bc_package(tmp_path, "pkg_b", [_make_skillset_def("beta")])
-        skillsets = _scan_directory(tmp_path)
+        skillsets = collect_skillsets(tmp_path)
         names = [s.name for s in skillsets]
         assert "alpha" in names
         assert "beta" in names
