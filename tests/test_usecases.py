@@ -970,20 +970,30 @@ class TestUpdateProspectus:
     The happy-path test therefore tests the scaffold.update() directly.
     """
 
+    @pytest.fixture(autouse=True)
+    def _cleanup_scaffolded(self, di):
+        """Remove any BC dirs scaffolded during this test."""
+        import shutil
+
+        yield
+        pkg_dir = di.config.repo_root / "commons" / "scratch_update_target"
+        if pkg_dir.exists():
+            shutil.rmtree(pkg_dir)
+
     def test_scaffold_updates_description(self, di):
         """Scaffold round-trips descriptive field updates."""
         from bin.cli.infrastructure.skillset_scaffold import _parse_current_skillset
 
         scaffold = di.scaffold
         scaffold.create(
-            name="test-method",
+            name="scratch-update-target",
             display_name="Test Method",
             description="Original.",
             slug_pattern="test-{n}",
             problem_domain="Testing",
         )
-        updated = scaffold.update(name="test-method", description="Updated.")
-        s = _parse_current_skillset(updated, "test-method")
+        updated = scaffold.update(name="scratch-update-target", description="Updated.")
+        s = _parse_current_skillset(updated, "scratch-update-target")
         assert s.description == "Updated."
         assert s.display_name == "Test Method"  # unchanged
         assert s.problem_domain == "Testing"  # unchanged
