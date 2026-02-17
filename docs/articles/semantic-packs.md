@@ -7,70 +7,227 @@ content that agents consume and humans audit.
 
 ## 1. The pattern
 
-A semantic pack is a directory with an invariant shape:
+A semantic pack is a convention applied to a directory of markdown
+files. Three things make a directory a knowledge pack:
+
+1. An `index.md` at the root with manifest frontmatter (purpose,
+   actor-goals, triggers)
+2. Markdown files with minimal frontmatter (`type:`) and prose bodies
+3. A `_bytecode/` directory mirroring the item tree with generated
+   summaries
+
+Optionally, a `summary.md` provides a human-authored prose synthesis
+of the pack's contents.
 
 ```
 {root}/
-├── items/           ← long-form source material
-├── summary.md       ← human-friendly prose synthesis, links to items
-├── bytecode/        ← L1-L2 compressed semantic tree
-└── index.md         ← L0 semantic bytecode index + pointer to summary.md
+├── index.md         ← manifest only: purpose, actor-goals, triggers
+├── summary.md       ← human-friendly prose synthesis (authored, not generated)
+├── _bytecode/       ← compiled mirror: summary prose for each item (generated)
+└── .../*.md         ← items: type frontmatter + prose body (human-maintained)
 ```
 
-The content varies — research reports, methodology descriptions,
-messaging frameworks, analytical lenses. The shape does not. Every
-semantic pack provides two access paths to the same knowledge:
+Every semantic pack provides two access paths to the same knowledge:
 
-- **Human path**: `summary.md` → `items/*` (prose, citations,
+- **Human path**: `summary.md` → item bodies (prose, citations,
   narrative — readable but token-expensive)
-- **Agent path**: `index.md` → `bytecode/*` (compressed, routable,
-  token-efficient — consumable but not meant for humans)
+- **Agent path**: `_bytecode/` mirror (compressed summaries, same
+  tree structure — navigable without reading full items)
 
 Neither path is subordinate. The human path exists for transparency
 and the propose-negotiate-agree loop. The agent path exists for
 downstream skill consumption where token budgets matter.
 
-## 2. The pack-and-wrap operation
+## 2. Separation of content and compiled metadata
 
-The transition from authored content to semantic pack is a
-deterministic operation:
+Items are pure content. Summaries are compiled artifacts. They live
+in separate places.
 
-1. **Author** creates `items/*` (long-form, iterative, domain-specific)
-2. **Author** creates or approves `summary.md` (synthesis, links to items)
-3. **Pack-and-wrap** generates `bytecode/` and `index.md` from the
-   approved items
+**Items** have minimal frontmatter (just `type:`) and a prose body.
+The body is human-authored, iterated, and maintained. Items are never
+modified by the pack-and-wrap use case.
 
-Step 3 is mechanical. It takes approved human-readable content and
-produces a token-efficient semantic bytecode hierarchy. It does not
-require domain expertise, negotiation, or creative judgement. It is
-a use case, not a skill.
+```markdown
+---
+type: article
+---
+# The Semantic Waist
 
-The pack-and-wrap operation is the same regardless of what the pack
-contains or where it lives. It reads items, compresses into an L1-L2
-tree, and writes an L0 index. The content domain is irrelevant to the
-compression.
+Full prose about the semantic waist concept, design rationale,
+how it enables skill composition, testing strategy...
+```
 
-### The semantic bytecode hierarchy
+**`_bytecode/` files** are generated summary prose. No frontmatter.
+Each file mirrors an item's path and contains a compressed
+representation of that item's body.
 
-Three tiers, all token-efficient:
+```
+_bytecode/semantic-waist.md:
 
-- **L2** (detail): one file per semantic cluster of related items.
-  Summarises findings, uses precise vocabulary aligned with consumer
-  needs, routes to specific items for evidence.
-- **L1** (cluster): one file per group of related L2 files.
-  Summarises and routes to L2 files, characterises what questions
-  the cluster answers.
-- **L0** (index): `index.md` at the pack root. Compressed summary of
-  all content, routes to L1 clusters, points to `summary.md` for
-  human access.
+The semantic waist routes engagement bookkeeping through a narrow
+typed layer. Entities, repositories, use cases, DTOs. Captures
+lifecycle data, not content. Enables skill composition through a
+single source of truth for engagement state.
+```
 
-The L0 index is the standard entry point for agent consumption.
-Downstream skills read `index.md` to navigate the pack. If they need
-more detail, they follow routes to L1, then L2, then the original
-items. This is progressive disclosure for token budgets — most
-consumers never need to read the full items.
+An agent reads `_bytecode/semantic-waist.md` (tiny, just summary),
+decides it's relevant, then reads `semantic-waist.md` (full prose).
+Progressive disclosure through the filesystem.
 
-## 3. Two lifecycle contexts
+The `_` prefix signals "generated, don't edit" — same convention as
+`__pycache__`. Design-time `_bytecode/` directories can be version
+controlled or gitignored depending on context.
+
+### Where structured data lives
+
+- **Type** lives on items (minimal frontmatter, one line)
+- **Summary** lives in `_bytecode/` (generated prose)
+- **Manifest** lives on `index.md` (purpose, actor-goals, triggers)
+
+Use cases read type from item frontmatter and summary from
+`_bytecode/`, assembling a complete view when structured operations
+are needed. Agents browsing `_bytecode/` don't need type info — they
+navigate summaries to decide what to drill into. Type matters to
+domain-specific use cases (jedi council selecting luminaries, research
+checking citations) that know where to look.
+
+## 3. Progressive disclosure through nesting
+
+Items can be leaves (files) or composites (directories with their
+own `index.md`). This is recursive — a composite item is itself a
+knowledge pack:
+
+```
+items/
+├── kent-beck.md                    ← leaf item
+├── craig-larman/                   ← composite item (nested pack)
+│   ├── index.md                    ← manifest for this sub-pack
+│   ├── summary.md
+│   ├── _bytecode/
+│   ├── grasp/                      ← nested again
+│   │   ├── index.md
+│   │   ├── _bytecode/
+│   │   ├── information-expert.md
+│   │   ├── creator.md
+│   │   └── low-coupling.md
+│   ├── less.md
+│   └── larman-laws.md
+└── alistair-cockburn.md            ← leaf item
+```
+
+Each level has the same structure. The parent's `_bytecode/` contains
+a summary of the child pack (compiled from the child's manifest and
+items). The parent never descends into the child's items — it trusts
+the child's compilation.
+
+Knowledge trees grow where attention goes. You start with a leaf
+(`craig-larman.md`), it grows, you promote it to a composite
+(`craig-larman/`), and one branch (`grasp/`) grows its own children.
+The tree is lopsided because knowledge is lopsided. Reorganisation
+is cheap — moving an item means moving a file and recompiling the
+immediate parent.
+
+## 4. The pack-and-wrap operation
+
+Pack-and-wrap reads item bodies and generates `_bytecode/` entries.
+Items are never modified.
+
+1. Walk items in one pack (one level, not recursive)
+2. For each leaf item: read body, generate summary, write to
+   `_bytecode/` mirror path
+3. For each composite item: read the child's `_bytecode/` to generate
+   the parent-level summary
+
+Pack-and-wrap operates one level at a time. If a nested pack's items
+changed, compile it first, then the parent. Bottom-up propagation,
+each step is small.
+
+The summary generation step requires LLM cost per changed item. The
+compilation step (writing to `_bytecode/`) is mechanical. Detecting
+staleness: if an item's modification time is newer than its
+`_bytecode/` mirror, it needs recompilation.
+
+### Incremental adoption
+
+Any existing directory of markdown files can become a knowledge pack
+incrementally:
+
+1. Add `index.md` with manifest frontmatter → directory is a pack
+2. Add `type:` frontmatter to existing files → items are typed
+3. Run pack-and-wrap → `_bytecode/` generated with summaries
+
+Each step adds value independently. Step 1 alone is enough for an
+agent to decide "should I look in here?"
+
+## 5. The manifest
+
+The `index.md` frontmatter is the pack's self-description. It carries
+the metadata needed to decide whether to consume the pack without
+reading any content.
+
+Two concerns, separated:
+
+- **Actor-goals**: who benefits and what they get (value proposition).
+  Each entry declares an actor and their goal. This is the Information
+  Expert pattern (Larman) — the pack that has the knowledge also has
+  the self-description.
+
+- **Triggers**: situations that make the pack relevant (activation
+  condition). Separate from actor-goals because the same trigger
+  activates multiple actor-goals, and the same actor-goal may be
+  activated by different triggers. Agents match on triggers; humans
+  match on actor-goals.
+
+```yaml
+---
+name: platform-architecture
+purpose: >
+  Architectural knowledge for extending and maintaining Consultamatron.
+actor_goals:
+  - actor: skill author
+    goal: understand conformance requirements for a new BC
+  - actor: contributor
+    goal: learn CLI command generation and docstring conventions
+  - actor: human/AI dyad
+    goal: understand design rationale during development sessions
+triggers:
+  - adding a new bounded context
+  - adding a CLI command
+  - debugging conformance test failures
+  - executing skillset engineering skills
+---
+```
+
+The manifest is a specification (Fowler) that consumers match against.
+"Am I the right actor? Is this the right trigger? Does this pack serve
+my goal?"
+
+The index.md body contains routing instructions: "humans read
+`summary.md`, agents read `_bytecode/`."
+
+## 6. The PackItem protocol
+
+Items declare their type in frontmatter. The protocol is minimal:
+
+```python
+class PackItem(Protocol):
+    """Any item in a knowledge pack."""
+    name: str
+    item_type: str
+```
+
+Name is derived from the filename. Type is the frontmatter `type:`
+field. Use cases read item frontmatter for type when they need
+structured operations (selecting luminaries, filtering by type).
+Agents browsing `_bytecode/` don't interact with the protocol — they
+just read summaries.
+
+Concrete item types add their own semantics but items remain simple
+markdown files. A pantheon's items have `type: luminary`. A docs
+pack's items have `type: article`. A pack can declare a default type
+in its manifest for packs where all items share a type.
+
+## 7. Two lifecycle contexts
 
 Semantic packs appear in two distinct contexts with different
 ownership and lifecycle characteristics.
@@ -82,20 +239,18 @@ Owned by the engagement.
 
 ```
 clients/{org-slug}/resources/
-├── reports/          ← items: research reports with citations
-├── summary_prose.md  ← summary: synthesis of findings
-├── bytecode/         ← L1-L2 compressed hierarchy
-└── index.md          ← L0 index (gate artifact for org-research)
+├── index.md              ← manifest (gate artifact for org-research)
+├── summary.md            ← human-friendly synthesis
+├── _bytecode/            ← compiled summaries
+└── reports/
+    ├── corporate-overview.md
+    ├── market-position.md
+    └── technology-stack.md
 ```
 
-The org-research skill produces a runtime pack. The items are
-research reports about a specific organisation. The pack-and-wrap
-compresses them into semantic bytecode. Downstream skills
-(`wm-research`, `bmc-research`, etc.) consume the index.
-
-Runtime packs are engagement-scoped artefacts. They are created,
-potentially refreshed, and consumed within the lifecycle of client
-work. They live in `clients/`, which is gitignored.
+Each report is a typed item. The org-research skill produces these.
+Downstream skills read `_bytecode/` summaries to decide which reports
+to read in full.
 
 ### Design-time packs (skillset engineering)
 
@@ -104,20 +259,17 @@ development. Owned by the bounded context.
 
 ```
 commons/{bc}/skills/{skill}/references/{pack-name}/
-├── methods/          ← items: methodology descriptions
-├── summary.md        ← summary: overview of available methods
-├── bytecode/         ← L1-L2 compressed hierarchy
-└── index.md          ← L0 index
+├── index.md              ← manifest
+├── summary.md
+├── _bytecode/
+└── methods/
+    ├── standard-research.md
+    ├── market-landscape.md
+    └── operator-mediated.md
 ```
 
-A skill author assembles reference materials — research strategies,
-analytical frameworks, messaging patterns — and packs them for agent
-consumption. The pack lives in the repository alongside the skill
-that uses it.
-
-Design-time packs are maintained through skillset engineering use
-cases (the `ns-*` and `rs-*` skills). They evolve with the skillset,
-not with any particular engagement.
+Each method file has type frontmatter. The research use case reads
+`_bytecode/` summaries to present available strategies.
 
 ### The distinction matters
 
@@ -129,11 +281,10 @@ not with any particular engagement.
 | **Lifecycle** | Engagement-scoped, potentially refreshed | Version-controlled, evolves with skillset |
 | **Example** | Organisation research output | Research strategy catalogue |
 
-The pack-and-wrap use case does not distinguish between these contexts.
-It operates on the directory structure, not on the content semantics
-or storage location.
+Pack-and-wrap does not distinguish between these contexts. It operates
+on the convention, not on content semantics or storage location.
 
-## 4. Knowledge packs as pluggable adapters
+## 8. Knowledge packs as pluggable adapters
 
 A skill may declare one or more knowledge packs that it requires. The
 use case that executes the skill loads those packs and makes them
@@ -147,27 +298,24 @@ of a skill's execution may draw on different bodies of knowledge:
 ```
 {skill}/references/
 ├── research-strategies/     ← plugged into research use cases
-│   ├── methods/
+│   ├── index.md
 │   ├── summary.md
-│   ├── bytecode/
-│   └── index.md
+│   ├── _bytecode/
+│   └── methods/
 ├── messaging-patterns/      ← plugged into engagement polishing use cases
-│   ├── methods/
+│   ├── index.md
 │   ├── summary.md
-│   ├── bytecode/
-│   └── index.md
+│   ├── _bytecode/
+│   └── patterns/
 └── analytical-frameworks/   ← plugged into analysis use cases
-    ├── methods/
+    ├── index.md
     ├── summary.md
-    ├── bytecode/
-    └── index.md
+    ├── _bytecode/
+    └── frameworks/
 ```
 
-Each pack serves a different adapter. Research strategy packs are
-consumed by research use cases. Messaging pattern packs are consumed
-by engagement polishing use cases. Analytical framework packs are
-consumed by analysis use cases. The packs are the same shape; the
-adapters that consume them are different.
+Each pack serves a different adapter. The packs share the same
+convention; the adapters that consume them are different.
 
 ### Strategy selection
 
@@ -175,142 +323,117 @@ One common adapter pattern is strategy selection: given a knowledge
 pack of methodologies, select the appropriate one (or synthesise a
 hybrid) for the current context.
 
-The org-research skill currently does this with a single
-`references/research-strategies.md` file. The SKILL.md says "read
-the strategies, assess initial signals, propose which strategy to
-use." With semantic packs, this becomes:
-
-1. The research strategies are a design-time pack with individual
-   method files in `methods/`
-2. The research use case loads `research-strategies/index.md`
-3. The agent reads the L0 index to understand available strategies
-4. The agent selects or combines strategies based on engagement context
-5. The operator approves the selection (propose-negotiate-agree)
-
-New strategies are added to the pack (open to extension) without
-modifying the research use case or the SKILL.md (closed to
-modification). This is the Open/Closed Principle applied to domain
-knowledge.
+The agent reads `_bytecode/` summaries to understand available
+strategies, selects or combines based on engagement context, and
+the operator approves the selection. New strategies are added to
+the pack (open to extension) without modifying the use case or
+SKILL.md (closed to modification).
 
 ### The adapter is not the pack
 
-The semantic pack is a content type — it knows how to store and
-compress knowledge. The adapter is the use case behaviour that
+The semantic pack is a content convention — it knows how to describe
+and compress knowledge. The adapter is the use case behaviour that
 consumes the pack for a specific purpose. Strategy selection is one
 adapter. Others might include:
 
-- **Reference lookup**: load a framework pack, find the relevant
-  framework for a given problem domain
-- **Template selection**: load a messaging pack, select the
-  appropriate communication pattern for a deliverable type
-- **Constraint checking**: load a compliance pack, verify that
-  proposed output satisfies declared constraints
+- **Reference lookup**: find the relevant framework for a problem domain
+- **Template selection**: select a communication pattern for a deliverable
+- **Jedi council**: select luminaries whose perspectives to invoke
+  for multi-perspective analysis
 
 The pack provides uniform access to knowledge. The adapter provides
-domain-specific interpretation. Separating these concerns means new
-adapter types can be written without changing pack structure, and new
-packs can be authored without changing adapter code.
+domain-specific interpretation.
 
-## 5. The Open/Closed Principle applied
+## 9. The Open/Closed Principle applied
 
 The semantic pack pattern embodies OCP at two levels.
 
 ### Pack content is open to extension
 
-Adding a new research strategy, analytical framework, or messaging
-pattern means adding a file to `items/` and re-running pack-and-wrap.
-No code changes. No SKILL.md modifications. The pack's index
-automatically reflects the new content.
-
-Skillset authors extend the knowledge base by adding items. The
-compression infrastructure is unchanged. Skill execution adapts
-because it reads the index dynamically, not because it was modified
-to handle the new item.
+Adding a new research strategy, analytical framework, or luminary
+means adding a markdown file with `type:` frontmatter and re-running
+pack-and-wrap to generate its `_bytecode/` summary. No code changes.
+No SKILL.md modifications.
 
 ### Pack consumption is open to extension
 
 New adapters can consume existing packs without modifying the pack
 or the pack-and-wrap use case. A research strategy pack authored for
 `wm-research` can be consumed by a hypothetical `scenario-planning`
-skill that also needs research strategies — it reads the same index
-through a different adapter.
+skill — it reads the same `_bytecode/` through a different adapter.
 
-This is the plugin architecture applied to knowledge: the core
-defines the pack structure (closed), and skills define how they
+The core defines the pack convention (closed). Skills define how they
 consume packs (open).
 
-## 6. Relationship to the research protocol
+## 10. Relationship to the research protocol
 
 Issue #34 proposes structured research entities (Source,
 LiteratureNote, Topic, Report) to make citation density a
-deterministic business rule. The semantic pack pattern provides the
-content infrastructure that those entities describe.
+deterministic business rule. The semantic pack convention provides
+the content infrastructure those entities inhabit.
 
-- `Source` maps to a citable item in `items/`
-- `LiteratureNote` maps to the evidence relationship captured in
-  the item's content
-- `Topic` maps to the semantic cluster that groups related items
-- `Report` maps to the L2 compression of a cluster
+- `Source` maps to a typed item (`type: source`)
+- `LiteratureNote` maps to the evidence relationship in item content
+- `Topic` maps to a composite item grouping related sources
+- `Report` maps to a leaf item with full prose
 
 The research domain model (#34) defines what research IS — the
 entities and their invariants. The semantic pack defines how research
-is STORED and COMPRESSED — the content infrastructure. The research
+is STORED and DESCRIBED — the content convention. The research
 protocol defines how research is CONSUMED — the adapter contracts
 between packs and skills.
 
 These three concerns compose without coupling:
 
 1. **Domain model** (entities, invariants) — `practice.entities`
-2. **Content infrastructure** (pack structure, compression) — semantic packs
+2. **Content convention** (items, `_bytecode/`, manifest) — semantic packs
 3. **Consumption contracts** (adapter protocols) — research protocol
 
-## 7. Structural enforcement
+## 11. Structural enforcement
 
 ### Doctrine test: pack shape
 
 A conformance test can verify that every semantic pack has the
-required structure: `index.md` exists, `bytecode/` is populated when
-items exist, `summary.md` references items. This is the same pattern
-as pipeline coherence and gate consumes tests.
+required structure: `index.md` exists with valid manifest frontmatter,
+items have `type:` frontmatter. Same pattern as pipeline coherence
+and gate consumes tests.
 
-### Doctrine test: pack freshness
+### Doctrine test: compilation freshness
 
-A conformance test can verify that pack compression is not stale:
-if any item in `items/` is newer than `index.md`, the pack needs
-re-compression. This catches the case where a skill author adds a
-new methodology but forgets to re-run pack-and-wrap.
+A conformance test can verify that `_bytecode/` is not stale: if any
+item is newer than its `_bytecode/` mirror, the pack needs
+recompilation. This catches the case where a skill author adds
+content but forgets to re-run pack-and-wrap.
 
 These tests apply uniformly to both runtime and design-time packs.
-The test fixture discovers packs by directory shape, not by hard-coded
-paths.
+The test fixture discovers packs by the presence of `index.md` with
+manifest frontmatter, not by hard-coded paths.
 
-## 8. Current state and next steps
+## 12. Current state and next steps
 
 The pattern exists implicitly in org-research output. It has not been
 extracted as a named concept with structural enforcement.
 
 **What exists today:**
-- org-research produces a runtime pack (reports, summary, bytecode,
-  index) — but the shape is encoded in the SKILL.md prose, not in
-  a protocol or use case
+- org-research produces research with reports, summary, and index —
+  but compression is encoded in SKILL.md prose, not in a protocol
+  or use case
 - org-research has a single `research-strategies.md` reference file —
   not yet a design-time pack
-- The pack-and-wrap compression is performed by the org-research skill
-  as part of its methodology — not yet extracted as a standalone use
-  case
+- `docs/` is a half-formed design-time pack: articles and conventions
+  about the platform, consumed by skill authors, contributors, and
+  human/AI dyads
 
 **What this article proposes (Option B: note the pattern, build
 incrementally):**
 1. Name the pattern (done — this article)
-2. Build the research domain model and research use cases (#34),
-   including pack-and-wrap as a use case
-3. Extract the design-time pack structure when a second instance
-   emerges (e.g. when a skillset needs a strategy pack beyond
-   org-research)
-4. Add doctrine tests for pack shape when the pack structure is
-   codified
+2. Define the KnowledgePack entity model and PackItem protocol (#98)
+3. Implement pack-and-wrap use cases, test on `docs/` (#99)
+4. Build the research domain model (#34), using pack infrastructure
+5. Extract design-time packs when skillsets need them
 
-The second instance will likely emerge from skillset engineering
-(`ns-*` skills) or from a skillset that needs domain-specific
-research strategies. When it does, the pattern is documented and the
-infrastructure path is clear.
+Any directory of markdown files becomes a knowledge pack the moment
+it gets an `index.md` with manifest frontmatter and its files get
+`type:` frontmatter. Pack-and-wrap compiles `_bytecode/` summaries.
+Agents navigate `_bytecode/` for cheap progressive disclosure, read
+full items only when needed.
