@@ -106,6 +106,105 @@ architecture. Pasting every file into the prompt is bulk transfer.
 Both deliver the same information; only one respects the token
 budget.
 
+### The description field as API contract
+
+The SKILL.md `description` frontmatter field is not documentation. It
+is an API contract that determines when the skill activates. The agent
+loads all descriptions at startup (~100 tokens each) and uses them to
+match user intent to skills. All triggering logic must go in the
+description (loaded always), not the body (loaded on demand).
+
+Write the description in third person. Include both what the skill
+does and when to use it. A description that says "Identify customer
+segments" is less effective than one that says "Identify customer
+segments and value propositions for a Business Model Canvas. Use after
+bmc-research is complete and brief.agreed.md exists." The second
+version encodes preconditions that the agent can match against project
+state.
+
+## Context management
+
+Token economics describes the cost of individual prompts. Context
+management extends this to the full agent session — the accumulated
+context across multiple tool calls, skill loads, and conversation
+turns.
+
+### Context rot
+
+As a context window fills, model accuracy degrades. At N tokens, the
+transformer maintains N² pairwise attention relationships. Each token
+added dilutes the attention available to every existing token. This is
+not a cliff — it is a gradient. The agent gets gradually worse at
+tracking earlier instructions, honouring constraints, and maintaining
+consistency.
+
+Countermeasures: progressive disclosure (load only what is needed now),
+compaction (summarise and discard intermediate reasoning), and bounded
+subagent contexts (delegate subtasks to fresh context windows). All
+three are structural — they are built into the skill architecture, not
+applied ad hoc. The semantic waist is the most powerful countermeasure:
+it replaces thousands of tokens of prose with a CLI call that returns
+structured data at zero context cost.
+
+### Context engineering
+
+Context engineering is the successor to prompt engineering. Where prompt
+engineering optimises a single prompt, context engineering optimises the
+full information environment: system prompts, tool responses, skill
+loading, long-horizon state, and cross-session memory.
+
+The framing: find the smallest set of high-signal tokens that maximise
+the likelihood of the desired outcome. Every architectural decision that
+moves information from prose to structure — the CLI, the entity model,
+the gate protocol, the SKILL.md progressive disclosure model — is a
+context engineering decision.
+
+### Scaling rules in prompts
+
+Agents cannot self-judge appropriate effort. A research skill will
+research indefinitely unless told to stop. An analysis skill will add
+nuance until the context window fills. Tell agents explicitly how much
+work a task warrants: research depth, iteration rounds, evidence
+threshold, word count targets. These are scaling rules — they calibrate
+agent effort to task importance.
+
+Freedom levels (high/medium/low) are one expression of this. Another is
+explicit instruction bounds: "identify 3-5 user needs" rather than
+"identify user needs." The bound prevents both under- and over-delivery.
+
+## Operational patterns
+
+The skillset pipeline embodies several agent architecture patterns
+identified in the Anthropic skills engineering literature.
+
+### Prompt Chaining
+
+A sequential pipeline where each step's output feeds the next step's
+input. This maps directly to skillset pipelines: research → needs →
+supply chain → evolution → strategy. Gate artifacts are the data
+flowing between stages. Each skill reads its prerequisite gate and
+proposes a new gate. The pipeline is a chain of prompts connected by
+deterministic artifacts.
+
+### Evaluator-Optimizer
+
+One agent generates output, another evaluates it, and they loop until
+a quality threshold is met. In Consultamatron, this maps to the
+propose-negotiate-agree loop with the human operator as evaluator. The
+agent proposes, the operator evaluates, and they iterate until the
+operator agrees. The pattern is the same; the evaluator is human rather
+than automated.
+
+### Pipeline idempotency
+
+Skills should be stateless transformations: read gates, propose new
+gates. Running a skill twice against the same input should produce the
+same proposal (modulo LLM nondeterminism). State lives in gate
+artifacts, not in skill execution. A skill that modifies shared state
+as a side effect of execution breaks this property and makes the
+pipeline fragile — the order of re-execution matters, partial failures
+corrupt state, and recovery requires manual intervention.
+
 ## Style as affordance
 
 Everything above applies to the *input* side — information flowing

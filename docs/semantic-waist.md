@@ -55,6 +55,15 @@ understanding crystallises into structured data. Each waist captures the
 value of the preceding convergence and makes it available — cheaply,
 reliably, deterministically — to the next divergence.
 
+The gate artifacts at each waist point are the deterministic backbone of
+the pipeline. The `.agreed` suffix marks the boundary between
+nondeterministic LLM proposals (divergent exploration, synthesis,
+drafting) and deterministic committed state (the operator has confirmed
+this artifact). Gate artifacts are immutable after agreement — to change
+one, re-negotiate and iterate, do not overwrite. This immutability is
+what makes the waist trustworthy: downstream consumers know that an
+`.agreed` file will not change under them.
+
 ## What the waist is made of
 
 The structured data layer (`bin/cli/`) implements the waist as clean
@@ -150,6 +159,22 @@ structured form.
 Each of these consumers gets high information density from the waist
 without re-mining the source artifacts.
 
+### External artifacts as cross-session memory
+
+Decision logs, gate files, and engagement logs are not just
+documentation. They are the agent's context reconstruction mechanism.
+Each new session rebuilds understanding from these artifacts rather than
+relying on conversation history. The agent reads the engagement log to
+learn what happened, the decision log to learn what was decided, and the
+gate files to learn what was agreed. This reconstruction is cheap because
+the waist provides it as structured data, not prose to be re-mined.
+
+This is what makes multi-session engagements viable. Without the waist,
+each session would start from raw artifacts and spend thousands of tokens
+recovering state. With the waist, each session starts from the
+concentrated residue of all previous sessions — the same information at
+a fraction of the cost.
+
 ## The boundary: lifecycle vs content
 
 The current domain model captures **lifecycle** data: that projects
@@ -174,6 +199,50 @@ immediate value and should be completed first. When the content layer
 is needed, the same clean architecture patterns (entities, repositories,
 usecases, typed DTOs) apply. The waist gets wider but retains its
 structural properties: typed, validated, cheap.
+
+## DDD vocabulary for the waist
+
+The semantic waist and the bounded context architecture already
+implement several DDD strategic patterns. Naming them makes the
+architecture more navigable for contributors familiar with DDD
+vocabulary.
+
+### Shared Kernel
+
+The `resources/` directory is a shared kernel — research output that all
+skillsets consume but no individual skillset owns. `resources/index.md`
+is the kernel's primary artifact. Changes to its schema affect every
+consumer: `wm-research` reads it, `bmc-research` reads it, `engage`
+reads it. Minimise this surface. When adding fields to
+`resources/index.md`, treat it as a cross-team schema change.
+
+### Published Language
+
+The `resources/index.md` format, `brief.agreed.md` structure, and gate
+artifact schemas are the published language between the engagement layer
+and skillsets. Each skillset knows how to read the published language.
+Each skill that produces a gate artifact writes in the published
+language. Documenting these schemas as explicit contracts (field names,
+required sections, optional extensions) makes the published language
+testable.
+
+### Anti-Corruption Layer
+
+Each skillset's research skill translates the neutral published language
+into domain-specific terms. `wm-research` turns research into "anchors,"
+"components," and "evolution stages." `bmc-research` turns research into
+"customer segments" and "value propositions." This translation is the
+anti-corruption layer — it prevents domain concepts from leaking across
+bounded context boundaries. The neutral research stays neutral; the
+domain-specific interpretation stays local.
+
+### Context Map
+
+The `engage` skill functions as an executable context map. It discovers
+available bounded contexts, proposes which to use for a given client,
+and describes cross-project relationships ("a Wardley Map could inform
+BMC Key Resources"). The engagement plan it produces is literally a map
+of which contexts participate and how they relate.
 
 ## Implications for skill design
 
