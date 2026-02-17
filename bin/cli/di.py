@@ -7,15 +7,12 @@ on implementations directly.
 
 from __future__ import annotations
 
-import importlib
 import uuid
 from datetime import date, datetime, timezone
 
 from bin.cli.config import Config
-from bin.cli.infrastructure.code_skillset_repository import (
-    CodeSkillsetRepository,
-    _read_pyproject_packages,
-)
+from bin.cli.infrastructure.code_skillset_repository import CodeSkillsetRepository
+from practice.bc_discovery import discover_all_bc_modules
 from bin.cli.infrastructure.filesystem_profile_repository import (
     FilesystemProfileRepository,
 )
@@ -111,43 +108,6 @@ class UuidGenerator:
 # ---------------------------------------------------------------------------
 
 
-def _discover_bc_modules(repo_root):
-    """Yield imported BC modules from all three source containers.
-
-    Commons modules come from pyproject.toml.  Personal and partnership
-    modules come from scanning their directories for BC packages.
-    """
-    # Commons — pyproject.toml packages
-    for pkg_name in _read_pyproject_packages(repo_root / "pyproject.toml"):
-        try:
-            yield importlib.import_module(pkg_name)
-        except ImportError:
-            continue
-
-    # Personal
-    personal_dir = repo_root / "personal"
-    if personal_dir.is_dir():
-        for child in sorted(personal_dir.iterdir()):
-            if child.is_dir() and (child / "__init__.py").is_file():
-                try:
-                    yield importlib.import_module(child.name)
-                except ImportError:
-                    continue
-
-    # Partnerships
-    partnerships_dir = repo_root / "partnerships"
-    if partnerships_dir.is_dir():
-        for partner in sorted(partnerships_dir.iterdir()):
-            if not partner.is_dir():
-                continue
-            for child in sorted(partner.iterdir()):
-                if child.is_dir() and (child / "__init__.py").is_file():
-                    try:
-                        yield importlib.import_module(child.name)
-                    except ImportError:
-                        continue
-
-
 class Container:
     """Wires repository implementations and usecases.
 
@@ -196,7 +156,7 @@ class Container:
 
         # -- BC discovery (presenters + service hooks) -------------------------
         self.presenters: dict[str, ProjectPresenter] = {}
-        for mod in _discover_bc_modules(config.repo_root):
+        for mod in discover_all_bc_modules(config.repo_root):
             factory = getattr(mod, "PRESENTER_FACTORY", None)
             if factory is not None:
                 entries = factory if isinstance(factory, list) else [factory]

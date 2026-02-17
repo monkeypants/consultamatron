@@ -25,7 +25,7 @@ import pytest
 
 from bin.cli.config import Config
 from bin.cli.di import Container
-from bin.cli.infrastructure.code_skillset_repository import _read_pyproject_packages
+from practice.bc_discovery import discover_all_bc_modules
 from consulting.dtos import (
     CreateEngagementRequest,
     GetProjectProgressRequest,
@@ -54,40 +54,7 @@ _REPO_ROOT = Path(__file__).resolve().parent.parent
 CLIENT = "conformance-corp"
 
 
-def _discover_bc_modules():
-    """Discover BC modules by scanning all three source containers.
-
-    Checks commons/ (committed), personal/ (operator-private), and
-    partnerships/{slug}/ (per-engagement) for directories containing
-    ``__init__.py`` with a ``SKILLSETS`` attribute.
-    """
-    source_dirs = [_REPO_ROOT / "commons"]
-
-    personal = _REPO_ROOT / "personal"
-    if personal.is_dir():
-        source_dirs.append(personal)
-
-    partnerships = _REPO_ROOT / "partnerships"
-    if partnerships.is_dir():
-        for slug_dir in sorted(partnerships.iterdir()):
-            if slug_dir.is_dir():
-                source_dirs.append(slug_dir)
-
-    for source_dir in source_dirs:
-        if not source_dir.is_dir():
-            continue
-        for path in sorted(source_dir.iterdir()):
-            if not path.is_dir() or not (path / "__init__.py").is_file():
-                continue
-            try:
-                mod = importlib.import_module(path.name)
-                if hasattr(mod, "SKILLSETS"):
-                    yield mod
-            except ImportError:
-                continue
-
-
-_BC_MODULES = list(_discover_bc_modules())
+_BC_MODULES = discover_all_bc_modules(_REPO_ROOT)
 _ALL_SKILLSETS: list[Skillset] = [s for mod in _BC_MODULES for s in mod.SKILLSETS]
 _IMPLEMENTED = [s for s in _ALL_SKILLSETS if s.is_implemented]
 _IMPLEMENTED_DICTS = [s.model_dump(mode="json") for s in _IMPLEMENTED]
@@ -97,11 +64,13 @@ _ALL_DICTS = [s.model_dump(mode="json") for s in _ALL_SKILLSETS]
 _ALL_IDS = [s["name"] for s in _ALL_DICTS]
 
 
-def _write_pyproject(tmp_path: Path) -> None:
-    """Copy the real pyproject.toml into a tmp directory for Container."""
-    import shutil
-
-    shutil.copy(_REPO_ROOT / "pyproject.toml", tmp_path / "pyproject.toml")
+def _tmp_config(tmp_path: Path) -> Config:
+    """Config with real repo_root for BC discovery, temp workspace for isolation."""
+    return Config(
+        repo_root=_REPO_ROOT,
+        workspace_root=tmp_path / "clients",
+        skillsets_root=tmp_path / "skillsets",
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -163,15 +132,7 @@ class TestDecisionTitleJoin:
 
     @pytest.mark.parametrize("skillset", _IMPLEMENTED_DICTS, ids=_IMPLEMENTED_IDS)
     def test_progress_advances_through_all_stages(self, skillset, tmp_path):
-        # Copy pyproject.toml so CodeSkillsetRepository can discover packages
-        _write_pyproject(tmp_path)
-
-        config = Config(
-            repo_root=tmp_path,
-            workspace_root=tmp_path / "clients",
-            skillsets_root=tmp_path / "skillsets",
-        )
-        di = Container(config)
+        di = Container(_tmp_config(tmp_path))
 
         # Initialize workspace, create engagement, and register project
         di.initialize_workspace_usecase.execute(
@@ -299,20 +260,10 @@ class TestSkillsetDiscipline:
 
 @pytest.mark.doctrine
 class TestSkillsetRegistration:
-    """Every BC package with SKILLSETS is listed in pyproject.toml."""
+    """Directory scanning discovers all BC packages."""
 
-    def test_all_bc_packages_in_pyproject(self):
-        """Packages exporting SKILLSETS must appear in pyproject.toml packages."""
-        pyproject_path = _REPO_ROOT / "pyproject.toml"
-        registered = _read_pyproject_packages(pyproject_path)
-        bc_packages = {mod.__name__ for mod in _BC_MODULES}
-        for pkg in bc_packages:
-            assert pkg in registered, (
-                f"BC package {pkg!r} not in pyproject.toml packages list"
-            )
-
-    def test_dynamic_discovery_finds_all_skillsets(self):
-        """CodeSkillsetRepository discovers the same skillsets as direct import."""
+    def test_directory_scanning_finds_all_skillsets(self):
+        """discover_all_bc_modules finds the same skillsets as direct import."""
         from bin.cli.infrastructure.code_skillset_repository import (
             CodeSkillsetRepository,
         )
@@ -400,13 +351,7 @@ class TestServiceRegistrationProtocol:
         register = getattr(mod, "register_services", None)
         if register is None:
             pytest.skip("No register_services hook")
-        _write_pyproject(tmp_path)
-        config = Config(
-            repo_root=tmp_path,
-            workspace_root=tmp_path / "clients",
-            skillsets_root=tmp_path / "skillsets",
-        )
-        container = Container(config)
+        container = Container(_tmp_config(tmp_path))
         # Should not raise
         register(container)
 

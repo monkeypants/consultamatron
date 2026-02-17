@@ -28,8 +28,8 @@ from bin.cli.dtos import (
     SkillPathRequest,
     UpdateProspectusRequest,
 )
-from bin.cli.infrastructure.code_skillset_repository import _read_pyproject_packages
 from bin.cli.introspect import generate_command
+from practice.bc_discovery import discover_all_bc_modules
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 
@@ -43,9 +43,9 @@ def cli(ctx: click.Context) -> None:
 
 # -- Register bounded context commands -------------------------------------
 
-for _pkg_name in _read_pyproject_packages(_REPO_ROOT / "pyproject.toml"):
+for _mod in discover_all_bc_modules(_REPO_ROOT):
     try:
-        _cli_mod = importlib.import_module(f"{_pkg_name}.cli")
+        _cli_mod = importlib.import_module(f"{_mod.__name__}.cli")
     except (ImportError, ModuleNotFoundError):
         continue
     if hasattr(_cli_mod, "register_commands"):

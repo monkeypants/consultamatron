@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import shutil
 import uuid
 from datetime import date, datetime, timezone
 from pathlib import Path
@@ -47,14 +46,9 @@ _REPO_ROOT = Path(__file__).resolve().parent.parent
 
 @pytest.fixture
 def tmp_config(tmp_path):
-    """Config pointing at a fresh temp directory.
-
-    Copies pyproject.toml so CodeSkillsetRepository can discover
-    bounded context packages via dynamic import.
-    """
-    shutil.copy(_REPO_ROOT / "pyproject.toml", tmp_path / "pyproject.toml")
+    """Config with real repo_root for BC discovery, temp workspace for isolation."""
     return Config(
-        repo_root=tmp_path,
+        repo_root=_REPO_ROOT,
         workspace_root=tmp_path / "clients",
         skillsets_root=tmp_path / "skillsets",
     )
