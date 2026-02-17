@@ -889,10 +889,24 @@ class TestListSkillsets:
 class TestRegisterProspectus:
     """Register a new skillset prospectus."""
 
+    _SCAFFOLDED: list[str] = []
+
+    @pytest.fixture(autouse=True)
+    def _cleanup_scaffolded(self, di):
+        """Remove any BC dirs scaffolded during this test."""
+        import shutil
+
+        self._SCAFFOLDED.clear()
+        yield
+        for name in self._SCAFFOLDED:
+            pkg_dir = di.config.repo_root / "commons" / name.replace("-", "_")
+            if pkg_dir.exists():
+                shutil.rmtree(pkg_dir)
+
     def test_registers_new_prospectus(self, di):
         resp = di.register_prospectus_usecase.execute(
             RegisterProspectusRequest(
-                name="competitive-analysis",
+                name="scratch-comp-analysis",
                 display_name="Competitive Analysis",
                 description="Market positioning methodology.",
                 slug_pattern="comp-{n}",
@@ -903,7 +917,8 @@ class TestRegisterProspectus:
                 evidence="Porter's Five Forces",
             )
         )
-        assert resp.name == "competitive-analysis"
+        self._SCAFFOLDED.append("scratch-comp-analysis")
+        assert resp.name == "scratch-comp-analysis"
         assert resp.init_path.endswith("__init__.py")
 
     def test_duplicate_name_rejected(self, di):
@@ -920,7 +935,7 @@ class TestRegisterProspectus:
     def test_csv_fields_split_correctly(self, di):
         resp = di.register_prospectus_usecase.execute(
             RegisterProspectusRequest(
-                name="test-method",
+                name="scratch-test-method",
                 display_name="Test Method",
                 description="A test.",
                 slug_pattern="test-{n}",
@@ -928,13 +943,14 @@ class TestRegisterProspectus:
                 classification="strategy, operations",
             )
         )
+        self._SCAFFOLDED.append("scratch-test-method")
         # Verify round-trip by parsing the generated __init__.py
         from pathlib import Path
 
         from bin.cli.infrastructure.skillset_scaffold import _parse_current_skillset
 
         init_path = Path(resp.init_path)
-        s = _parse_current_skillset(init_path, "test-method")
+        s = _parse_current_skillset(init_path, "scratch-test-method")
         assert s.deliverables == ["Report", "Dashboard", "Slides"]
         assert s.classification == ["strategy", "operations"]
         assert s.is_implemented is False
