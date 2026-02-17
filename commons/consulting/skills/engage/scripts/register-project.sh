@@ -12,7 +12,7 @@
 #                                                                     "Project created" entry)
 #   clients/{client}/engagements/{engagement}/engagement-log.json — Engagement log (append)
 #
-# The files listed above are JSON documents managed by the consultamatron
+# The files listed above are JSON documents managed by the practice
 # CLI (bin/cli/). Agents may read these files directly for inspection.
 # Do not edit them by hand — use the CLI to ensure validation, timestamps,
 # and cross-file consistency are maintained.
@@ -40,7 +40,7 @@ if [[ -z "$CLIENT" || -z "$ENGAGEMENT" || -z "$SLUG" || -z "$SKILLSET" || -z "$S
   exit 1
 fi
 
-exec uv run --project "$REPO_DIR" consultamatron project register \
+exec uv run --project "$REPO_DIR" practice project register \
   --client "$CLIENT" \
   --engagement "$ENGAGEMENT" \
   --slug "$SLUG" \

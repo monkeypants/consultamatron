@@ -14,7 +14,7 @@
 set -euo pipefail
 
 REPO_DIR="$(git -C "$(dirname "$0")" rev-parse --show-toplevel)"
-CLI="uv run --project $REPO_DIR consultamatron"
+CLI="uv run --project $REPO_DIR practice"
 
 CLIENT="" ENGAGEMENT="" PROJECT=""
 FIELDS=()
