@@ -80,6 +80,44 @@ pipeline. The fix is to separate them: the engagement protocol becomes
 a use case layer; the skillset protocol remains as-is; the skills
 engineering protocol is untouched.
 
+### The engagement execution use case (Cockburn fully dressed)
+
+Cockburn's fully dressed use case format makes the engagement protocol's
+real design visible. The happy path is trivial — the extensions are where
+the architecture lives.
+
+**Preconditions:** Client workspace exists. At least one engagement with
+registered projects.
+
+**Trigger:** Operator asks "where am I?" or "what should I do?"
+
+**Main success scenario:**
+1. System derives pipeline position for all projects (gate inspection)
+2. System identifies the earliest incomplete project
+3. System verifies the prerequisite gate exists
+4. System recommends the next skill to execute
+5. Agent executes the skill through the propose-negotiate-agree loop
+6. Skill produces a gate artifact on operator agreement
+7. Repeat from step 1
+
+**Extensions:**
+- *1a. Gate inspection fails (filesystem error):* Report the error and
+  the affected project. Do not guess state.
+- *3a. Prerequisite gate missing:* Report the project as blocked. Name
+  the missing gate and which earlier skill produces it.
+- *5a. Operator negotiates (disagrees with proposal):* Agent revises.
+  Loop until agreement or operator abandons.
+- *5b. Operator abandons skill execution:* No gate artifact written.
+  Pipeline position unchanged. System can recommend the same skill
+  next time.
+- *6a. Gate artifact already exists (re-execution):* Do not overwrite.
+  Report that the gate exists and the stage is already complete.
+- *7a. All terminal gates exist:* Recommend "run review."
+
+"Extensions are where the real design lives" — the negotiate loop (5a),
+the gate immutability invariant (6a), and the blocked-project detection
+(3a) are the architecturally significant paths.
+
 ## 3. Clean Architecture applied
 
 Uncle Bob's Clean Architecture provides the structural vocabulary for
@@ -121,6 +159,22 @@ Adding `GetEngagementStatusUseCase` and `GetNextActionUseCase` makes
 the engagement protocol visible in the architecture. The system now
 screams "I track engagement status and recommend next actions" in
 addition to "I do bookkeeping."
+
+### LLM as framework detail
+
+The LLM belongs in the outermost ring. Core logic — what constitutes a
+valid engagement, what gates a pipeline must produce, how pipeline
+progress is derived — must not depend on which LLM executes the skill.
+If you swapped Claude for GPT, no entity, use case, or protocol should
+change. The entities define the domain. The use cases define the rules.
+The LLM is an infrastructure detail that executes skill instructions,
+no different architecturally from the filesystem that stores gate
+artifacts.
+
+This is the dependency rule applied to the most exotic dependency in
+the system. The temptation is to treat the LLM as special — to embed
+model-specific assumptions in business logic. The Clean Architecture
+response is to treat it as what it is: an adapter behind a port.
 
 ### Screaming architecture
 
@@ -255,6 +309,41 @@ imports makes it structural. A violation fails CI, not code review.
 
 This is Law 4 applied to the dependency rule: don't document that
 imports must not cross BC boundaries. Verify it.
+
+### Crystal methodology tuning
+
+Cockburn's Crystal methodology family classifies projects by
+criticality × size and prescribes different process weights for each
+classification. A quick strategic sketch (Comfort level — loss of
+comfort on failure) needs fewer pipeline stages, lighter gate evidence,
+and less formal review than a full digital transformation (Essential
+Money level — significant financial loss on failure).
+
+Consultamatron currently treats all engagements with equal process
+weight. Future direction: formal engagement classification at the
+`engage` skill, driving skill selection and gate evidence requirements.
+A Comfort-level engagement might skip atlas generation and use
+abbreviated gates. An Essential Money-level engagement might require
+cross-validated research, multi-perspective tours, and formal review
+sign-off.
+
+### Heart of Agile mapping
+
+Cockburn's Heart of Agile distills agility to four verbs: Collaborate,
+Deliver, Reflect, Improve. All four are structurally present in
+Consultamatron:
+
+- **Collaborate** = the propose-negotiate-agree loop. Every skill
+  execution is a structured collaboration between agent and operator.
+- **Deliver** = gate artifacts. Each agreed gate is a delivered
+  increment of consulting value.
+- **Reflect** = the engagement log and the `review` skill. The
+  engagement log is a running audit trail; the review skill produces
+  a structured retrospective.
+- **Improve** = the skillset engineering pipeline (`rs-assess`,
+  `rs-plan`, `rs-iterate`). The practice improves its own tools
+  through the same structured pipeline approach it uses for client
+  work.
 
 ## 7. Consumer-driven contracts for gates
 
@@ -462,6 +551,26 @@ pipeline definitions, never calling into skillset code.
 This is the plugin architecture that Clean Architecture and Hexagonal
 Architecture converge on: the core defines ports, plugins satisfy them,
 and the core drives the plugins without depending on them.
+
+### Orchestration within, choreography across
+
+The engagement layer explicitly plans and sequences project execution —
+this is orchestration. The `engagement next` command applies deterministic
+rules to recommend the next skill. The engagement plan records which
+projects exist and in what order they were created.
+
+Cross-project references are suggestions, not dependencies — this is
+choreography. The `engage` skill may say "a Wardley Map could inform BMC
+Key Resources," but this does not create a hard gate dependency. The BMC
+project can proceed without the Wardley Map. Cross-project insights flow
+through the shared research kernel (`resources/`), not through gate
+artifact dependencies.
+
+This distinction matters for execution flexibility. Orchestration within
+an engagement ensures each project progresses through its own pipeline
+correctly. Choreography across projects means the engagement is not
+blocked by artificial cross-project dependencies — the operator decides
+when and whether to incorporate cross-project insights.
 
 ### What gets removed
 

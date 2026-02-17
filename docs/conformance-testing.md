@@ -50,6 +50,68 @@ for why the CLI boundary provides this isolation.
 Conformance testing is what makes unsupervised contribution a
 controlled risk rather than an uncontrolled one.
 
+## Why structural, not cultural
+
+The conformance approach is a deliberate response to Larman's first
+three laws of organisational behaviour, which predict exactly how a
+cultural (process-based) approach to contributor quality would fail.
+
+**Larman's Law 1 (power-structure inertia).** Whoever controls the
+skill registry becomes gatekeeper. Centralised approval calcifies into
+a bottleneck that optimises for the reviewer's preferences rather than
+the contributor's domain expertise. Conformance tests replace human
+gatekeeping with machine verification — no gatekeeper, no bottleneck.
+
+**Larman's Law 2 (terminology absorption).** Contributors will adopt
+the vocabulary — SKILL.md frontmatter, pipeline stages, gate
+suffixes — without conforming to the behavioral contracts underneath.
+The artifacts look right but do not compose. Machine-enforced contracts
+catch this; code reviews do not, because the reviewer sees the right
+terms and infers the right behaviour.
+
+**Larman's Law 3 (pragmatism defence).** Contributors will argue that
+their skill is special and needs gate exceptions, different pipeline
+semantics, or relaxed conformance requirements. A structural test suite
+has no exceptions mechanism. The test either passes or it does not.
+There is no appeal process because there is no committee.
+
+Two Larman/LeSS organisational principles follow from this:
+
+**Feature teams over component teams.** Each skillset contributor owns
+the full vertical slice — skills, pipeline, gates, tests, presenter.
+No architecture review board sits between the contributor and the
+practice. The conformance suite is the gate, not a person.
+
+**Community of Practice over review board.** Quality patterns are shared
+through example skills, documentation, and entity builders — not through
+committee approval. A contributor reads an existing BC's `testing.py` to
+understand the pattern, then implements their own. The conformance suite
+verifies the result; the community shares the knowledge.
+
+## Component coupling principles
+
+The cross-BC import test (see § 6 of `docs/articles/engagement-protocol.md`)
+enforces three of Uncle Bob's component coupling principles:
+
+**Acyclic Dependencies Principle.** No cycles in the package dependency
+graph. The cross-BC import test scans all BC Python files and fails if
+any BC imports from another. Cycles between BCs would make independent
+development and testing impossible — exactly the property conformance
+testing exists to protect.
+
+**Stable Dependencies Principle.** Depend in the direction of stability.
+The `practice` package (entities, protocols, base classes) is maximally
+stable — it changes rarely and absorbs no BC-specific concepts. Every
+BC depends on `practice`; `practice` depends on no BC. The cross-BC
+import test enforces this directionality.
+
+**Stable Abstractions Principle.** A component should be as abstract as
+it is stable. `practice` is almost entirely abstractions: `Protocol`
+classes, base entities, typed DTOs. Skillset BCs are concrete
+implementations. This means the stable package is also the abstract
+package — changes to concrete implementations in BCs do not propagate to
+the stable core.
+
 ## What conformance verifies
 
 ### Pipeline coherence
@@ -172,6 +234,12 @@ and the practice. They answer "does this compose?" not "is this
 correct?" A bounded context can pass conformance and still produce
 wrong answers. But it cannot pass conformance and break the
 engagement lifecycle.
+
+This is the "grade outputs, not process" principle applied to bounded
+context evaluation. Conformance tests grade what the BC produced (does
+it compose?), not how it got there. Partial credit where possible — a
+BC with a valid pipeline but a missing presenter test gets targeted
+feedback naming the gap, not blanket rejection.
 
 ## Relationship to the semantic waist
 
