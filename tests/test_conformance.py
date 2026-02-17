@@ -592,3 +592,98 @@ class TestSkillFileConformance:
         assert fm.get("name") == skill_name, (
             f"Frontmatter name {fm.get('name')!r} != pipeline skill {skill_name!r}"
         )
+
+
+# ---------------------------------------------------------------------------
+# 8. Cross-BC import isolation — dependency rule enforcement
+# ---------------------------------------------------------------------------
+
+
+def _discover_bc_packages():
+    """Return set of BC package names from all source containers."""
+    packages = set()
+    for container in ("commons", "personal", "partnerships"):
+        container_dir = _REPO_ROOT / container
+        if not container_dir.is_dir():
+            continue
+        # partnerships has sub-dirs per engagement
+        if container == "partnerships":
+            for slug_dir in container_dir.iterdir():
+                if not slug_dir.is_dir():
+                    continue
+                for pkg_dir in slug_dir.iterdir():
+                    if pkg_dir.is_dir() and (pkg_dir / "__init__.py").is_file():
+                        packages.add(pkg_dir.name)
+        else:
+            for pkg_dir in container_dir.iterdir():
+                if pkg_dir.is_dir() and (pkg_dir / "__init__.py").is_file():
+                    packages.add(pkg_dir.name)
+    return packages
+
+
+_BC_PACKAGES = _discover_bc_packages()
+
+# Build (bc_name, py_file) pairs for parametrization
+_IMPORT_RE = re.compile(r"^\s*(?:import|from)\s+([\w.]+)", re.MULTILINE)
+
+
+def _collect_bc_python_files():
+    """Return list of (bc_name, py_path) for all Python files in each BC."""
+    results = []
+    for container in ("commons", "personal", "partnerships"):
+        container_dir = _REPO_ROOT / container
+        if not container_dir.is_dir():
+            continue
+        dirs = []
+        if container == "partnerships":
+            for slug_dir in container_dir.iterdir():
+                if slug_dir.is_dir():
+                    dirs.extend(
+                        d
+                        for d in slug_dir.iterdir()
+                        if d.is_dir() and (d / "__init__.py").is_file()
+                    )
+        else:
+            dirs = [
+                d
+                for d in container_dir.iterdir()
+                if d.is_dir() and (d / "__init__.py").is_file()
+            ]
+        for bc_dir in sorted(dirs):
+            bc_name = bc_dir.name
+            for py_file in sorted(bc_dir.rglob("*.py")):
+                # Skip test files — test fixtures legitimately cross BC
+                # boundaries for workspace/engagement setup.
+                if "tests" in py_file.relative_to(bc_dir).parts:
+                    continue
+                results.append((bc_name, py_file))
+    return results
+
+
+_BC_PY_FILES = _collect_bc_python_files()
+_BC_PY_IDS = [f"{bc}/{py.relative_to(_REPO_ROOT)}" for bc, py in _BC_PY_FILES]
+
+
+@pytest.mark.doctrine
+class TestNoCrossBCImports:
+    """No bounded context may import from another bounded context.
+
+    Enforces the dependency rule structurally (Larman Law 4). Allowed
+    imports: practice.*, stdlib, third-party, same-BC internals.
+    """
+
+    @pytest.mark.parametrize("bc_file", _BC_PY_FILES, ids=_BC_PY_IDS)
+    def test_no_cross_bc_import(self, bc_file):
+        bc_name, py_path = bc_file
+        source = py_path.read_text()
+        other_bcs = _BC_PACKAGES - {bc_name}
+        violations = []
+        for match in _IMPORT_RE.finditer(source):
+            top_level = match.group(1).split(".")[0]
+            if top_level in other_bcs:
+                violations.append(
+                    f"  {py_path.relative_to(_REPO_ROOT)}: imports {match.group(1)}"
+                )
+        assert not violations, f"{bc_name} imports from other BCs:\n" + "\n".join(
+            violations
+        )
