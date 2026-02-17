@@ -448,3 +448,56 @@ class RemoveEngagementSourceResponse(BaseModel):
     engagement: str
     source: str
     allowed_sources: list[str]
+
+
+# ---------------------------------------------------------------------------
+# 17. EngagementStatus
+# ---------------------------------------------------------------------------
+
+
+class EngagementStatusRequest(BaseModel):
+    """Derive engagement state from gate artifacts."""
+
+    client: str = Field(description="Client slug.")
+    engagement: str = Field(description="Engagement slug.")
+
+
+class EngagementStatusResponse(BaseModel):
+    dashboard: "EngagementDashboardInfo"
+
+
+class EngagementDashboardInfo(BaseModel):
+    """Flattened dashboard for CLI rendering."""
+
+    engagement_slug: str
+    status: str
+    projects: list["ProjectPositionInfo"]
+
+
+class ProjectPositionInfo(BaseModel):
+    """Pipeline position for one project."""
+
+    project_slug: str
+    skillset: str
+    current_stage: int
+    total_stages: int
+    completed_gates: list[str]
+    next_gate: str | None
+
+
+# ---------------------------------------------------------------------------
+# 18. NextAction
+# ---------------------------------------------------------------------------
+
+
+class NextActionRequest(BaseModel):
+    """Determine the recommended next skill execution."""
+
+    client: str = Field(description="Client slug.")
+    engagement: str = Field(description="Engagement slug.")
+
+
+class NextActionResponse(BaseModel):
+    skill: str | None
+    project_slug: str | None
+    reason: str

@@ -181,3 +181,36 @@ class Profile(BaseModel):
     display_name: str
     description: str
     skillsets: list[str]
+
+
+# ---------------------------------------------------------------------------
+# Engagement protocol value objects (computed, no identity, no persistence)
+# ---------------------------------------------------------------------------
+
+
+class ProjectPipelinePosition(BaseModel):
+    """Derived position of one project within its skillset pipeline."""
+
+    project_slug: str
+    skillset: str
+    current_stage: int
+    total_stages: int
+    completed_gates: list[str]
+    next_gate: str | None
+
+
+class EngagementDashboard(BaseModel):
+    """Aggregate engagement state derived from gate artifacts."""
+
+    engagement_slug: str
+    status: str
+    projects: list[ProjectPipelinePosition]
+
+
+class NextAction(BaseModel):
+    """Recommended next skill execution within an engagement."""
+
+    skill: str
+    project_slug: str
+    reason: str
+    prerequisite_exists: bool
