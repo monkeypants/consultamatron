@@ -16,6 +16,7 @@ from practice.bc_discovery import discover_all_bc_modules
 from bin.cli.infrastructure.filesystem_profile_repository import (
     FilesystemProfileRepository,
 )
+from bin.cli.infrastructure.filesystem_gate_inspector import FilesystemGateInspector
 from bin.cli.infrastructure.filesystem_source_repository import (
     FilesystemSourceRepository,
 )
@@ -52,7 +53,9 @@ from consulting.usecases import (
     AddEngagementEntryUseCase,
     AddEngagementSourceUseCase,
     CreateEngagementUseCase,
+    GetEngagementStatusUseCase,
     GetEngagementUseCase,
+    GetNextActionUseCase,
     GetProjectProgressUseCase,
     GetProjectUseCase,
     InitializeWorkspaceUseCase,
@@ -68,6 +71,7 @@ from consulting.usecases import (
 )
 from practice.repositories import (
     Clock,
+    GateInspector,
     IdGenerator,
     ProfileRepository,
     ProjectPresenter,
@@ -148,6 +152,9 @@ class Container:
         )
         self.profiles: ProfileRepository = FilesystemProfileRepository(
             config.repo_root, self.sources
+        )
+        self.gate_inspector: GateInspector = FilesystemGateInspector(
+            config.workspace_root,
         )
         self.site_renderer: SiteRenderer = JinjaSiteRenderer(
             workspace_root=config.workspace_root,
@@ -281,6 +288,20 @@ class Container:
             research=self.research,
             renderer=self.site_renderer,
             presenters=self.presenters,
+        )
+
+        # -- Engagement protocol usecases ----------------------------------
+        self.get_engagement_status_usecase = GetEngagementStatusUseCase(
+            engagements=self.engagement_entities,
+            projects=self.projects,
+            skillsets=self.skillsets,
+            gate_inspector=self.gate_inspector,
+        )
+        self.get_next_action_usecase = GetNextActionUseCase(
+            engagements=self.engagement_entities,
+            projects=self.projects,
+            skillsets=self.skillsets,
+            gate_inspector=self.gate_inspector,
         )
 
         # -- Prospectus usecases -------------------------------------------
