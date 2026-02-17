@@ -18,3 +18,4 @@ class PipelineStage(BaseModel):
     prerequisite_gate: str
     produces_gate: str
     description: str
+    consumes: list[str] = []
