@@ -112,3 +112,19 @@ class ProfileRepository(Protocol):
     def list_all(self) -> list[tuple[Profile, str]]:
         """List all profiles as (profile, source_slug) tuples."""
         ...
+
+
+@runtime_checkable
+class GateInspector(Protocol):
+    """Driven port: check gate artifact existence.
+
+    The engagement protocol use cases need to know whether a gate
+    artifact exists without knowing the storage mechanism. This port
+    abstracts file existence into a testable contract.
+    """
+
+    def exists(
+        self, client: str, engagement: str, project: str, gate_path: str
+    ) -> bool:
+        """Return True if the gate artifact exists."""
+        ...

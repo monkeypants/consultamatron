@@ -39,6 +39,9 @@ from practice.entities import Skillset
 from .conftest import (
     make_decision,
     make_engagement,
+    make_engagement_dashboard,
+    make_next_action,
+    make_pipeline_position,
     make_profile,
     make_project,
     make_prospectus,
@@ -204,6 +207,9 @@ class TestEntityRoundTrip:
             pytest.param(make_skillset(), id="Skillset"),
             pytest.param(make_prospectus(), id="Skillset-prospectus"),
             pytest.param(make_profile(), id="Profile"),
+            pytest.param(make_pipeline_position(), id="ProjectPipelinePosition"),
+            pytest.param(make_engagement_dashboard(), id="EngagementDashboard"),
+            pytest.param(make_next_action(), id="NextAction"),
             pytest.param(
                 PipelineStage(
                     order=1,

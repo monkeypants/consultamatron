@@ -15,7 +15,10 @@ from consulting.dtos import (
     CreateEngagementRequest,
     CreateEngagementResponse,
     DecisionInfo,
+    EngagementDashboardInfo,
     EngagementInfo,
+    EngagementStatusRequest,
+    EngagementStatusResponse,
     GetEngagementRequest,
     GetEngagementResponse,
     GetProjectProgressRequest,
@@ -32,7 +35,10 @@ from consulting.dtos import (
     ListProjectsResponse,
     ListResearchTopicsRequest,
     ListResearchTopicsResponse,
+    NextActionRequest,
+    NextActionResponse,
     ProjectInfo,
+    ProjectPositionInfo,
     RecordDecisionRequest,
     RecordDecisionResponse,
     RegisterProjectRequest,
@@ -64,7 +70,7 @@ from practice.entities import (
     ResearchTopic,
 )
 from practice.exceptions import DuplicateError, InvalidTransitionError, NotFoundError
-from practice.repositories import Clock, IdGenerator, SourceRepository
+from practice.repositories import Clock, GateInspector, IdGenerator, SourceRepository
 
 
 # ---------------------------------------------------------------------------
@@ -753,4 +759,170 @@ class RemoveEngagementSourceUseCase:
             engagement=request.engagement,
             source=request.source,
             allowed_sources=new_sources,
+        )
+
+
+# ---------------------------------------------------------------------------
+# Engagement protocol usecases
+# ---------------------------------------------------------------------------
+
+
+class GetEngagementStatusUseCase:
+    """Derive engagement state from gate artifacts on disk.
+
+    Reads the engagement, its projects, their pipeline definitions, and
+    checks gate artifact existence via the GateInspector port. Returns
+    an EngagementDashboard with per-project pipeline positions.
+    """
+
+    def __init__(
+        self,
+        engagements: EngagementRepository,
+        projects: ProjectRepository,
+        skillsets: SkillsetRepository,
+        gate_inspector: GateInspector,
+    ) -> None:
+        self._engagements = engagements
+        self._projects = projects
+        self._skillsets = skillsets
+        self._gate_inspector = gate_inspector
+
+    def execute(self, request: EngagementStatusRequest) -> EngagementStatusResponse:
+        engagement = self._engagements.get(request.client, request.engagement)
+        if engagement is None:
+            raise NotFoundError(
+                f"Engagement not found: {request.client}/{request.engagement}"
+            )
+
+        projects = self._projects.list_filtered(request.client, request.engagement)
+        positions: list[ProjectPositionInfo] = []
+
+        for project in projects:
+            skillset = self._skillsets.get(project.skillset)
+            if skillset is None or not skillset.is_implemented:
+                continue
+
+            stages = sorted(skillset.pipeline, key=lambda s: s.order)
+            completed_gates: list[str] = []
+            next_gate: str | None = None
+            current_stage = len(stages) + 1  # past the end = all complete
+
+            for i, stage in enumerate(stages):
+                if self._gate_inspector.exists(
+                    request.client,
+                    request.engagement,
+                    project.slug,
+                    stage.produces_gate,
+                ):
+                    completed_gates.append(stage.produces_gate)
+                elif next_gate is None:
+                    next_gate = stage.produces_gate
+                    current_stage = i + 1
+
+            positions.append(
+                ProjectPositionInfo(
+                    project_slug=project.slug,
+                    skillset=project.skillset,
+                    current_stage=current_stage,
+                    total_stages=len(stages),
+                    completed_gates=completed_gates,
+                    next_gate=next_gate,
+                )
+            )
+
+        return EngagementStatusResponse(
+            dashboard=EngagementDashboardInfo(
+                engagement_slug=request.engagement,
+                status=engagement.status.value,
+                projects=positions,
+            )
+        )
+
+
+class GetNextActionUseCase:
+    """Determine the recommended next skill execution.
+
+    Applies sequencing rules to the engagement's project positions:
+    1. Find projects with incomplete pipelines, ordered by creation date
+    2. For the earliest incomplete project, find first incomplete stage
+    3. Check prerequisite gate exists; if not, the project is blocked
+    4. Return skill name, project slug, and reason
+    """
+
+    def __init__(
+        self,
+        engagements: EngagementRepository,
+        projects: ProjectRepository,
+        skillsets: SkillsetRepository,
+        gate_inspector: GateInspector,
+    ) -> None:
+        self._engagements = engagements
+        self._projects = projects
+        self._skillsets = skillsets
+        self._gate_inspector = gate_inspector
+
+    def execute(self, request: NextActionRequest) -> NextActionResponse:
+        engagement = self._engagements.get(request.client, request.engagement)
+        if engagement is None:
+            raise NotFoundError(
+                f"Engagement not found: {request.client}/{request.engagement}"
+            )
+
+        projects = self._projects.list_filtered(request.client, request.engagement)
+        projects.sort(key=lambda p: p.created)
+
+        for project in projects:
+            skillset = self._skillsets.get(project.skillset)
+            if skillset is None or not skillset.is_implemented:
+                continue
+
+            stages = sorted(skillset.pipeline, key=lambda s: s.order)
+            for stage in stages:
+                gate_exists = self._gate_inspector.exists(
+                    request.client,
+                    request.engagement,
+                    project.slug,
+                    stage.produces_gate,
+                )
+                if gate_exists:
+                    continue
+
+                # Found first incomplete stage
+                if stage.prerequisite_gate:
+                    prereq_exists = self._gate_inspector.exists(
+                        request.client,
+                        request.engagement,
+                        project.slug,
+                        stage.prerequisite_gate,
+                    )
+                else:
+                    prereq_exists = True
+
+                if not prereq_exists:
+                    return NextActionResponse(
+                        skill=None,
+                        project_slug=project.slug,
+                        reason=(
+                            f"Blocked: prerequisite {stage.prerequisite_gate} "
+                            f"missing for {project.slug}"
+                        ),
+                    )
+
+                return NextActionResponse(
+                    skill=stage.skill,
+                    project_slug=project.slug,
+                    reason=(
+                        f"Run {stage.skill} for {project.slug}"
+                        + (
+                            f" (prerequisite {stage.prerequisite_gate} exists)"
+                            if stage.prerequisite_gate
+                            else ""
+                        )
+                    ),
+                )
+
+        return NextActionResponse(
+            skill=None,
+            project_slug=None,
+            reason="All projects complete — run review",
         )

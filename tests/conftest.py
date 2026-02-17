@@ -16,9 +16,12 @@ from practice.discovery import PipelineStage
 from practice.entities import (
     Confidence,
     Engagement,
+    EngagementDashboard,
     EngagementStatus,
+    NextAction,
     Profile,
     Project,
+    ProjectPipelinePosition,
     ProjectStatus,
     ResearchTopic,
     SkillsetSource,
@@ -265,6 +268,37 @@ def make_profile(**overrides) -> Profile:
         skillsets=["test-skillset"],
     )
     return Profile(**(defaults | overrides))
+
+
+def make_pipeline_position(**overrides) -> ProjectPipelinePosition:
+    defaults = dict(
+        project_slug=DEFAULT_PROJECT,
+        skillset="test-skillset",
+        current_stage=1,
+        total_stages=3,
+        completed_gates=[],
+        next_gate="brief.agreed.md",
+    )
+    return ProjectPipelinePosition(**(defaults | overrides))
+
+
+def make_engagement_dashboard(**overrides) -> EngagementDashboard:
+    defaults = dict(
+        engagement_slug=DEFAULT_ENGAGEMENT,
+        status="active",
+        projects=[],
+    )
+    return EngagementDashboard(**(defaults | overrides))
+
+
+def make_next_action(**overrides) -> NextAction:
+    defaults = dict(
+        skill="wm-research",
+        project_slug=DEFAULT_PROJECT,
+        reason="Run wm-research for maps-1",
+        prerequisite_exists=True,
+    )
+    return NextAction(**(defaults | overrides))
 
 
 def _write_skillsets(skillsets_root, skillsets):
