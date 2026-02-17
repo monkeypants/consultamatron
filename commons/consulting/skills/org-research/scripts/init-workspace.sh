@@ -11,7 +11,7 @@
 #                                            "Client onboarded" entry)
 #   clients/{client}/resources/index.json  — Research topic manifest (created empty)
 #
-# The files listed above are JSON documents managed by the consultamatron
+# The files listed above are JSON documents managed by the practice
 # CLI (bin/cli/). Agents may read these files directly for inspection.
 # Do not edit them by hand — use the CLI to ensure validation, timestamps,
 # and cross-file consistency are maintained.
@@ -34,4 +34,4 @@ if [[ -z "$CLIENT" ]]; then
   exit 1
 fi
 
-exec uv run --project "$REPO_DIR" consultamatron project init --client "$CLIENT"
+exec uv run --project "$REPO_DIR" practice project init --client "$CLIENT"

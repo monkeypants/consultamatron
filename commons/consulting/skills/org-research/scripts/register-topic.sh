@@ -11,7 +11,7 @@
 # Files modified by this script:
 #   clients/{client}/resources/index.json  — Research topic manifest (append)
 #
-# The files listed above are JSON documents managed by the consultamatron
+# The files listed above are JSON documents managed by the practice
 # CLI (bin/cli/). Agents may read these files directly for inspection.
 # Do not edit them by hand — use the CLI to ensure validation, timestamps,
 # and cross-file consistency are maintained.
@@ -37,7 +37,7 @@ if [[ -z "$CLIENT" || -z "$TOPIC" || -z "$FILENAME" || -z "$CONFIDENCE" ]]; then
   exit 1
 fi
 
-exec uv run --project "$REPO_DIR" consultamatron research add \
+exec uv run --project "$REPO_DIR" practice research add \
   --client "$CLIENT" \
   --topic "$TOPIC" \
   --filename "$FILENAME" \

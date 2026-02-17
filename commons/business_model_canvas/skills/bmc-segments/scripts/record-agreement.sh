@@ -10,7 +10,7 @@
 #   clients/{client}/engagements/{engagement}/{slug}/decisions.json — Decision log (append:
 #                                                                      "Stage 2: Customer segments agreed")
 #
-# The files listed above are JSON documents managed by the consultamatron
+# The files listed above are JSON documents managed by the practice
 # CLI (bin/cli/). Agents may read these files directly for inspection.
 # Do not edit them by hand — use the CLI to ensure validation, timestamps,
 # and cross-file consistency are maintained.
@@ -37,7 +37,7 @@ if [[ -z "$CLIENT" || -z "$ENGAGEMENT" || -z "$PROJECT" ]]; then
   exit 1
 fi
 
-CMD=(uv run --project "$REPO_DIR" consultamatron decision record \
+CMD=(uv run --project "$REPO_DIR" practice decision record \
   --client "$CLIENT" --engagement "$ENGAGEMENT" --project "$PROJECT" \
   --title "Stage 2: Customer segments agreed" \
   --field "Agreed=Customer segments and value propositions signed off")

@@ -14,7 +14,7 @@
 #   clients/{client}/engagements/{engagement}/projects.json        — Project registry
 #                                                                      (status -> elaboration)
 #
-# The files listed above are JSON documents managed by the consultamatron
+# The files listed above are JSON documents managed by the practice
 # CLI (bin/cli/). Agents may read these files directly for inspection.
 # Do not edit them by hand — use the CLI to ensure validation, timestamps,
 # and cross-file consistency are maintained.
@@ -23,7 +23,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
-CLI="uv run --project $REPO_DIR consultamatron"
+CLI="uv run --project $REPO_DIR practice"
 
 CLIENT="" ENGAGEMENT="" PROJECT=""
 FIELDS=()
