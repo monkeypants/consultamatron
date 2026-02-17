@@ -38,6 +38,7 @@ SKILLSETS: list[Skillset] = [
                 prerequisite_gate="resources/index.md",
                 produces_gate="engagements/index.json",
                 description="Stage 2: Engagement planned",
+                consumes=["topics", "confidence"],
             ),
             PipelineStage(
                 order=3,
@@ -45,6 +46,7 @@ SKILLSETS: list[Skillset] = [
                 prerequisite_gate="engagements/index.json",
                 produces_gate="review/review.agreed.md",
                 description="Stage 3: Post-implementation review agreed",
+                consumes=["projects", "decisions"],
             ),
         ],
     ),
