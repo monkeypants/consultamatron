@@ -147,9 +147,9 @@ Present the draft to the consultant for review. This follows the
 standard propose-negotiate-agree loop. Iterate until the consultant
 confirms the review is accurate and complete.
 
-**Do not create a `.agreed.md` gate artifact.** Review is terminal —
-nothing depends on it. Confirmation is verbal; the file itself is the
-record.
+When the consultant confirms the review is accurate and complete,
+write `engagements/{eng}/{slug}/review/review.agreed.md` as the gate
+artifact.
 
 ## Step 4: Sanitise findings
 
@@ -241,8 +241,10 @@ Apply `post-review` to all issues plus a category label:
 - **Two human approval gates.** Gate 1: private review content (Step 3,
   accuracy). Gate 2: sanitised findings (Step 4, confidentiality). Do
   not touch GitHub without passing both gates.
-- **No gate artifact.** Review is terminal. The `review/review.md` file
-  is the record, not a gate for downstream skills.
+- **Gate artifact.** `review/review.agreed.md` is the gate artifact,
+  written when the consultant confirms the review is accurate and
+  complete. Review is terminal — nothing downstream depends on it,
+  but the gate formalises the operator's agreement.
 - **Per-project reviews, engagement-level synthesis.** Each project gets
   its own `review/` directory under its engagement path. Cross-project
   patterns go in the client-level `review.md`.

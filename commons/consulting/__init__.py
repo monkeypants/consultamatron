@@ -43,7 +43,7 @@ SKILLSETS: list[Skillset] = [
                 order=3,
                 skill="review",
                 prerequisite_gate="engagements/index.json",
-                produces_gate="review.agreed.md",
+                produces_gate="review/review.agreed.md",
                 description="Stage 3: Post-implementation review agreed",
             ),
         ],
