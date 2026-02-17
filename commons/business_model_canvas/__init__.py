@@ -31,6 +31,7 @@ SKILLSETS: list[Skillset] = [
                 prerequisite_gate="resources/index.md",
                 produces_gate="brief.agreed.md",
                 description="Stage 1: Project brief agreed",
+                consumes=["topics", "confidence"],
             ),
             PipelineStage(
                 order=2,
@@ -38,6 +39,7 @@ SKILLSETS: list[Skillset] = [
                 prerequisite_gate="brief.agreed.md",
                 produces_gate="segments/segments.agreed.md",
                 description="Stage 2: Customer segments agreed",
+                consumes=["scope", "context"],
             ),
             PipelineStage(
                 order=3,
@@ -45,6 +47,7 @@ SKILLSETS: list[Skillset] = [
                 prerequisite_gate="segments/segments.agreed.md",
                 produces_gate="canvas.agreed.md",
                 description="Stage 3: Business Model Canvas agreed",
+                consumes=["segments", "value_propositions"],
             ),
         ],
     ),

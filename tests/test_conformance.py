@@ -121,6 +121,16 @@ class TestPipelineCoherence:
             f"slug_pattern missing {{n}} placeholder: {skillset['slug_pattern']}"
         )
 
+    @pytest.mark.parametrize("skillset", _IMPLEMENTED_DICTS, ids=_IMPLEMENTED_IDS)
+    def test_gate_consumes_declared(self, skillset):
+        """Stages with a prerequisite gate must declare what they consume."""
+        for stage in skillset["pipeline"]:
+            if stage["prerequisite_gate"]:
+                assert stage.get("consumes"), (
+                    f"Stage {stage['order']} ({stage['skill']}) in "
+                    f"{skillset['name']} has prerequisite_gate but no consumes"
+                )
+
 
 # ---------------------------------------------------------------------------
 # 2. Decision-title join (implemented skillsets only)

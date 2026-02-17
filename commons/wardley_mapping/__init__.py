@@ -49,6 +49,7 @@ SKILLSETS: list[Skillset] = [
                 prerequisite_gate="resources/index.md",
                 produces_gate="brief.agreed.md",
                 description="Stage 1: Project brief agreed",
+                consumes=["topics", "confidence"],
             ),
             PipelineStage(
                 order=2,
@@ -56,6 +57,7 @@ SKILLSETS: list[Skillset] = [
                 prerequisite_gate="brief.agreed.md",
                 produces_gate="needs/needs.agreed.md",
                 description="Stage 2: User needs agreed",
+                consumes=["scope", "context"],
             ),
             PipelineStage(
                 order=3,
@@ -63,6 +65,7 @@ SKILLSETS: list[Skillset] = [
                 prerequisite_gate="needs/needs.agreed.md",
                 produces_gate="chain/supply-chain.agreed.md",
                 description="Stage 3: Supply chain agreed",
+                consumes=["users", "needs"],
             ),
             PipelineStage(
                 order=4,
@@ -70,6 +73,7 @@ SKILLSETS: list[Skillset] = [
                 prerequisite_gate="chain/supply-chain.agreed.md",
                 produces_gate="evolve/map.agreed.owm",
                 description="Stage 4: Evolution map agreed",
+                consumes=["components", "dependencies"],
             ),
             PipelineStage(
                 order=5,
@@ -77,6 +81,7 @@ SKILLSETS: list[Skillset] = [
                 prerequisite_gate="evolve/map.agreed.owm",
                 produces_gate="strategy/map.agreed.owm",
                 description="Stage 5: Strategy map agreed",
+                consumes=["components", "evolution"],
             ),
         ],
     ),

@@ -61,6 +61,7 @@ SKILLSETS: list[Skillset] = [
                 prerequisite_gate="resources/index.md",
                 produces_gate="brief.agreed.md",
                 description="Stage 1: Skillset brief agreed",
+                consumes=["topics", "confidence"],
             ),
             PipelineStage(
                 order=2,
@@ -68,6 +69,7 @@ SKILLSETS: list[Skillset] = [
                 prerequisite_gate="brief.agreed.md",
                 produces_gate="research/synthesis.agreed.md",
                 description="Stage 2: Domain research synthesised",
+                consumes=["scope", "problem_domain"],
             ),
             PipelineStage(
                 order=3,
@@ -75,6 +77,7 @@ SKILLSETS: list[Skillset] = [
                 prerequisite_gate="research/synthesis.agreed.md",
                 produces_gate="design/design.agreed.md",
                 description="Stage 3: Pipeline design agreed",
+                consumes=["methodology", "patterns"],
             ),
             PipelineStage(
                 order=4,
@@ -82,6 +85,7 @@ SKILLSETS: list[Skillset] = [
                 prerequisite_gate="design/design.agreed.md",
                 produces_gate="implementation.agreed.md",
                 description="Stage 4: Implementation complete",
+                consumes=["pipeline", "skills", "gates"],
             ),
         ],
     ),
@@ -122,6 +126,7 @@ SKILLSETS: list[Skillset] = [
                 prerequisite_gate="resources/index.md",
                 produces_gate="assessment.agreed.md",
                 description="Stage 1: Quality assessment agreed",
+                consumes=["topics", "confidence"],
             ),
             PipelineStage(
                 order=2,
@@ -129,6 +134,7 @@ SKILLSETS: list[Skillset] = [
                 prerequisite_gate="assessment.agreed.md",
                 produces_gate="plan.agreed.md",
                 description="Stage 2: Improvement plan agreed",
+                consumes=["quality_scores", "issues"],
             ),
             PipelineStage(
                 order=3,
@@ -136,6 +142,7 @@ SKILLSETS: list[Skillset] = [
                 prerequisite_gate="plan.agreed.md",
                 produces_gate="iteration.agreed.md",
                 description="Stage 3: Iteration complete",
+                consumes=["changes", "acceptance_criteria"],
             ),
         ],
     ),
