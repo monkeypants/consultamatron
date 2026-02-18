@@ -339,3 +339,52 @@ Semantic bytecode.
 testing helpers; the core guarantees discovery, progress tracking, and
 conformance verification.
 **Applied:** engagement-protocol.md § 11.
+
+### Wetware Economics (3-Cost Model)
+**Consultamatron.** Cognitive load, attention fatigue, and background
+knowledge debt compound in the operator's cognitive budget — the
+operator-side parallel to token economics.
+**Applied:** wetware-efficiency.md § The cost model for wetware.
+
+### Operator as Sensor / Actuator / Insight Generator
+**Consultamatron.** The operator fills three irreplaceable roles in the
+dyad: reading socio-economic signals (sensor), taking real-world action
+(actuator), and synthesising judgment across information sources the
+model cannot access (insight generator). All three improve with
+understanding.
+**Applied:** wetware-efficiency.md § Three roles in the dyad.
+
+### Pedagogy as Compounding Investment
+**Consultamatron.** The operator learns across engagements; the LLM does
+not. Every unit of understanding built in the operator is a permanent
+improvement to dyad capability. Teaching through the work — making
+reasoning visible in proposals — is the mechanism.
+**Applied:** wetware-efficiency.md § Pedagogy as compounding investment.
+
+### Rubber-Stamp Failure Mode
+**Consultamatron.** An operator who does not understand a proposal cannot
+negotiate it, only accept or reject wholesale. This collapses the
+propose-negotiate-agree quality gate to a single-agent system with human
+latency.
+**Applied:** wetware-efficiency.md § Comprehension enables negotiation.
+
+### Background Knowledge Debt
+**Consultamatron.** An operator lacking analytical vocabulary must spend
+cognitive effort on translation before evaluation. This debt compounds
+at every encounter. Paying it down — building fluency — reduces
+per-interaction cost permanently.
+**Applied:** wetware-efficiency.md § The cost model for wetware.
+
+### Capability vs Dependency
+**Consultamatron.** A system that produces output the operator does not
+understand creates dependency. A system that produces output the operator
+progressively understands creates capability. Capability building
+improves the dyad's own performance by improving its collaborator.
+**Applied:** wetware-efficiency.md § The long game.
+
+### Graduation Gradient
+**Consultamatron.** Calibrate pedagogical investment to the operator's
+current fluency. New operators need reasoning chains and vocabulary
+reinforcement. Experienced operators need conclusions and evidence.
+Detect fluency from negotiation resolution.
+**Applied:** wetware-efficiency.md § The long game.
