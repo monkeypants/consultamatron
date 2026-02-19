@@ -51,7 +51,7 @@ and may extend with their own specifics.
 
 **Instance-level needs (specific):**
 - A particular client extends with needs driven by their situation —
-  "watch for signals about the CTO's appetite for build-vs-buy"
+  "watch for signals about the sponsor's appetite for build-vs-buy"
 - A particular skillset extends with needs driven by known gaps —
   "watch for cases where the evolution assessment stage takes too long"
 - A particular engagement extends with needs driven by its brief —
@@ -61,6 +61,130 @@ and may extend with their own specifics.
 Instance-level needs are the pecadilloes — specific to the target,
 declared by whoever knows the target best (the operator, the
 engagement brief, accumulated client knowledge).
+
+## Needs lifecycle
+
+Needs declaration is not a single event — it is distributed across
+the destination's lifecycle. Each destination type has multiple
+moments where needs are naturally created, refined, or retired.
+These moments already exist in the practice; the observation-routing
+system piggybacks on them.
+
+### Client workspace needs
+
+- **Research** — initial needs emerge from what we learn about the
+  client ("regulated industry — watch for compliance constraints")
+- **Engagement planning** — needs refined by engagement scope ("this
+  engagement focuses on go-to-market — watch for channel assumptions")
+- **During engagement** — gatepoint observations reveal gaps in
+  client knowledge (feedback loop)
+- **Engagement review** — retrospective: "what should we watch for
+  next time we work with this client?"
+- **Between engagements** — needs age. Some become more urgent, some
+  become irrelevant as the client evolves.
+
+### Engagement needs
+
+- **Planning** — "what risks should we watch for in this engagement?"
+- **During execution** — gatepoint feedback loop refines what to
+  watch for
+- **Review** — less about refining engagement needs (it's ending) and
+  more about promoting patterns to type-level
+
+### Skillset needs
+
+- **ns-design** — what signals does each pipeline stage need to know
+  if it's working?
+- **ns-implement** — are the declared needs actually observable?
+- **rs-assess** — what is the skillset blind to? What signals is it
+  not collecting?
+- **rs-iterate** — what signals confirm the improvement worked?
+- **During execution** — do declared needs actually produce useful
+  observations?
+
+### Personal needs
+
+- **Goal setting** — intentional: "I want to get better at X"
+- **During engagement** — emergent: operator notices their own
+  confusion or mastery
+- **Personal review** — reflective: "what did I learn, what gaps
+  remain?"
+
+### Practice layer needs
+
+- **Practice planning** — "what infrastructure improvements do we
+  need?"
+- **During engagement** — friction and tooling gaps surface
+  operationally
+- **Post-review pattern recognition** — "this keeps coming up across
+  engagements"
+
+### Who authors needs
+
+Distributed across the lifecycle like the declaration moments.
+At research and planning, the operator. At gatepoints, the agent
+proposes based on observations. At review, both reflect. At
+skillset engineering, the skillset author. The authoring follows
+the lifecycle — whoever is active at that moment is the natural
+author.
+
+## Needs evolution
+
+Needs evolve at two timescales.
+
+**Within an engagement.** Observations at gatepoint N produce needs
+for gatepoint N+1. The observation system feeds itself — the act of
+observing something interesting is also the act of declaring a need
+for the next inflection point.
+
+**Across engagements.** Patterns noticed in one engagement become
+instance-level needs. The same pattern noticed across several
+engagements gets promoted to type-level. The review skill is the
+natural moment for promotion — "this thing we kept watching for
+should be something we always watch for."
+
+Type-level needs evolve through this promotion path: instance →
+pattern → type. Each promotion is a methodology improvement
+observation routed to the type-level needs definition.
+
+This replaces the earlier "bag of tricks" concept. The bags were
+vague — "questions worth asking, grow with experience." Declared
+needs are concrete, owned by their destinations, and evolve through
+well-defined lifecycle moments.
+
+## Needs hygiene
+
+Needs have a full lifecycle: creation, refinement, and retirement.
+Without active maintenance, needs accumulate and degrade.
+
+**Staleness.** The context has changed and this need no longer
+applies — "watch for the CTO's build-vs-buy appetite" when the CTO
+has left. Needs degrade like any knowledge artifact.
+
+**Duplication.** Instance-level needs may overlap with type-level
+needs that were added later, or multiple instance needs from
+different gatepoints may converge on the same thing.
+
+**Supersession.** A vague early need was replaced by a more specific
+one but the vague one was never removed.
+
+**Unserved needs.** A need exists but no observation has ever
+addressed it. Two possible causes: the need is wrong (prune it) or
+the observation process has a blind spot (investigate it). The
+distinction matters.
+
+**Review moments** for needs hygiene align with the declaration
+lifecycle:
+- Engagement planning — review client needs from previous
+  engagements. Still relevant?
+- Engagement review — which needs were served? Which produced
+  nothing?
+- rs-assess — review skillset needs. Duplicative? Stale?
+- Personal review — achieved goals can be retired.
+
+The aggregation use case can flag duplicates mechanically when
+building the brief — if two needs are textually similar or serve
+the same destination, surface that for the operator.
 
 ## The aggregation use case
 
@@ -76,19 +200,6 @@ brief:
 The skill at the inflection point does not need to know about
 destinations, types, or inheritance. It asks the CLI for the
 observation needs brief and receives a synthesised document.
-
-## Needs grow through practice
-
-Type-level needs evolve as the practice matures — new generic needs
-are added when a pattern is observed across multiple engagements.
-Instance-level needs evolve as specific targets develop — the client
-workspace accumulates knowledge that refines what it needs to learn
-next.
-
-This replaces the earlier "bag of tricks" concept. The bags were
-vague — "questions worth asking, grow with experience." Declared
-needs are concrete, owned by their destinations, and aggregated
-mechanically.
 
 ## Where needs are declared
 
