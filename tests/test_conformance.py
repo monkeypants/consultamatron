@@ -40,8 +40,10 @@ from .conftest import (
     make_decision,
     make_engagement,
     make_engagement_dashboard,
+    make_item_freshness,
     make_knowledge_pack,
     make_next_action,
+    make_pack_freshness,
     make_pipeline_position,
     make_profile,
     make_project,
@@ -235,6 +237,23 @@ class TestEntityRoundTrip:
             pytest.param(
                 make_knowledge_pack(compilation_state=CompilationState.DIRTY),
                 id="KnowledgePack-dirty",
+            ),
+            pytest.param(
+                make_knowledge_pack(compilation_state=CompilationState.CORRUPT),
+                id="KnowledgePack-corrupt",
+            ),
+            pytest.param(make_item_freshness(), id="ItemFreshness"),
+            pytest.param(
+                make_item_freshness(state="orphan", is_composite=False),
+                id="ItemFreshness-orphan",
+            ),
+            pytest.param(make_pack_freshness(), id="PackFreshness"),
+            pytest.param(
+                make_pack_freshness(
+                    compilation_state=CompilationState.CORRUPT,
+                    items=[make_item_freshness(state="orphan")],
+                ),
+                id="PackFreshness-corrupt",
             ),
         ],
     )

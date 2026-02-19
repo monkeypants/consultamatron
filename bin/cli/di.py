@@ -16,6 +16,9 @@ from practice.bc_discovery import discover_all_bc_modules
 from bin.cli.infrastructure.filesystem_profile_repository import (
     FilesystemProfileRepository,
 )
+from bin.cli.infrastructure.filesystem_freshness_inspector import (
+    FilesystemFreshnessInspector,
+)
 from bin.cli.infrastructure.filesystem_gate_inspector import FilesystemGateInspector
 from bin.cli.infrastructure.filesystem_source_repository import (
     FilesystemSourceRepository,
@@ -71,6 +74,7 @@ from consulting.usecases import (
 )
 from practice.repositories import (
     Clock,
+    FreshnessInspector,
     GateInspector,
     IdGenerator,
     ProfileRepository,
@@ -153,6 +157,7 @@ class Container:
         self.profiles: ProfileRepository = FilesystemProfileRepository(
             config.repo_root, self.sources
         )
+        self.freshness_inspector: FreshnessInspector = FilesystemFreshnessInspector()
         self.gate_inspector: GateInspector = FilesystemGateInspector(
             config.workspace_root,
         )
