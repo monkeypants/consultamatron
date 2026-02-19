@@ -13,6 +13,9 @@ from bin.cli.dtos import (
     ListSkillsetsResponse,
     ListSourcesRequest,
     ListSourcesResponse,
+    PackItemInfo,
+    PackStatusRequest,
+    PackStatusResponse,
     ProfileInfo,
     RegisterProspectusRequest,
     RegisterProspectusResponse,
@@ -53,8 +56,10 @@ from consulting.usecases import (
     UpdateProjectStatusUseCase,
 )
 from practice.entities import Profile, Skillset, SkillsetSource
+from practice.entities import PackFreshness
 from practice.exceptions import DuplicateError, NotFoundError
 from practice.repositories import (
+    FreshnessInspector,
     ProfileRepository,
     ProjectPresenter,
     SiteRenderer,
@@ -71,6 +76,7 @@ __all__ = [
     "ListProjectsUseCase",
     "ListSkillsetsUseCase",
     "ListSourcesUseCase",
+    "PackStatusUseCase",
     "ListResearchTopicsUseCase",
     "RecordDecisionUseCase",
     "RegisterProjectUseCase",
@@ -414,3 +420,40 @@ class SkillPathUseCase:
                 return SkillPathResponse(path=str(skill_md.parent))
 
         raise NotFoundError(f"Skill not found: {request.name}")
+
+
+# ---------------------------------------------------------------------------
+# PackStatus — knowledge pack freshness inspection
+# ---------------------------------------------------------------------------
+
+
+def _freshness_to_response(freshness: PackFreshness) -> PackStatusResponse:
+    """Convert a PackFreshness tree into a PackStatusResponse tree."""
+    return PackStatusResponse(
+        pack_root=freshness.pack_root,
+        compilation_state=freshness.compilation_state.value,
+        deep_state=freshness.deep_state.value,
+        items=[
+            PackItemInfo(
+                name=item.name,
+                is_composite=item.is_composite,
+                state=item.state,
+            )
+            for item in freshness.items
+        ],
+        children=[_freshness_to_response(c) for c in freshness.children],
+    )
+
+
+class PackStatusUseCase:
+    """Show compilation freshness of a knowledge pack."""
+
+    def __init__(self, inspector: FreshnessInspector) -> None:
+        self._inspector = inspector
+
+    def execute(self, request: PackStatusRequest) -> PackStatusResponse:
+        root = Path(request.path).resolve()
+        if not (root / "index.md").is_file():
+            raise NotFoundError(f"No pack manifest at: {root}/index.md")
+        freshness = self._inspector.assess(root)
+        return _freshness_to_response(freshness)

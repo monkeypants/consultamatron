@@ -36,6 +36,7 @@ from bin.cli.usecases import (
     ListProfilesUseCase,
     ListSkillsetsUseCase,
     ListSourcesUseCase,
+    PackStatusUseCase,
     RegisterProspectusUseCase,
     RenderSiteUseCase,
     ShowProfileUseCase,
@@ -318,4 +319,7 @@ class Container:
         self.update_prospectus_usecase = UpdateProspectusUseCase(
             skillsets=self.skillsets,
             scaffold=self.scaffold,
+        )
+        self.pack_status_usecase = PackStatusUseCase(
+            inspector=self.freshness_inspector,
         )
