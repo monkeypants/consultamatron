@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import date, datetime, timezone
+from pathlib import Path
 
 from bin.cli.config import Config
 from bin.cli.infrastructure.code_skillset_repository import CodeSkillsetRepository
@@ -164,9 +165,6 @@ class Container:
         self.gate_inspector: GateInspector = FilesystemGateInspector(
             config.workspace_root,
         )
-        self.pack_nudger: PackNudger = FilesystemPackNudger(
-            config.repo_root, self.freshness_inspector
-        )
         self.site_renderer: SiteRenderer = JinjaSiteRenderer(
             workspace_root=config.workspace_root,
             repo_root=config.repo_root,
@@ -174,7 +172,10 @@ class Container:
 
         # -- BC discovery (presenters + service hooks) -------------------------
         self.presenters: dict[str, ProjectPresenter] = {}
+        skillset_bc_dirs: dict[str, Path] = {}
         for mod in discover_all_bc_modules(config.repo_root):
+            for skillset in getattr(mod, "SKILLSETS", []):
+                skillset_bc_dirs[skillset.name] = Path(mod.__file__).resolve().parent
             factory = getattr(mod, "PRESENTER_FACTORY", None)
             if factory is not None:
                 entries = factory if isinstance(factory, list) else [factory]
@@ -185,6 +186,10 @@ class Container:
             register = getattr(mod, "register_services", None)
             if register is not None:
                 register(self)
+
+        self.pack_nudger: PackNudger = FilesystemPackNudger(
+            config.repo_root, self.freshness_inspector, skillset_bc_dirs
+        )
 
         # -- Write usecases ------------------------------------------------
         self.initialize_workspace_usecase = InitializeWorkspaceUseCase(

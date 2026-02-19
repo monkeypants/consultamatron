@@ -26,6 +26,7 @@ from consulting.dtos import (
     AddEngagementEntryRequest,
     AddEngagementSourceRequest,
     CreateEngagementRequest,
+    EngagementStatusRequest,
     GetEngagementRequest,
     GetProjectRequest,
     InitializeWorkspaceRequest,
@@ -1015,3 +1016,35 @@ class TestUpdateProspectus:
                     description="Cannot update implemented.",
                 )
             )
+
+
+# ---------------------------------------------------------------------------
+# GetEngagementStatus (nudge scoping)
+# ---------------------------------------------------------------------------
+
+
+class TestEngagementStatusNudges:
+    """Engagement status nudges are scoped to the engagement's skillsets.
+
+    When checking engagement status, the usecase collects the skillset
+    names from the engagement's projects and passes them to the pack
+    nudger. This scopes freshness nudges to platform packs (always) and
+    BC packs belonging to the relevant skillsets (only when in play).
+    """
+
+    def test_nudges_scoped_to_engagement_skillsets(self, project):
+        """Engagement with wardley-mapping project → nudges are a subset of all nudges."""
+        all_nudges = project.pack_nudger.check(skillset_names=None)
+        resp = project.get_engagement_status_usecase.execute(
+            EngagementStatusRequest(client=CLIENT, engagement=ENGAGEMENT)
+        )
+        # Scoped nudges must be a subset of the unscoped set — scoping
+        # can only reduce, never add nudges.
+        assert set(resp.nudges) <= set(all_nudges)
+
+    def test_nudges_returned_as_list(self, project):
+        """Engagement status always returns nudges as a list, even when empty."""
+        resp = project.get_engagement_status_usecase.execute(
+            EngagementStatusRequest(client=CLIENT, engagement=ENGAGEMENT)
+        )
+        assert isinstance(resp.nudges, list)
