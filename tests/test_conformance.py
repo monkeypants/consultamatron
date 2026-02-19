@@ -660,6 +660,50 @@ class TestDesignTimePackFreshness:
 
 _BC_PACKAGES = _discover_bc_packages()
 
+
+# ---------------------------------------------------------------------------
+# 10. Script REPO_DIR resolution
+# ---------------------------------------------------------------------------
+
+_REPO_DIR_RE = re.compile(r"^REPO_DIR=", re.MULTILINE)
+_GIT_TOPLEVEL_RE = re.compile(r"git\b.*rev-parse\s+--show-toplevel")
+
+
+def _discover_all_skill_scripts():
+    """Return (relative_path, abs_path) for every .sh under commons/ skills."""
+    results = []
+    for script in sorted((_REPO_ROOT / "commons").rglob("scripts/*.sh")):
+        rel = script.relative_to(_REPO_ROOT)
+        results.append((str(rel), script))
+    return results
+
+
+_ALL_SKILL_SCRIPTS = _discover_all_skill_scripts()
+_ALL_SKILL_SCRIPT_IDS = [rel for rel, _ in _ALL_SKILL_SCRIPTS]
+
+
+@pytest.mark.doctrine
+class TestScriptRepoRoot:
+    """Skill scripts that set REPO_DIR must resolve the repo root reliably.
+
+    The correct pattern is ``git rev-parse --show-toplevel``, not relative
+    path traversal (``../..``) which breaks when the directory depth changes.
+    """
+
+    @pytest.mark.parametrize(
+        "script_entry", _ALL_SKILL_SCRIPTS, ids=_ALL_SKILL_SCRIPT_IDS
+    )
+    def test_repo_dir_uses_git_rev_parse(self, script_entry):
+        _, script_path = script_entry
+        source = script_path.read_text()
+        if not _REPO_DIR_RE.search(source):
+            pytest.skip("Script does not set REPO_DIR")
+        assert _GIT_TOPLEVEL_RE.search(source), (
+            f"{script_path.relative_to(_REPO_ROOT)} sets REPO_DIR without "
+            "git rev-parse --show-toplevel"
+        )
+
+
 # Build (bc_name, py_file) pairs for parametrization
 _IMPORT_RE = re.compile(r"^\s*(?:import|from)\s+([\w.]+)", re.MULTILINE)
 
