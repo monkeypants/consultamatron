@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import os
+import time
 import uuid
 from datetime import date, datetime, timezone
 from pathlib import Path
@@ -15,12 +17,15 @@ from consulting.entities import DecisionEntry, EngagementEntry
 from practice.discovery import PipelineStage
 from practice.entities import (
     ActorGoal,
+    CompilationState,
     Confidence,
     Engagement,
     EngagementDashboard,
     EngagementStatus,
+    ItemFreshness,
     KnowledgePack,
     NextAction,
+    PackFreshness,
     Profile,
     Project,
     ProjectPipelinePosition,
@@ -336,3 +341,96 @@ def seed_all_skillsets(skillsets_root):
 
     repo = CodeSkillsetRepository(_REPO_ROOT)
     _write_skillsets(skillsets_root, repo.list_all())
+
+
+# ---------------------------------------------------------------------------
+# Freshness value object builders
+# ---------------------------------------------------------------------------
+
+
+def make_item_freshness(**overrides) -> ItemFreshness:
+    defaults = dict(
+        name="test-item",
+        is_composite=False,
+        state="clean",
+    )
+    return ItemFreshness(**(defaults | overrides))
+
+
+def make_pack_freshness(**overrides) -> PackFreshness:
+    defaults = dict(
+        pack_root="/tmp/test-pack",
+        compilation_state=CompilationState.CLEAN,
+        items=[make_item_freshness()],
+    )
+    return PackFreshness(**(defaults | overrides))
+
+
+# ---------------------------------------------------------------------------
+# Filesystem helpers for freshness tests
+# ---------------------------------------------------------------------------
+
+
+def write_pack(tmp_path, name, items, *, bytecode=None, children=None):
+    """Create a pack directory with controlled timestamps.
+
+    items: dict of {name: content} — creates {name}.md files
+    bytecode: dict of {name: content} — creates _bytecode/{name}.md
+    children: list of (name, items, bytecode) tuples — nested packs
+    Returns the pack root Path.
+    """
+    pack_root = tmp_path / name
+    pack_root.mkdir(parents=True, exist_ok=True)
+
+    # Write index.md (manifest)
+    (pack_root / "index.md").write_text("---\nname: test\n---\n")
+
+    # Write items
+    for item_name, content in items.items():
+        (pack_root / f"{item_name}.md").write_text(content)
+
+    # Write bytecode
+    if bytecode is not None:
+        bc_dir = pack_root / "_bytecode"
+        bc_dir.mkdir(exist_ok=True)
+        for bc_name, content in bytecode.items():
+            (bc_dir / f"{bc_name}.md").write_text(content)
+
+    # Write children (nested packs)
+    if children is not None:
+        for child_name, child_items, child_bytecode in children:
+            child_root = pack_root / child_name
+            child_root.mkdir(exist_ok=True)
+            (child_root / "index.md").write_text("---\nname: child\n---\n")
+            for item_name, content in child_items.items():
+                (child_root / f"{item_name}.md").write_text(content)
+            if child_bytecode is not None:
+                child_bc = child_root / "_bytecode"
+                child_bc.mkdir(exist_ok=True)
+                for bc_name, content in child_bytecode.items():
+                    (child_bc / f"{bc_name}.md").write_text(content)
+
+    return pack_root
+
+
+def age_file(path, seconds=10):
+    """Set a file's mtime to ``seconds`` ago."""
+    now = time.time()
+    os.utime(path, (now - seconds, now - seconds))
+
+
+def freshen_file(path, seconds=0):
+    """Set a file's mtime to now + offset."""
+    now = time.time()
+    os.utime(path, (now + seconds, now + seconds))
+
+
+class StubCompiler:
+    """Deterministic compiler for testing pack-and-wrap orchestration."""
+
+    def __init__(self):
+        self.calls: list[Path] = []
+
+    def compile(self, item_path: Path, pack_root: Path) -> str:
+        self.calls.append(item_path)
+        return f"Summary of {item_path.stem}"

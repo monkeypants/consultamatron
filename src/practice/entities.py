@@ -328,11 +328,14 @@ class CompilationState(str, Enum):
     CLEAN: bytecode exists and is newer than all source items.
     DIRTY: bytecode exists but at least one item is newer.
     ABSENT: no _bytecode/ directory.
+    CORRUPT: bytecode has orphan mirrors — summaries with no
+        corresponding source item.
     """
 
     CLEAN = "clean"
     DIRTY = "dirty"
     ABSENT = "absent"
+    CORRUPT = "corrupt"
 
 
 @runtime_checkable
@@ -368,3 +371,45 @@ class KnowledgePack(BaseModel):
     actor_goals: list[ActorGoal]
     triggers: list[str]
     compilation_state: CompilationState = CompilationState.ABSENT
+
+
+# ---------------------------------------------------------------------------
+# Freshness assessment (computed from filesystem state)
+# ---------------------------------------------------------------------------
+
+
+class ItemFreshness(BaseModel):
+    """Per-item compilation status within a pack."""
+
+    name: str
+    is_composite: bool
+    state: str  # "clean" | "dirty" | "orphan" | "absent"
+
+
+class PackFreshness(BaseModel):
+    """Complete freshness assessment of a knowledge pack.
+
+    compilation_state is the rollup for this level only (shallow).
+    Use deep_state to include descendant pack states.
+    """
+
+    pack_root: str  # string, not Path (for serialisation)
+    compilation_state: CompilationState
+    items: list[ItemFreshness]
+    children: list["PackFreshness"] = []
+
+    @property
+    def deep_state(self) -> CompilationState:
+        """Worst state across self and all descendants.
+
+        Precedence: CORRUPT > DIRTY > ABSENT > CLEAN.
+        """
+        states = [self.compilation_state] + [c.deep_state for c in self.children]
+        for s in (
+            CompilationState.CORRUPT,
+            CompilationState.DIRTY,
+            CompilationState.ABSENT,
+        ):
+            if s in states:
+                return s
+        return CompilationState.CLEAN
