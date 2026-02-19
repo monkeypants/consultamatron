@@ -64,6 +64,7 @@ from consulting.usecases import (
     GetNextActionUseCase,
     GetProjectProgressUseCase,
     GetProjectUseCase,
+    GetWipStatusUseCase,
     InitializeWorkspaceUseCase,
     ListDecisionsUseCase,
     ListEngagementsUseCase,
@@ -318,6 +319,13 @@ class Container:
         self.get_next_action_usecase = GetNextActionUseCase(
             engagements=self.engagement_entities,
             projects=self.projects,
+            skillsets=self.skillsets,
+            gate_inspector=self.gate_inspector,
+            pack_nudger=self.pack_nudger,
+        )
+        self.get_wip_status_usecase = GetWipStatusUseCase(
+            projects=self.projects,
+            engagements=self.engagement_entities,
             skillsets=self.skillsets,
             gate_inspector=self.gate_inspector,
             pack_nudger=self.pack_nudger,

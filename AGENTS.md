@@ -24,12 +24,13 @@ Do not assume you know which skills, skillsets, or profiles exist.
 Discover everything through the practice CLI:
 
 ```bash
-uv run practice profile list                     # activity profiles
-uv run practice profile show --name <name>       # skillsets in a profile
-uv run practice skillset list                     # all registered skillsets
-uv run practice skillset show --name <name>       # pipeline, gates, skill names
-uv run practice skill path --name <name>          # filesystem path to a skill
-uv run practice project progress                  # current pipeline position
+uv run practice wip                                          # all work in progress
+uv run practice profile list                                 # activity profiles
+uv run practice profile show --name <name>                   # skillsets in a profile
+uv run practice skillset list                                # all registered skillsets
+uv run practice skillset show --name <name>                  # pipeline, gates, skill names
+uv run practice skill path --name <name>                     # filesystem path to a skill
+uv run practice project progress                             # current pipeline position
 uv run practice engagement status --client X --engagement Y  # pipeline position for all projects
 uv run practice engagement next --client X --engagement Y    # recommended next skill
 ```
@@ -38,16 +39,18 @@ Read the SKILL.md file before executing any skill.
 
 ## Engagement steering
 
-1. Check `clients/` for existing workspaces and engagements
-2. If resuming: read the engagement log and decision logs
+1. Run `practice wip` to see all work in progress across clients
+2. If resuming: pick up where the WIP list shows incomplete work
 3. If new: run `org-research` then `engage` to plan work
-4. Use `engagement status` to see pipeline position for all projects
+4. Use `engagement status` for detail on a specific engagement
 5. Use `engagement next` for a recommendation on which skill to run
 6. Execute projects through their skillset pipelines
 7. Run `review` after all projects complete
+8. When you finish a skill, check `practice wip` and ask the
+   operator which work item to continue with
 
-If the user's request is ambiguous, use `engagement status` to derive
-where the engagement is from gate artifacts on disk.
+If the user's request is ambiguous, use `practice wip` to see what
+work exists, then `engagement status` for detail.
 
 The `engagement status`, `engagement next`, and `project progress`
 commands check knowledge pack freshness and surface hints when packs

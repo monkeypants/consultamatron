@@ -25,6 +25,8 @@ from consulting.dtos import (
     GetProjectProgressResponse,
     GetProjectRequest,
     GetProjectResponse,
+    GetWipRequest,
+    GetWipResponse,
     InitializeWorkspaceRequest,
     InitializeWorkspaceResponse,
     ListDecisionsRequest,
@@ -51,6 +53,8 @@ from consulting.dtos import (
     StageProgress,
     UpdateProjectStatusRequest,
     UpdateProjectStatusResponse,
+    WipEngagementInfo,
+    WipProjectInfo,
 )
 from consulting.entities import DecisionEntry, EngagementEntry
 from consulting.repositories import (
@@ -956,5 +960,123 @@ class GetNextActionUseCase:
             skill=None,
             project_slug=None,
             reason="All projects complete — run review",
+            nudges=nudges,
+        )
+
+
+class GetWipStatusUseCase:
+    """Scan all clients for in-progress work.
+
+    Walks every client workspace, finds non-closed engagements with
+    non-closed projects, checks pipeline gate existence, and returns
+    only projects that have incomplete pipelines.
+    """
+
+    def __init__(
+        self,
+        projects: ProjectRepository,
+        engagements: EngagementRepository,
+        skillsets: SkillsetRepository,
+        gate_inspector: GateInspector,
+        pack_nudger: PackNudger | None = None,
+    ) -> None:
+        self._projects = projects
+        self._engagements = engagements
+        self._skillsets = skillsets
+        self._gate_inspector = gate_inspector
+        self._pack_nudger = pack_nudger
+
+    def execute(self, request: GetWipRequest) -> GetWipResponse:
+        if request.client is not None:
+            clients = [request.client]
+        else:
+            clients = self._projects.list_clients()
+
+        result_engagements: list[WipEngagementInfo] = []
+        skillset_names: list[str] = []
+
+        for client in clients:
+            engagements = self._engagements.list_all(client)
+            for eng in engagements:
+                if eng.status == EngagementStatus.CLOSED:
+                    continue
+
+                projects = self._projects.list_filtered(client, eng.slug)
+                wip_projects: list[WipProjectInfo] = []
+
+                for project in projects:
+                    if project.status == ProjectStatus.CLOSED:
+                        continue
+
+                    skillset = self._skillsets.get(project.skillset)
+                    if skillset is None or not skillset.is_implemented:
+                        continue
+
+                    skillset_names.append(project.skillset)
+                    stages = sorted(skillset.pipeline, key=lambda s: s.order)
+
+                    completed_count = 0
+                    next_skill: str | None = None
+                    next_gate: str | None = None
+                    blocked = False
+                    blocked_reason: str | None = None
+
+                    for stage in stages:
+                        gate_exists = self._gate_inspector.exists(
+                            client,
+                            eng.slug,
+                            project.slug,
+                            stage.produces_gate,
+                        )
+                        if gate_exists:
+                            completed_count += 1
+                            continue
+
+                        if next_skill is None:
+                            next_skill = stage.skill
+                            next_gate = stage.produces_gate
+                            if stage.prerequisite_gate:
+                                prereq_exists = self._gate_inspector.exists(
+                                    client,
+                                    eng.slug,
+                                    project.slug,
+                                    stage.prerequisite_gate,
+                                )
+                                if not prereq_exists:
+                                    blocked = True
+                                    blocked_reason = f"prerequisite {stage.prerequisite_gate} missing"
+
+                    if completed_count == len(stages):
+                        continue  # all gates present — project complete
+
+                    wip_projects.append(
+                        WipProjectInfo(
+                            client=client,
+                            engagement=eng.slug,
+                            project_slug=project.slug,
+                            skillset=project.skillset,
+                            current_stage=completed_count + 1,
+                            total_stages=len(stages),
+                            next_skill=next_skill,
+                            next_gate=next_gate,
+                            blocked=blocked,
+                            blocked_reason=blocked_reason,
+                        )
+                    )
+
+                if wip_projects:
+                    result_engagements.append(
+                        WipEngagementInfo(
+                            client=client,
+                            engagement_slug=eng.slug,
+                            status=eng.status.value,
+                            projects=wip_projects,
+                        )
+                    )
+
+        nudges = self._pack_nudger.check(skillset_names) if self._pack_nudger else []
+
+        return GetWipResponse(
+            engagements=result_engagements,
             nudges=nudges,
         )
