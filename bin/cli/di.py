@@ -19,6 +19,7 @@ from bin.cli.infrastructure.filesystem_profile_repository import (
 from bin.cli.infrastructure.filesystem_freshness_inspector import (
     FilesystemFreshnessInspector,
 )
+from bin.cli.infrastructure.pack_nudger import FilesystemPackNudger
 from bin.cli.infrastructure.filesystem_gate_inspector import FilesystemGateInspector
 from bin.cli.infrastructure.filesystem_source_repository import (
     FilesystemSourceRepository,
@@ -78,6 +79,7 @@ from practice.repositories import (
     FreshnessInspector,
     GateInspector,
     IdGenerator,
+    PackNudger,
     ProfileRepository,
     ProjectPresenter,
     SiteRenderer,
@@ -161,6 +163,9 @@ class Container:
         self.freshness_inspector: FreshnessInspector = FilesystemFreshnessInspector()
         self.gate_inspector: GateInspector = FilesystemGateInspector(
             config.workspace_root,
+        )
+        self.pack_nudger: PackNudger = FilesystemPackNudger(
+            config.repo_root, self.freshness_inspector
         )
         self.site_renderer: SiteRenderer = JinjaSiteRenderer(
             workspace_root=config.workspace_root,
@@ -253,6 +258,7 @@ class Container:
             projects=self.projects,
             decisions=self.decisions,
             skillsets=self.skillsets,
+            pack_nudger=self.pack_nudger,
         )
         self.list_decisions_usecase = ListDecisionsUseCase(
             decisions=self.decisions,
@@ -302,12 +308,14 @@ class Container:
             projects=self.projects,
             skillsets=self.skillsets,
             gate_inspector=self.gate_inspector,
+            pack_nudger=self.pack_nudger,
         )
         self.get_next_action_usecase = GetNextActionUseCase(
             engagements=self.engagement_entities,
             projects=self.projects,
             skillsets=self.skillsets,
             gate_inspector=self.gate_inspector,
+            pack_nudger=self.pack_nudger,
         )
 
         # -- Prospectus usecases -------------------------------------------

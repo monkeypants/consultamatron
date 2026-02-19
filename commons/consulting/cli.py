@@ -37,6 +37,14 @@ from consulting.dtos import (
 # ---------------------------------------------------------------------------
 
 
+def _echo_nudges(resp: Any) -> None:
+    nudges = getattr(resp, "nudges", None)
+    if nudges:
+        click.echo()
+        for nudge in nudges:
+            click.echo(f"  hint: {nudge}")
+
+
 def _format_init_workspace(resp: Any) -> None:
     click.echo(f"Initialized workspace for '{resp.client}'")
 
@@ -80,6 +88,7 @@ def _format_project_progress(resp: Any) -> None:
         click.echo(f"\nCurrent: {resp.current_stage}")
     if resp.next_prerequisite:
         click.echo(f"Next gate: {resp.next_prerequisite}")
+    _echo_nudges(resp)
 
 
 def _format_decision_record(resp: Any) -> None:
@@ -114,10 +123,12 @@ def _format_engagement_status(resp: Any) -> None:
             click.echo("    All stages complete.")
         elif p.next_gate:
             click.echo(f"    Next gate: {p.next_gate}")
+    _echo_nudges(resp)
 
 
 def _format_next_action(resp: Any) -> None:
     click.echo(resp.reason)
+    _echo_nudges(resp)
 
 
 def _format_engagement_add(resp: Any) -> None:

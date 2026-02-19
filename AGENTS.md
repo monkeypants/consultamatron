@@ -49,6 +49,11 @@ Read the SKILL.md file before executing any skill.
 If the user's request is ambiguous, use `engagement status` to derive
 where the engagement is from gate artifacts on disk.
 
+The `engagement status`, `engagement next`, and `project progress`
+commands check knowledge pack freshness and surface hints when packs
+are dirty or corrupt. Act on these hints before executing skills that
+depend on stale knowledge.
+
 ## Workspace
 
 ```
