@@ -13,7 +13,7 @@ import pytest
 from bin.cli.config import Config
 from bin.cli.di import Container
 from bin.cli.dtos import RenderSiteRequest
-from consulting.dtos import (
+from bin.cli.dtos import (
     CreateEngagementRequest,
     InitializeWorkspaceRequest,
     RegisterProjectRequest,

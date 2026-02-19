@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 
 from bin.cli.di import Container
-from consulting.dtos import (
+from bin.cli.dtos import (
     CreateEngagementRequest,
     GetProjectProgressRequest,
     InitializeWorkspaceRequest,

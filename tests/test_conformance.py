@@ -28,7 +28,7 @@ from bin.cli.di import Container
 from practice.bc_discovery import discover_all_bc_modules
 from practice.entities import SkillManifest
 from practice.frontmatter import parse_frontmatter
-from consulting.dtos import (
+from bin.cli.dtos import (
     CreateEngagementRequest,
     GetProjectProgressRequest,
     InitializeWorkspaceRequest,

@@ -22,7 +22,7 @@ from bin.cli.dtos import (
     RegisterProspectusRequest,
     UpdateProspectusRequest,
 )
-from consulting.dtos import (
+from bin.cli.dtos import (
     AddEngagementEntryRequest,
     AddEngagementSourceRequest,
     CreateEngagementRequest,
@@ -40,7 +40,7 @@ from consulting.dtos import (
     RemoveEngagementSourceRequest,
     UpdateProjectStatusRequest,
 )
-from consulting.entities import DecisionEntry
+from practice.entities import DecisionEntry
 from practice.exceptions import DuplicateError, InvalidTransitionError, NotFoundError
 from bin.cli.di import Container
 

@@ -4,13 +4,14 @@ Entities that appear in protocol signatures in this package are shared
 vocabulary across all bounded contexts. They live here — not in any
 single BC — so that dependency direction flows downward.
 
-Lifecycle-only entities (DecisionEntry, EngagementEntry) belong in
-their bounded context, not here.
+Domain exceptions live in practice.exceptions.
+Deliverable content entities live in practice.content.
+PipelineStage lives in practice.discovery.
 """
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
 from enum import Enum
 from typing import Protocol, runtime_checkable
 
@@ -215,6 +216,44 @@ class NextAction(BaseModel):
     project_slug: str
     reason: str
     prerequisite_exists: bool
+
+
+# ---------------------------------------------------------------------------
+# Lifecycle accounting entities
+# ---------------------------------------------------------------------------
+
+
+class DecisionEntry(BaseModel):
+    """A timestamped decision recorded during a project.
+
+    Immutable — created once, never updated or deleted.
+    The date field is for human display; timestamp is for ordering.
+    """
+
+    id: str
+    client: str
+    engagement: str
+    project_slug: str
+    date: date
+    timestamp: datetime
+    title: str
+    fields: dict[str, str]
+
+
+class EngagementEntry(BaseModel):
+    """A timestamped entry in the client engagement log.
+
+    Immutable — created once, never updated or deleted.
+    The date field is for human display; timestamp is for ordering.
+    """
+
+    id: str
+    client: str
+    engagement: str
+    date: date
+    timestamp: datetime
+    title: str
+    fields: dict[str, str]
 
 
 # ---------------------------------------------------------------------------

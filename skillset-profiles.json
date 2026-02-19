@@ -3,7 +3,7 @@
         "name": "strategic-consulting",
         "display_name": "Strategic Consulting",
         "description": "Full engagement lifecycle with analytical skillsets.",
-        "skillsets": ["consulting", "wardley-mapping", "business-model-canvas"]
+        "skillsets": ["wardley-mapping", "business-model-canvas"]
     },
     {
         "name": "practice-engineering",

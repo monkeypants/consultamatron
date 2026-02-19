@@ -41,7 +41,7 @@ Read the SKILL.md file before executing any skill.
 
 1. Run `practice wip` to see all work in progress across clients
 2. If resuming: pick up where the WIP list shows incomplete work
-3. If new: run `org-research` then `engage` to plan work
+3. If new: run `org-research`, then use the CLI to create engagements and register projects
 4. Use `engagement status` for detail on a specific engagement
 5. Use `engagement next` for a recommendation on which skill to run
 6. Execute projects through their skillset pipelines
