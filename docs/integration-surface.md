@@ -189,6 +189,38 @@ skillsets exist in advance. A new skillset that satisfies the conventions
 is discovered automatically — the Open/Closed Principle (Martin) applied
 to the integration surface.
 
+## Shared kernels follow the pack convention
+
+At every level of the hierarchy, a context provides a knowledge pack
+directory that its child contexts consume as a shared kernel:
+
+| Level | Shared kernel | Producer | Consumers |
+|---|---|---|---|
+| Practice | `docs/` | practice development | all skillsets (design time) |
+| Skillset | `{skillset}/docs/` | ns-implement | all skills in that skillset |
+| Client | `clients/{org}/resources/` | org-research | all engagements for that client |
+| Engagement | `{engagement}/resources/` | engagement-scoped research | all projects in that engagement |
+
+The pattern: **a parent context's knowledge pack directory is the shared
+kernel for its children.** Every shared kernel listed above is produced
+by a research-like activity, follows the semantic pack convention
+(`index.md` manifest, typed items, optional `_bytecode/` mirror), and
+is immutable after agreement.
+
+This is not a separate convention from knowledge packs. It is knowledge
+packs applied structurally: the pack convention already defines how
+knowledge is stored and discovered; the shared kernel convention says
+where in the hierarchy a pack sits and who depends on it. Conformance
+tests that verify pack shape (`doctrine_pack_shape`) transitively verify
+shared kernel structure.
+
+The convention has a diagnostic use. When integration friction involves
+two sibling contexts needing different things from the same shared data,
+the shared kernel is too large. The remedy (per Evans) is to narrow the
+kernel and move context-specific translation into per-context
+anti-corruption layers — which in this architecture means per-skillset
+research skills.
+
 ## What this is not
 
 This is not a framework. A skillset author does not inherit from a base

@@ -36,7 +36,7 @@ The class docstring becomes the command's `--help` text.
 Every field needs `Field(description=...)` — the description becomes
 the `--help` text for that option.
 
-See `docs/docstring-conventions.md` for what belongs in each layer's
+See `docs/dev/docstring-conventions.md` for what belongs in each layer's
 docstring.
 
 ### 2. Write the usecase
