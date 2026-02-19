@@ -7,12 +7,15 @@ from __future__ import annotations
 from pathlib import Path
 
 from bin.cli.dtos import (
+    AggregateNeedsBriefRequest,
+    AggregateNeedsBriefResponse,
     ListProfilesRequest,
     ListProfilesResponse,
     ListSkillsetsRequest,
     ListSkillsetsResponse,
     ListSourcesRequest,
     ListSourcesResponse,
+    ObservationNeedInfo,
     PackItemInfo,
     PackStatusRequest,
     PackStatusResponse,
@@ -21,6 +24,9 @@ from bin.cli.dtos import (
     RegisterProspectusResponse,
     RenderSiteRequest,
     RenderSiteResponse,
+    RouteObservationsRequest,
+    RouteObservationsResponse,
+    RoutingDestinationInfo,
     ShowProfileRequest,
     ShowProfileResponse,
     ShowSkillsetRequest,
@@ -55,19 +61,32 @@ from consulting.usecases import (
     RegisterResearchTopicUseCase,
     UpdateProjectStatusUseCase,
 )
-from practice.entities import Profile, Skillset, SkillsetSource
-from practice.entities import PackFreshness
+from practice.entities import (
+    Observation,
+    ObservationNeed,
+    PackFreshness,
+    Profile,
+    RoutingDestination,
+    Skillset,
+    SkillsetSource,
+)
 from practice.exceptions import DuplicateError, NotFoundError
 from practice.repositories import (
     FreshnessInspector,
+    NeedsReader,
+    ObservationWriter,
+    PackNudger,
     ProfileRepository,
     ProjectPresenter,
     SiteRenderer,
     SourceRepository,
 )
+from practice.routing import build_routing_allow_list
 
 __all__ = [
     "AddEngagementEntryUseCase",
+    "AggregateNeedsBriefUseCase",
+    "RouteObservationsUseCase",
     "GetProjectProgressUseCase",
     "GetProjectUseCase",
     "InitializeWorkspaceUseCase",
@@ -457,3 +476,172 @@ class PackStatusUseCase:
             raise NotFoundError(f"No pack manifest at: {root}/index.md")
         freshness = self._inspector.assess(root)
         return _freshness_to_response(freshness)
+
+
+# ---------------------------------------------------------------------------
+# Observation routing — needs aggregation
+# ---------------------------------------------------------------------------
+
+
+def _need_to_info(n: ObservationNeed) -> ObservationNeedInfo:
+    return ObservationNeedInfo(
+        slug=n.slug,
+        owner_type=n.owner_type,
+        owner_ref=n.owner_ref,
+        level=n.level,
+        need=n.need,
+        rationale=n.rationale,
+        lifecycle_moment=n.lifecycle_moment,
+        served=n.served,
+    )
+
+
+class AggregateNeedsBriefUseCase:
+    """Aggregate observation needs for an engagement context.
+
+    Builds the routing allow list, gathers type- and instance-level
+    needs for each eligible destination, and returns a structured brief.
+    """
+
+    def __init__(
+        self,
+        engagements: EngagementRepository,
+        projects: ProjectRepository,
+        sources: SourceRepository,
+        needs_reader: NeedsReader,
+        pack_nudger: PackNudger,
+    ) -> None:
+        self._engagements = engagements
+        self._projects = projects
+        self._sources = sources
+        self._needs_reader = needs_reader
+        self._pack_nudger = pack_nudger
+
+    def execute(
+        self, request: AggregateNeedsBriefRequest
+    ) -> AggregateNeedsBriefResponse:
+        engagement = self._engagements.get(request.client, request.engagement)
+        if engagement is None:
+            raise NotFoundError(
+                f"Engagement not found: {request.client}/{request.engagement}"
+            )
+
+        projects = self._projects.list_filtered(request.client, request.engagement)
+
+        # Resolve sources from engagement config
+        resolved_sources = []
+        for source_slug in engagement.allowed_sources:
+            src = self._sources.get(source_slug)
+            if src:
+                resolved_sources.append(src)
+
+        allow_list = build_routing_allow_list(
+            client=request.client,
+            engagement=engagement,
+            projects=projects,
+            sources=resolved_sources,
+        )
+
+        # Gather needs for each eligible destination
+        needs: list[ObservationNeed] = []
+        seen_types: set[str] = set()
+        for dest in allow_list.destinations:
+            # Type-level needs (once per owner_type)
+            if dest.owner_type not in seen_types:
+                seen_types.add(dest.owner_type)
+                needs.extend(self._needs_reader.type_level_needs(dest.owner_type))
+            # Instance-level needs
+            needs.extend(
+                self._needs_reader.instance_needs(dest.owner_type, dest.owner_ref)
+            )
+
+        nudges = self._pack_nudger.check()
+
+        return AggregateNeedsBriefResponse(
+            needs=[_need_to_info(n) for n in needs],
+            destinations=[
+                RoutingDestinationInfo(owner_type=d.owner_type, owner_ref=d.owner_ref)
+                for d in allow_list.destinations
+            ],
+            nudges=nudges,
+        )
+
+
+class RouteObservationsUseCase:
+    """Route observations to their declared destinations.
+
+    Rebuilds the allow list, filters each observation's destinations
+    against it, writes eligible observations via ObservationWriter,
+    and counts routed vs rejected.
+    """
+
+    def __init__(
+        self,
+        engagements: EngagementRepository,
+        projects: ProjectRepository,
+        sources: SourceRepository,
+        observation_writer: ObservationWriter,
+    ) -> None:
+        self._engagements = engagements
+        self._projects = projects
+        self._sources = sources
+        self._writer = observation_writer
+
+    def execute(self, request: RouteObservationsRequest) -> RouteObservationsResponse:
+        import json
+
+        engagement = self._engagements.get(request.client, request.engagement)
+        if engagement is None:
+            raise NotFoundError(
+                f"Engagement not found: {request.client}/{request.engagement}"
+            )
+
+        projects = self._projects.list_filtered(request.client, request.engagement)
+
+        resolved_sources = []
+        for source_slug in engagement.allowed_sources:
+            src = self._sources.get(source_slug)
+            if src:
+                resolved_sources.append(src)
+
+        allow_list = build_routing_allow_list(
+            client=request.client,
+            engagement=engagement,
+            projects=projects,
+            sources=resolved_sources,
+        )
+        allowed_set = {(d.owner_type, d.owner_ref) for d in allow_list.destinations}
+
+        raw_observations = json.loads(request.observations)
+        routed = 0
+        rejected = 0
+
+        for raw in raw_observations:
+            eligible = []
+            ineligible_count = 0
+            for dest_data in raw.get("destinations", []):
+                key = (dest_data["owner_type"], dest_data["owner_ref"])
+                if key in allowed_set:
+                    eligible.append(
+                        RoutingDestination(
+                            owner_type=dest_data["owner_type"],
+                            owner_ref=dest_data["owner_ref"],
+                        )
+                    )
+                else:
+                    ineligible_count += 1
+
+            rejected += ineligible_count
+
+            if eligible:
+                obs = Observation(
+                    slug=raw["slug"],
+                    source_inflection=raw["source_inflection"],
+                    need_refs=raw.get("need_refs", []),
+                    content=raw.get("content", ""),
+                    destinations=eligible,
+                )
+                self._writer.write(obs)
+                routed += len(eligible)
+
+        return RouteObservationsResponse(routed=routed, rejected=rejected)

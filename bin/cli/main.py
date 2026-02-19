@@ -17,7 +17,9 @@ import click
 from bin.cli.config import Config
 from bin.cli.di import Container
 from bin.cli.dtos import (
+    AggregateNeedsBriefRequest,
     ListProfilesRequest,
+    RouteObservationsRequest,
     ListSkillsetsRequest,
     ListSourcesRequest,
     PackStatusRequest,
@@ -319,6 +321,58 @@ pack.add_command(
         request_model=PackStatusRequest,
         usecase_attr="pack_status_usecase",
         format_output=_format_pack_status,
+    )
+)
+
+
+# ---------------------------------------------------------------------------
+# observation (cross-BC, stays here)
+# ---------------------------------------------------------------------------
+
+
+@cli.group()
+def observation() -> None:
+    """Observation routing operations."""
+
+
+def _format_needs_brief(resp: Any) -> None:
+    if not resp.needs:
+        click.echo("No observation needs declared.")
+    else:
+        click.echo(f"{len(resp.needs)} observation needs:")
+        for n in resp.needs:
+            served = " [served]" if n.served else ""
+            click.echo(f"  {n.slug}  ({n.owner_type}/{n.owner_ref}){served}")
+            click.echo(f"    {n.need}")
+    click.echo(f"\n{len(resp.destinations)} eligible destinations:")
+    for d in resp.destinations:
+        click.echo(f"  {d.owner_type}/{d.owner_ref}")
+    if resp.nudges:
+        click.echo("\nNudges:")
+        for nudge in resp.nudges:
+            click.echo(f"  {nudge}")
+
+
+observation.add_command(
+    generate_command(
+        name="needs",
+        request_model=AggregateNeedsBriefRequest,
+        usecase_attr="aggregate_needs_brief_usecase",
+        format_output=_format_needs_brief,
+    )
+)
+
+
+def _format_route_result(resp: Any) -> None:
+    click.echo(f"Routed: {resp.routed}  Rejected: {resp.rejected}")
+
+
+observation.add_command(
+    generate_command(
+        name="route",
+        request_model=RouteObservationsRequest,
+        usecase_attr="route_observations_usecase",
+        format_output=_format_route_result,
     )
 )
 

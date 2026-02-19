@@ -89,6 +89,12 @@ __all__ = [
     "PackStatusRequest",
     "PackStatusResponse",
     "PackItemInfo",
+    "ObservationNeedInfo",
+    "RoutingDestinationInfo",
+    "AggregateNeedsBriefRequest",
+    "AggregateNeedsBriefResponse",
+    "RouteObservationsRequest",
+    "RouteObservationsResponse",
 ]
 
 
@@ -323,3 +329,52 @@ class PackStatusResponse(BaseModel):
     deep_state: str
     items: list[PackItemInfo]
     children: list["PackStatusResponse"] = []
+
+
+# ---------------------------------------------------------------------------
+# Observation routing — needs aggregation and routing
+# ---------------------------------------------------------------------------
+
+
+class ObservationNeedInfo(BaseModel):
+    slug: str
+    owner_type: str
+    owner_ref: str
+    level: str
+    need: str
+    rationale: str
+    lifecycle_moment: str
+    served: bool
+
+
+class RoutingDestinationInfo(BaseModel):
+    owner_type: str
+    owner_ref: str
+
+
+class AggregateNeedsBriefRequest(BaseModel):
+    """Aggregate observation needs for an engagement context."""
+
+    client: str = Field(description="Client slug.")
+    engagement: str = Field(description="Engagement slug.")
+
+
+class AggregateNeedsBriefResponse(BaseModel):
+    needs: list[ObservationNeedInfo]
+    destinations: list[RoutingDestinationInfo]
+    nudges: list[str] = []
+
+
+class RouteObservationsRequest(BaseModel):
+    """Route observations to their declared destinations."""
+
+    client: str = Field(description="Client slug.")
+    engagement: str = Field(description="Engagement slug.")
+    observations: str = Field(
+        description="JSON array of observation objects.",
+    )
+
+
+class RouteObservationsResponse(BaseModel):
+    routed: int
+    rejected: int

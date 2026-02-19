@@ -40,13 +40,19 @@ from bin.cli.infrastructure.json_repos import (
     JsonProjectRepository,
     JsonResearchTopicRepository,
 )
+from bin.cli.infrastructure.filesystem_needs_reader import FilesystemNeedsReader
+from bin.cli.infrastructure.filesystem_observation_writer import (
+    FilesystemObservationWriter,
+)
 from bin.cli.usecases import (
+    AggregateNeedsBriefUseCase,
     ListProfilesUseCase,
     ListSkillsetsUseCase,
     ListSourcesUseCase,
     PackStatusUseCase,
     RegisterProspectusUseCase,
     RenderSiteUseCase,
+    RouteObservationsUseCase,
     ShowProfileUseCase,
     ShowSkillsetUseCase,
     ShowSourceUseCase,
@@ -88,6 +94,8 @@ from practice.repositories import (
     GateInspector,
     IdGenerator,
     KnowledgePackRepository,
+    NeedsReader,
+    ObservationWriter,
     PackNudger,
     ProfileRepository,
     ProjectPresenter,
@@ -207,6 +215,10 @@ class Container:
             self.freshness_inspector,
             skillset_bc_dirs,
             knowledge_packs=self.knowledge_packs,
+        )
+        self.needs_reader: NeedsReader = FilesystemNeedsReader(
+            repo_root=config.repo_root,
+            workspace_root=config.workspace_root,
         )
 
         # -- Write usecases ------------------------------------------------
@@ -360,4 +372,24 @@ class Container:
         )
         self.pack_status_usecase = PackStatusUseCase(
             inspector=self.freshness_inspector,
+        )
+
+        self.observation_writer: ObservationWriter = FilesystemObservationWriter(
+            repo_root=config.repo_root,
+            workspace_root=config.workspace_root,
+        )
+
+        # -- Observation routing usecases ----------------------------------
+        self.aggregate_needs_brief_usecase = AggregateNeedsBriefUseCase(
+            engagements=self.engagement_entities,
+            projects=self.projects,
+            sources=self.sources,
+            needs_reader=self.needs_reader,
+            pack_nudger=self.pack_nudger,
+        )
+        self.route_observations_usecase = RouteObservationsUseCase(
+            engagements=self.engagement_entities,
+            projects=self.projects,
+            sources=self.sources,
+            observation_writer=self.observation_writer,
         )

@@ -13,6 +13,8 @@ from typing import Protocol, runtime_checkable
 from practice.content import ProjectContribution
 from practice.entities import (
     KnowledgePack,
+    Observation,
+    ObservationNeed,
     PackFreshness,
     Profile,
     Project,
@@ -168,6 +170,33 @@ class PackNudger(Protocol):
         When skillset_names is provided, check only packs related to
         those skillsets. When None, check all design-time packs.
         """
+        ...
+
+
+@runtime_checkable
+class NeedsReader(Protocol):
+    """Read observation needs declarations from their storage locations.
+
+    Type-level needs live in practice layer manifests — one per
+    destination type. Instance-level needs live with the destination
+    instance (in its workspace, config, or brief).
+    """
+
+    def type_level_needs(self, owner_type: str) -> list[ObservationNeed]:
+        """Read type-level needs for a destination type."""
+        ...
+
+    def instance_needs(self, owner_type: str, owner_ref: str) -> list[ObservationNeed]:
+        """Read instance-level needs for a specific destination."""
+        ...
+
+
+@runtime_checkable
+class ObservationWriter(Protocol):
+    """Write observations to their routed destinations."""
+
+    def write(self, observation: Observation) -> None:
+        """Persist an observation to all its resolved destinations."""
         ...
 
 
