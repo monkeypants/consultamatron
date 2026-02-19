@@ -67,7 +67,7 @@ Drives individual projects through their pipeline stages. This is what
 `PipelineStage` and `GetProjectProgressUseCase` already implement.
 Each stage has a prerequisite gate, a skill to execute, and a gate it
 produces. Progress is tracked via the decision-title join
-(see `docs/conformance-testing.md`).
+(see `docs/dev/conformance-testing.md`).
 
 ### The skills engineering protocol (inner loop)
 
@@ -289,7 +289,7 @@ the only path, or at minimum make the incorrect path detectable.
 
 ### Doctrine tests as definition of done
 
-The conformance test suite (see `docs/conformance-testing.md`) is the
+The conformance test suite (see `docs/dev/conformance-testing.md`) is the
 structural enforcement mechanism for bounded context composition. The
 engagement protocol extends this: new doctrine tests verify that
 engagement use cases compose correctly with gate artifacts and pipeline

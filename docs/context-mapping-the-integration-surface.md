@@ -91,6 +91,13 @@ immutability invariant (gate protocol) means the kernel does not change
 after agreement — the dangerous part of shared kernels (concurrent
 mutation) is eliminated by convention.
 
+The same pattern repeats at every level of the hierarchy: `docs/` at the
+practice level, `{skillset}/docs/` within a skillset, `resources/` within
+a client workspace, `resources/` within an engagement. Each is a knowledge
+pack that serves as the shared kernel for its child contexts. See
+[The Integration Surface](integration-surface.md#shared-kernels-follow-the-pack-convention)
+for the full structural pattern.
+
 The practice layer entities (`entities.py`) are a second shared kernel
 at the code level — every bounded context depends on them. The Stable
 Dependencies Principle (Martin) governs this: entities change rarely and

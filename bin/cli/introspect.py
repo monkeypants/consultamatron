@@ -4,7 +4,7 @@ Reads Pydantic model fields from request DTOs and produces Click
 commands mechanically. Each DTO field becomes a CLI --option with
 type, required/optional, and help text derived from field metadata.
 
-See docs/cli-command-generation.md for the full convention reference.
+See docs/dev/cli-command-generation.md for the full convention reference.
 """
 
 from __future__ import annotations
