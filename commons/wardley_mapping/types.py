@@ -66,9 +66,8 @@ class TourManifestRepository(Protocol):
 class ProjectLookup(Protocol):
     """Minimal project existence check.
 
-    Allows the wardley_mapping BC to verify project existence without
-    importing from consulting/. ProjectRepository already satisfies
-    this shape, so DI passes it through with no adapter.
+    ProjectRepository already satisfies this shape, so DI passes it
+    through with no adapter.
     """
 
     def get(self, client: str, engagement: str, slug: str) -> object | None:

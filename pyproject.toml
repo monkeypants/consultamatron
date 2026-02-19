@@ -23,7 +23,6 @@ build-backend = "hatchling.build"
 packages = [
     "bin",
     "commons/business_model_canvas",
-    "commons/consulting",
     "commons/skillset_engineering",
     "commons/world_domination",
     "src/practice",
