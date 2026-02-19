@@ -623,13 +623,21 @@ class TestDesignTimePackFreshness:
     ABSENT is tolerated — newly created packs haven't been compiled yet.
     DIRTY means someone edited content without recompiling.
     CORRUPT means orphan mirrors need cleanup.
+
+    The dirty check uses file mtimes, which git checkout does not
+    preserve — tree extraction order makes sources appear newer than
+    bytecodes.  Skipped in CI; run locally before pushing.
     """
 
+    @pytest.mark.skipif(
+        os.environ.get("CI") == "true",
+        reason="mtime-based freshness unreliable after git checkout",
+    )
     @pytest.mark.parametrize(
         "pack_entry", _DESIGN_TIME_PACKS, ids=_DESIGN_TIME_PACK_IDS
     )
     def test_no_dirty_packs(self, pack_entry):
-        """Stale bytecode (DIRTY) is a CI failure."""
+        """Stale bytecode (DIRTY) is a local-only check."""
         from bin.cli.infrastructure.filesystem_freshness_inspector import (
             FilesystemFreshnessInspector,
         )
