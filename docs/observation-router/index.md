@@ -27,7 +27,7 @@ inflection points in the consulting practice.
 
 ## Status
 
-Iteration 3 in progress. Seven accumulator items. Software-changes
+Iteration 3 complete (stacked). Seven accumulator items. Software-changes
 spec updated with concrete entities, repository protocols, use cases,
 and lifecycle/evolution/hygiene support grounded in existing
 architecture.
@@ -53,6 +53,8 @@ items by interest.
 
 ## History
 
+- `_history/iteration-3/` — software-changes spec rewrite grounded
+  in existing platform architecture.
 - `_history/iteration-2/` — worked example validation, needs guiding
   principle, storage format, needs lifecycle/evolution/hygiene.
 - `_history/iteration-1/` — extraction of accumulator items from
