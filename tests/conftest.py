@@ -14,10 +14,12 @@ from bin.cli.di import Container
 from consulting.entities import DecisionEntry, EngagementEntry
 from practice.discovery import PipelineStage
 from practice.entities import (
+    ActorGoal,
     Confidence,
     Engagement,
     EngagementDashboard,
     EngagementStatus,
+    KnowledgePack,
     NextAction,
     Profile,
     Project,
@@ -299,6 +301,24 @@ def make_next_action(**overrides) -> NextAction:
         prerequisite_exists=True,
     )
     return NextAction(**(defaults | overrides))
+
+
+def make_actor_goal(**overrides) -> ActorGoal:
+    defaults = dict(
+        actor="skill author",
+        goal="understand conformance requirements for a new BC",
+    )
+    return ActorGoal(**(defaults | overrides))
+
+
+def make_knowledge_pack(**overrides) -> KnowledgePack:
+    defaults = dict(
+        name="platform-architecture",
+        purpose="Architectural knowledge for extending Consultamatron.",
+        actor_goals=[make_actor_goal()],
+        triggers=["adding a new bounded context"],
+    )
+    return KnowledgePack(**(defaults | overrides))
 
 
 def _write_skillsets(skillsets_root, skillsets):

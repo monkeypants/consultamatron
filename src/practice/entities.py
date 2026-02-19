@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from datetime import date
 from enum import Enum
+from typing import Protocol, runtime_checkable
 
 from pydantic import BaseModel, Field
 
@@ -214,3 +215,156 @@ class NextAction(BaseModel):
     project_slug: str
     reason: str
     prerequisite_exists: bool
+
+
+# ---------------------------------------------------------------------------
+# Skillset Capability (integration protocol — the practice/skillset boundary)
+# ---------------------------------------------------------------------------
+
+
+class CapabilityDirection(str, Enum):
+    """Whether the practice layer drives or is driven by the skillset.
+
+    All current capabilities are driven: the practice layer reaches into
+    the skillset for domain-specific material. The dyad drives the practice
+    layer (driver direction); the practice layer drives skillsets (driven).
+    """
+
+    DRIVER = "driver"
+    DRIVEN = "driven"
+
+
+class CapabilityMechanism(str, Enum):
+    """How the port/adapter contract is expressed.
+
+    Code ports use Python Protocols enforced by @runtime_checkable and
+    conformance tests. Language ports use filesystem conventions enforced
+    by token-burning verification during skillset engineering.
+    """
+
+    CODE_PORT = "code_port"
+    LANGUAGE_PORT = "language_port"
+    BOTH = "both"
+    UNDEFINED = "undefined"
+
+
+class CapabilityMaturity(str, Enum):
+    """How established the capability's contract and enforcement are.
+
+    nascent: concept exists in documentation, no enforcement mechanism.
+    established: convention documented, shape tests in CI.
+    mature: code port with Protocol + DI + conformance tests, or
+            language port with shape tests + contract verification.
+    """
+
+    NASCENT = "nascent"
+    ESTABLISHED = "established"
+    MATURE = "mature"
+
+
+class CapabilityDiscovery(str, Enum):
+    """How the practice layer discovers a skillset's adapter."""
+
+    DI_SCAN = "di_scan"
+    FILESYSTEM_CONVENTION = "filesystem_convention"
+    PACK_MANIFEST = "pack_manifest"
+    NOT_DEFINED = "not_defined"
+
+
+class SemanticVerification(BaseModel):
+    """Specification for token-burning verification of a language port.
+
+    Contract verification is token-conservative (shallow scan for
+    structural violations). Fitness verification is token-generous
+    (deep evaluation of adapter quality in context of the skillset).
+    """
+
+    reference_problem: str = ""
+    sample_size: int = 3
+    max_tokens_per_evaluation: int = 2000
+    evaluation_criteria: list[str] = []
+    trigger: str = "content change in adapter files"
+
+
+class Capability(BaseModel):
+    """A facet of the Consultamatron Integration Protocol.
+
+    Each Capability describes one port at the practice/skillset boundary:
+    the practice layer defines a capability (what it provides), and the
+    skillset supplies an adapter (domain-specific material that facilitates
+    the capability in a particular domain).
+
+    The Capability entity is the metamodel. It drives: the contributor
+    catalogue (what must my skillset provide?), rs-assess evaluation
+    (is this skillset well-integrated?), and conformance testing (does
+    this adapter satisfy the contract?).
+
+    Properties capture both the structural contract (how to use) and the
+    architectural rationale (how to understand — Parnas's hidden decision,
+    Larman's information expert assignment).
+    """
+
+    name: str
+    description: str
+    direction: CapabilityDirection
+    mechanism: CapabilityMechanism
+    adapter_contract: str
+    discovery: CapabilityDiscovery
+    maturity: CapabilityMaturity
+    hidden_decision: str
+    information_expert: str
+    structural_tests: list[str] = []
+    semantic_verification: SemanticVerification | None = None
+
+
+# ---------------------------------------------------------------------------
+# Knowledge Pack (semantic pack convention — dual-fidelity knowledge storage)
+# ---------------------------------------------------------------------------
+
+
+class CompilationState(str, Enum):
+    """Freshness of a knowledge pack's compiled _bytecode/ mirror.
+
+    CLEAN: bytecode exists and is newer than all source items.
+    DIRTY: bytecode exists but at least one item is newer.
+    ABSENT: no _bytecode/ directory.
+    """
+
+    CLEAN = "clean"
+    DIRTY = "dirty"
+    ABSENT = "absent"
+
+
+@runtime_checkable
+class PackItem(Protocol):
+    """Any item in a knowledge pack.
+
+    The narrow interface between the convention layer (storage,
+    compression) and the use case layer (domain-specific consumption).
+    Name is derived from the filename; item_type from the frontmatter
+    ``type:`` field.
+    """
+
+    name: str
+    item_type: str
+
+
+class ActorGoal(BaseModel):
+    """Who benefits from a knowledge pack and what they get."""
+
+    actor: str
+    goal: str
+
+
+class KnowledgePack(BaseModel):
+    """Identity and freshness metadata for a semantic pack.
+
+    Represents the manifest in ``index.md`` frontmatter plus the
+    compilation state of the ``_bytecode/`` mirror.
+    """
+
+    name: str
+    purpose: str
+    actor_goals: list[ActorGoal]
+    triggers: list[str]
+    compilation_state: CompilationState = CompilationState.ABSENT
