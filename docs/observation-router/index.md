@@ -27,9 +27,9 @@ inflection points in the consulting practice.
 
 ## Status
 
-Iteration 1 complete (stacked). Six accumulator items extracted and
-refined. Key design moves: needs-driven observation model, routing
-security model (deny-all/allow-some), dark channel for commons.
+Iteration 2 in progress. Worked example traces the pattern through
+a fictional engagement. Needs protocol refined with guiding principle
+and storage format decision.
 
 ## Routing
 
@@ -48,6 +48,7 @@ items by interest.
 | `observation-routing-split.md` | concept | High-freedom observation vs low-freedom routing; classification collapses into needs |
 | `routing-security-model.md` | concept | Deny-all/allow-some routing policy; three destination classes (personal, engagement-scoped, commons/dark channel); information leak as primary risk |
 | `software-changes.md` | specification | Platform changes: needs protocol, CLI use case, skill changes, routing infrastructure |
+| `worked-example.md` | scenario | End-to-end trace through a fictional engagement gatepoint |
 
 ## History
 

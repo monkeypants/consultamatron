@@ -20,6 +20,20 @@ who consumes it and what they need from it. Observation destinations
 declare what they need to learn from engagement activity — they are
 actors with goals for sensory input.
 
+## Guiding principle: what are we able to improve?
+
+Information needs are driven by the ability to act on the information.
+The purpose of observations is to drive behaviour: continuous
+improvement, demonstrating responsiveness to the client, operant
+conditioning to reinforce positive habits, solving problems,
+mitigating risks, achieving goals.
+
+A need is worth declaring when the destination can act on the
+observation — change a process, refine a methodology step, adjust
+delivery to a client preference. Needs that produce observations
+nobody can act on are noise. The test for a well-formed need: "if
+the observer finds something, what improves?"
+
 ## Inheritance model
 
 Individual observation targets inherit generic needs from their type
@@ -87,6 +101,16 @@ Needs declarations live with their owners:
 - Type-level needs: in the type definitions (what it means to be
   a client workspace, a skillset, etc.)
 
-The exact format is not yet specified. The protocol is the convention
-— "declare your information needs so the observation process can
-serve them." The format will emerge from implementation.
+## Storage format
+
+Needs declarations follow the practice convention: markdown files
+with structured data in YAML frontmatter and prose body as docstring.
+A repository implementation serialises/deserialises the frontmatter
+into Pydantic entities (per `src/practice/entities.py`), so use
+cases operate in Python land through the semantic waist rather than
+in LLM land. The prose body provides context for agent consumption
+when the brief is rendered for an inflection point.
+
+This matches the existing pattern: entities define the domain model,
+repositories handle persistence, use cases orchestrate behaviour —
+all through the narrow typed layer between practice and skillsets.
