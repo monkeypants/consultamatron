@@ -473,3 +473,74 @@ class TestObservationWriterContract:
         personal_dir = tmp_path / "personal" / "observations"
         assert len(list(client_dir.glob("*.md"))) == 1
         assert len(list(personal_dir.glob("*.md"))) == 1
+
+
+# ---------------------------------------------------------------------------
+# PendingObservationStore contract tests
+# ---------------------------------------------------------------------------
+
+
+_PENDING_OBS_TEMPLATE = """\
+---
+slug: {slug}
+source_inflection: gatepoint
+need_refs: [{need_refs}]
+---
+{content}
+"""
+
+
+@pytest.mark.doctrine
+class TestPendingObservationStoreContract:
+    """PendingObservationStore implementations must satisfy these contracts."""
+
+    def test_empty_dir_returns_empty(self, pending_store):
+        result = pending_store.read_pending(CLIENT, ENGAGEMENT)
+        assert result == []
+
+    def test_write_then_read_returns_observation(self, pending_store, tmp_path):
+        pending_dir = (
+            tmp_path
+            / "clients"
+            / CLIENT
+            / "engagements"
+            / ENGAGEMENT
+            / ".observations-pending"
+        )
+        pending_dir.mkdir(parents=True)
+        (pending_dir / "test-obs.md").write_text(
+            _PENDING_OBS_TEMPLATE.format(
+                slug="test-obs",
+                need_refs="some-need",
+                content="An observation.",
+            )
+        )
+        result = pending_store.read_pending(CLIENT, ENGAGEMENT)
+        assert len(result) == 1
+        assert result[0].slug == "test-obs"
+        assert result[0].need_refs == ["some-need"]
+        assert result[0].content == "An observation."
+
+    def test_clear_pending_removes_files(self, pending_store, tmp_path):
+        pending_dir = (
+            tmp_path
+            / "clients"
+            / CLIENT
+            / "engagements"
+            / ENGAGEMENT
+            / ".observations-pending"
+        )
+        pending_dir.mkdir(parents=True)
+        (pending_dir / "test-obs.md").write_text(
+            _PENDING_OBS_TEMPLATE.format(
+                slug="test-obs",
+                need_refs="some-need",
+                content="An observation.",
+            )
+        )
+        pending_store.clear_pending(CLIENT, ENGAGEMENT)
+        assert not list(pending_dir.glob("*.md"))
+
+    def test_nonexistent_dir_returns_empty(self, pending_store):
+        result = pending_store.read_pending("no-such-client", "no-such-engagement")
+        assert result == []

@@ -93,8 +93,8 @@ __all__ = [
     "RoutingDestinationInfo",
     "AggregateNeedsBriefRequest",
     "AggregateNeedsBriefResponse",
-    "RouteObservationsRequest",
-    "RouteObservationsResponse",
+    "FlushObservationsRequest",
+    "FlushObservationsResponse",
 ]
 
 
@@ -357,24 +357,28 @@ class AggregateNeedsBriefRequest(BaseModel):
 
     client: str = Field(description="Client slug.")
     engagement: str = Field(description="Engagement slug.")
+    inflection: str = Field(
+        default="gatepoint",
+        description="Inflection point type (e.g. gatepoint, review).",
+    )
 
 
 class AggregateNeedsBriefResponse(BaseModel):
     needs: list[ObservationNeedInfo]
     destinations: list[RoutingDestinationInfo]
+    pending_dir: str
+    inflection: str
     nudges: list[str] = []
 
 
-class RouteObservationsRequest(BaseModel):
-    """Route observations to their declared destinations."""
+class FlushObservationsRequest(BaseModel):
+    """Flush pending observations to their routed destinations."""
 
     client: str = Field(description="Client slug.")
     engagement: str = Field(description="Engagement slug.")
-    observations: str = Field(
-        description="JSON array of observation objects.",
-    )
 
 
-class RouteObservationsResponse(BaseModel):
+class FlushObservationsResponse(BaseModel):
     routed: int
     rejected: int
+    flushed: int

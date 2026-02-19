@@ -139,6 +139,18 @@ def observation_writer(request, tmp_path):
         )
 
 
+@pytest.fixture(params=["filesystem"])
+def pending_store(request, tmp_path):
+    if request.param == "filesystem":
+        from bin.cli.infrastructure.filesystem_pending_store import (
+            FilesystemPendingObservationStore,
+        )
+
+        return FilesystemPendingObservationStore(
+            workspace_root=tmp_path / "clients",
+        )
+
+
 @pytest.fixture(params=["json"])
 def project_store(request, tmp_path):
     if request.param == "json":

@@ -44,15 +44,18 @@ from bin.cli.infrastructure.filesystem_needs_reader import FilesystemNeedsReader
 from bin.cli.infrastructure.filesystem_observation_writer import (
     FilesystemObservationWriter,
 )
+from bin.cli.infrastructure.filesystem_pending_store import (
+    FilesystemPendingObservationStore,
+)
 from bin.cli.usecases import (
     AggregateNeedsBriefUseCase,
+    FlushObservationsUseCase,
     ListProfilesUseCase,
     ListSkillsetsUseCase,
     ListSourcesUseCase,
     PackStatusUseCase,
     RegisterProspectusUseCase,
     RenderSiteUseCase,
-    RouteObservationsUseCase,
     ShowProfileUseCase,
     ShowSkillsetUseCase,
     ShowSourceUseCase,
@@ -97,6 +100,7 @@ from practice.repositories import (
     NeedsReader,
     ObservationWriter,
     PackNudger,
+    PendingObservationStore,
     ProfileRepository,
     ProjectPresenter,
     SiteRenderer,
@@ -378,6 +382,9 @@ class Container:
             repo_root=config.repo_root,
             workspace_root=config.workspace_root,
         )
+        self.pending_store: PendingObservationStore = FilesystemPendingObservationStore(
+            workspace_root=config.workspace_root,
+        )
 
         # -- Observation routing usecases ----------------------------------
         self.aggregate_needs_brief_usecase = AggregateNeedsBriefUseCase(
@@ -386,10 +393,14 @@ class Container:
             sources=self.sources,
             needs_reader=self.needs_reader,
             pack_nudger=self.pack_nudger,
+            workspace_root=config.workspace_root,
         )
-        self.route_observations_usecase = RouteObservationsUseCase(
+        self.flush_observations_usecase = FlushObservationsUseCase(
             engagements=self.engagement_entities,
             projects=self.projects,
             sources=self.sources,
+            needs_reader=self.needs_reader,
             observation_writer=self.observation_writer,
+            pending_store=self.pending_store,
+            workspace_root=config.workspace_root,
         )

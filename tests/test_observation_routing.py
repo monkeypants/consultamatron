@@ -8,11 +8,9 @@ from __future__ import annotations
 
 import pytest
 
-import json
-
 from bin.cli.di import Container
-from bin.cli.dtos import AggregateNeedsBriefRequest, RouteObservationsRequest
-from bin.cli.usecases import AggregateNeedsBriefUseCase, RouteObservationsUseCase
+from bin.cli.dtos import AggregateNeedsBriefRequest
+from bin.cli.usecases import AggregateNeedsBriefUseCase
 from consulting.dtos import CreateEngagementRequest, InitializeWorkspaceRequest
 from practice.entities import SourceType
 from practice.exceptions import NotFoundError
@@ -227,6 +225,7 @@ class TestAggregateNeedsBrief:
             sources=c.sources,
             needs_reader=reader,
             pack_nudger=c.pack_nudger,
+            workspace_root=tmp_config.workspace_root,
         )
         return c
 
@@ -243,6 +242,11 @@ class TestAggregateNeedsBrief:
         assert "personal" in dest_types
         assert "client" in dest_types
         assert "practice" in dest_types
+        # New fields
+        assert resp.inflection == "gatepoint"
+        assert resp.pending_dir.endswith(
+            f"{CLIENT}/engagements/{ENGAGEMENT}/.observations-pending"
+        )
 
     def test_type_level_need_appears_in_brief(self, di, tmp_path):
         """Type-level need file → appears in brief."""
@@ -321,13 +325,13 @@ class TestAggregateNeedsBrief:
 
 
 # ---------------------------------------------------------------------------
-# RouteObservations — integration tests
+# FlushObservations — integration tests
 # ---------------------------------------------------------------------------
 
 
 @pytest.mark.doctrine
-class TestRouteObservations:
-    """Integration tests for observation routing use case."""
+class TestFlushObservations:
+    """Integration tests for flush observations use case."""
 
     @pytest.fixture
     def di(self, tmp_config, tmp_path):
@@ -337,6 +341,10 @@ class TestRouteObservations:
         from bin.cli.infrastructure.filesystem_observation_writer import (
             FilesystemObservationWriter,
         )
+        from bin.cli.infrastructure.filesystem_pending_store import (
+            FilesystemPendingObservationStore,
+        )
+        from bin.cli.usecases import FlushObservationsUseCase
 
         c = Container(tmp_config)
         reader = FilesystemNeedsReader(
@@ -347,109 +355,140 @@ class TestRouteObservations:
             repo_root=tmp_path,
             workspace_root=tmp_config.workspace_root,
         )
+        pending_store = FilesystemPendingObservationStore(
+            workspace_root=tmp_config.workspace_root,
+        )
         c.needs_reader = reader
         c.observation_writer = writer
+        c.pending_store = pending_store
         c.aggregate_needs_brief_usecase = AggregateNeedsBriefUseCase(
             engagements=c.engagement_entities,
             projects=c.projects,
             sources=c.sources,
             needs_reader=reader,
             pack_nudger=c.pack_nudger,
+            workspace_root=tmp_config.workspace_root,
         )
-        c.route_observations_usecase = RouteObservationsUseCase(
+        c.flush_observations_usecase = FlushObservationsUseCase(
             engagements=c.engagement_entities,
             projects=c.projects,
             sources=c.sources,
+            needs_reader=reader,
             observation_writer=writer,
+            pending_store=pending_store,
+            workspace_root=tmp_config.workspace_root,
         )
         return c
 
-    def test_observation_to_allowed_destination_routed(self, di):
-        """Observation to allowed destination → routed."""
-        _init(di)
-        _ensure_engagement(di)
-        obs = [
-            {
-                "slug": "test-obs",
-                "source_inflection": "gatepoint",
-                "need_refs": ["some-need"],
-                "content": "An observation.",
-                "destinations": [
-                    {"owner_type": "client", "owner_ref": CLIENT},
-                ],
-            }
-        ]
-        resp = di.route_observations_usecase.execute(
-            RouteObservationsRequest(
-                client=CLIENT,
-                engagement=ENGAGEMENT,
-                observations=json.dumps(obs),
-            )
+    def _write_pending(self, di, slug, need_refs, content="An observation."):
+        """Write a pending observation file to the staging directory."""
+        pending_dir = (
+            di.config.workspace_root
+            / CLIENT
+            / "engagements"
+            / ENGAGEMENT
+            / ".observations-pending"
         )
-        assert resp.routed == 1
-        assert resp.rejected == 0
+        pending_dir.mkdir(parents=True, exist_ok=True)
+        refs_str = ", ".join(need_refs)
+        (pending_dir / f"{slug}.md").write_text(
+            f"---\nslug: {slug}\nsource_inflection: gatepoint\n"
+            f"need_refs: [{refs_str}]\n---\n{content}\n"
+        )
 
-    def test_observation_to_commons_rejected(self, di):
-        """Observation to commons skillset → rejected."""
-        _init(di)
-        _ensure_engagement(di)
-        obs = [
-            {
-                "slug": "commons-obs",
-                "source_inflection": "gatepoint",
-                "need_refs": [],
-                "content": "Should be rejected.",
-                "destinations": [
-                    {"owner_type": "skillset", "owner_ref": "wardley-mapping"},
-                ],
-            }
-        ]
-        resp = di.route_observations_usecase.execute(
-            RouteObservationsRequest(
-                client=CLIENT,
-                engagement=ENGAGEMENT,
-                observations=json.dumps(obs),
+    def _write_type_need(self, tmp_path, slug, owner_type):
+        """Write a type-level need declaration."""
+        needs_dir = tmp_path / "docs" / "observation-needs"
+        needs_dir.mkdir(parents=True, exist_ok=True)
+        (needs_dir / f"{owner_type}.md").write_text(
+            _NEED_TEMPLATE.format(
+                slug=slug,
+                owner_type=owner_type,
+                owner_ref=owner_type,
+                level="type",
+                need=f"Watch for {slug} signals",
             )
         )
-        assert resp.routed == 0
-        assert resp.rejected == 1
 
-    def test_zero_observations_succeeds(self, di):
-        """Zero observations → succeeds with both counts 0."""
+    def test_pending_with_valid_need_ref_routed(self, di, tmp_path):
+        """Pending observation with valid need_ref → routed to destination."""
+        from bin.cli.dtos import FlushObservationsRequest
+
         _init(di)
         _ensure_engagement(di)
-        resp = di.route_observations_usecase.execute(
-            RouteObservationsRequest(
-                client=CLIENT,
-                engagement=ENGAGEMENT,
-                observations="[]",
-            )
+        self._write_type_need(tmp_path, "client-type-need", "client")
+        self._write_pending(di, "test-obs", ["client-type-need"])
+
+        resp = di.flush_observations_usecase.execute(
+            FlushObservationsRequest(client=CLIENT, engagement=ENGAGEMENT)
         )
+        assert resp.flushed == 1
+        assert resp.routed >= 1
+
+    def test_pending_with_unknown_need_ref_silently_dropped(self, di, tmp_path):
+        """Pending observation with unknown need_ref → silently dropped."""
+        from bin.cli.dtos import FlushObservationsRequest
+
+        _init(di)
+        _ensure_engagement(di)
+        self._write_pending(di, "orphan-obs", ["nonexistent-need"])
+
+        resp = di.flush_observations_usecase.execute(
+            FlushObservationsRequest(client=CLIENT, engagement=ENGAGEMENT)
+        )
+        assert resp.flushed == 1
         assert resp.routed == 0
         assert resp.rejected == 0
 
-    def test_fan_out_with_partial_eligibility(self, di):
-        """Fan-out: eligible delivered, ineligible rejected."""
+    def test_empty_pending_dir_succeeds(self, di):
+        """Empty pending dir → succeeds with all counts 0."""
+        from bin.cli.dtos import FlushObservationsRequest
+
         _init(di)
         _ensure_engagement(di)
-        obs = [
-            {
-                "slug": "mixed-obs",
-                "source_inflection": "review",
-                "need_refs": [],
-                "content": "Mixed routing.",
-                "destinations": [
-                    {"owner_type": "client", "owner_ref": CLIENT},
-                    {"owner_type": "skillset", "owner_ref": "wardley-mapping"},
-                ],
-            }
-        ]
-        resp = di.route_observations_usecase.execute(
-            RouteObservationsRequest(
-                client=CLIENT,
-                engagement=ENGAGEMENT,
-                observations=json.dumps(obs),
-            )
+
+        resp = di.flush_observations_usecase.execute(
+            FlushObservationsRequest(client=CLIENT, engagement=ENGAGEMENT)
         )
-        assert resp.routed == 1
-        assert resp.rejected == 1
+        assert resp.flushed == 0
+        assert resp.routed == 0
+        assert resp.rejected == 0
+
+    def test_multiple_observations_partial_coverage(self, di, tmp_path):
+        """Multiple observations, partial need coverage → correct counts."""
+        from bin.cli.dtos import FlushObservationsRequest
+
+        _init(di)
+        _ensure_engagement(di)
+        self._write_type_need(tmp_path, "client-type-need", "client")
+        self._write_pending(di, "good-obs", ["client-type-need"])
+        self._write_pending(di, "orphan-obs", ["nonexistent-need"])
+
+        resp = di.flush_observations_usecase.execute(
+            FlushObservationsRequest(client=CLIENT, engagement=ENGAGEMENT)
+        )
+        assert resp.flushed == 2
+        assert resp.routed >= 1
+
+    def test_pending_dir_cleaned_after_flush(self, di, tmp_path):
+        """Pending dir cleaned after flush."""
+        from bin.cli.dtos import FlushObservationsRequest
+
+        _init(di)
+        _ensure_engagement(di)
+        self._write_type_need(tmp_path, "client-type-need", "client")
+        self._write_pending(di, "test-obs", ["client-type-need"])
+
+        pending_dir = (
+            di.config.workspace_root
+            / CLIENT
+            / "engagements"
+            / ENGAGEMENT
+            / ".observations-pending"
+        )
+        assert list(pending_dir.glob("*.md"))  # Files exist before flush
+
+        di.flush_observations_usecase.execute(
+            FlushObservationsRequest(client=CLIENT, engagement=ENGAGEMENT)
+        )
+        assert not list(pending_dir.glob("*.md"))  # Files cleared after flush

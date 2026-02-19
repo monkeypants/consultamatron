@@ -201,6 +201,19 @@ class ObservationWriter(Protocol):
 
 
 @runtime_checkable
+class PendingObservationStore(Protocol):
+    """Read and clear pending observation files from the staging directory."""
+
+    def read_pending(self, client: str, engagement: str) -> list[Observation]:
+        """Read all pending observations for an engagement."""
+        ...
+
+    def clear_pending(self, client: str, engagement: str) -> None:
+        """Remove all pending observation files for an engagement."""
+        ...
+
+
+@runtime_checkable
 class ItemCompiler(Protocol):
     """Generate a _bytecode/ summary for a single pack item."""
 

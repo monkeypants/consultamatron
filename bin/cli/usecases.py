@@ -9,6 +9,8 @@ from pathlib import Path
 from bin.cli.dtos import (
     AggregateNeedsBriefRequest,
     AggregateNeedsBriefResponse,
+    FlushObservationsRequest,
+    FlushObservationsResponse,
     ListProfilesRequest,
     ListProfilesResponse,
     ListSkillsetsRequest,
@@ -24,8 +26,6 @@ from bin.cli.dtos import (
     RegisterProspectusResponse,
     RenderSiteRequest,
     RenderSiteResponse,
-    RouteObservationsRequest,
-    RouteObservationsResponse,
     RoutingDestinationInfo,
     ShowProfileRequest,
     ShowProfileResponse,
@@ -76,6 +76,7 @@ from practice.repositories import (
     NeedsReader,
     ObservationWriter,
     PackNudger,
+    PendingObservationStore,
     ProfileRepository,
     ProjectPresenter,
     SiteRenderer,
@@ -86,7 +87,7 @@ from practice.routing import build_routing_allow_list
 __all__ = [
     "AddEngagementEntryUseCase",
     "AggregateNeedsBriefUseCase",
-    "RouteObservationsUseCase",
+    "FlushObservationsUseCase",
     "GetProjectProgressUseCase",
     "GetProjectUseCase",
     "InitializeWorkspaceUseCase",
@@ -510,12 +511,14 @@ class AggregateNeedsBriefUseCase:
         sources: SourceRepository,
         needs_reader: NeedsReader,
         pack_nudger: PackNudger,
+        workspace_root: Path,
     ) -> None:
         self._engagements = engagements
         self._projects = projects
         self._sources = sources
         self._needs_reader = needs_reader
         self._pack_nudger = pack_nudger
+        self._workspace_root = workspace_root
 
     def execute(
         self, request: AggregateNeedsBriefRequest
@@ -557,22 +560,32 @@ class AggregateNeedsBriefUseCase:
 
         nudges = self._pack_nudger.check()
 
+        pending_dir = (
+            self._workspace_root
+            / request.client
+            / "engagements"
+            / request.engagement
+            / ".observations-pending"
+        )
+
         return AggregateNeedsBriefResponse(
             needs=[_need_to_info(n) for n in needs],
             destinations=[
                 RoutingDestinationInfo(owner_type=d.owner_type, owner_ref=d.owner_ref)
                 for d in allow_list.destinations
             ],
+            pending_dir=str(pending_dir),
+            inflection=request.inflection,
             nudges=nudges,
         )
 
 
-class RouteObservationsUseCase:
-    """Route observations to their declared destinations.
+class FlushObservationsUseCase:
+    """Flush pending observations to routed destinations.
 
-    Rebuilds the allow list, filters each observation's destinations
-    against it, writes eligible observations via ObservationWriter,
-    and counts routed vs rejected.
+    Reads pending observation files, resolves need_refs to
+    destinations via the needs aggregation, filters through the
+    allow list, writes via ObservationWriter, and cleans up.
     """
 
     def __init__(
@@ -580,16 +593,20 @@ class RouteObservationsUseCase:
         engagements: EngagementRepository,
         projects: ProjectRepository,
         sources: SourceRepository,
+        needs_reader: NeedsReader,
         observation_writer: ObservationWriter,
+        pending_store: PendingObservationStore,
+        workspace_root: Path,
     ) -> None:
         self._engagements = engagements
         self._projects = projects
         self._sources = sources
+        self._needs_reader = needs_reader
         self._writer = observation_writer
+        self._pending_store = pending_store
+        self._workspace_root = workspace_root
 
-    def execute(self, request: RouteObservationsRequest) -> RouteObservationsResponse:
-        import json
-
+    def execute(self, request: FlushObservationsRequest) -> FlushObservationsResponse:
         engagement = self._engagements.get(request.client, request.engagement)
         if engagement is None:
             raise NotFoundError(
@@ -612,36 +629,49 @@ class RouteObservationsUseCase:
         )
         allowed_set = {(d.owner_type, d.owner_ref) for d in allow_list.destinations}
 
-        raw_observations = json.loads(request.observations)
+        # Build need_slug → destinations mapping
+        need_to_dests: dict[str, list[RoutingDestination]] = {}
+        seen_types: set[str] = set()
+        for dest in allow_list.destinations:
+            if dest.owner_type not in seen_types:
+                seen_types.add(dest.owner_type)
+                for need in self._needs_reader.type_level_needs(dest.owner_type):
+                    need_to_dests.setdefault(need.slug, []).append(dest)
+            for need in self._needs_reader.instance_needs(
+                dest.owner_type, dest.owner_ref
+            ):
+                need_to_dests.setdefault(need.slug, []).append(dest)
+
+        pending = self._pending_store.read_pending(request.client, request.engagement)
+
         routed = 0
         rejected = 0
+        flushed = 0
 
-        for raw in raw_observations:
-            eligible = []
-            ineligible_count = 0
-            for dest_data in raw.get("destinations", []):
-                key = (dest_data["owner_type"], dest_data["owner_ref"])
-                if key in allowed_set:
-                    eligible.append(
-                        RoutingDestination(
-                            owner_type=dest_data["owner_type"],
-                            owner_ref=dest_data["owner_ref"],
-                        )
-                    )
-                else:
-                    ineligible_count += 1
+        for obs in pending:
+            # Resolve need_refs → destinations
+            resolved_dests: dict[tuple[str, str], RoutingDestination] = {}
+            for ref in obs.need_refs:
+                for dest in need_to_dests.get(ref, []):
+                    key = (dest.owner_type, dest.owner_ref)
+                    if key in allowed_set:
+                        resolved_dests[key] = dest
 
-            rejected += ineligible_count
-
-            if eligible:
-                obs = Observation(
-                    slug=raw["slug"],
-                    source_inflection=raw["source_inflection"],
-                    need_refs=raw.get("need_refs", []),
-                    content=raw.get("content", ""),
-                    destinations=eligible,
+            if resolved_dests:
+                obs_with_dests = Observation(
+                    slug=obs.slug,
+                    source_inflection=obs.source_inflection,
+                    need_refs=obs.need_refs,
+                    content=obs.content,
+                    destinations=list(resolved_dests.values()),
                 )
-                self._writer.write(obs)
-                routed += len(eligible)
+                self._writer.write(obs_with_dests)
+                routed += len(resolved_dests)
+            flushed += 1
 
-        return RouteObservationsResponse(routed=routed, rejected=rejected)
+        if pending:
+            self._pending_store.clear_pending(request.client, request.engagement)
+
+        return FlushObservationsResponse(
+            routed=routed, rejected=rejected, flushed=flushed
+        )
