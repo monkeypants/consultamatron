@@ -27,17 +27,16 @@ inflection points in the consulting practice.
 
 ## Status
 
-Iteration 1 in progress. Accumulator items extracted from iteration-0
-compressed material. Operator refinement during extraction introduced
-the needs-driven observation model — destinations declare information
-needs, the CLI aggregates them into a brief, skills apply the brief
-to transient context.
+Iteration 1 complete (stacked). Six accumulator items extracted and
+refined. Key design moves: needs-driven observation model, routing
+security model (deny-all/allow-some), dark channel for commons.
 
 ## Routing
 
 Agents: read accumulator items for current understanding. For
-background on how we got here, read `_history/iteration-0/`. Humans:
-start with `general-pattern.md`, then browse items by interest.
+background on how we got here, read `_history/` bytecodes (most
+recent first). Humans: start with `general-pattern.md`, then browse
+items by interest.
 
 ## Accumulator items (persist, evolve across iterations)
 
@@ -52,6 +51,9 @@ start with `general-pattern.md`, then browse items by interest.
 
 ## History
 
+- `_history/iteration-1/` — extraction of accumulator items from
+  iteration-0, needs-driven model refinement, Beck-Larman testing
+  deliberation, eligibility council + operator security correction.
 - `_history/iteration-0/` — compressed output of the conversation that
   identified the general pattern, ran a jedi council deliberation on
   client expertise accumulation, and refined the observation-routing
