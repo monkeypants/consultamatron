@@ -1,12 +1,3 @@
----
-name: iteration-2-worked-example-and-lifecycle
-purpose: >
-  Compressed output of iteration 2. Worked example validated the
-  pattern against a realistic scenario. Operator refinements
-  established needs guiding principle, storage format, needs
-  lifecycle, evolution timescales, and hygiene model.
----
-
 # Iteration 2 — Worked Example and Needs Lifecycle
 
 Traced the full observation-routing pattern through a concrete
@@ -119,4 +110,4 @@ Seven items in the pack:
   incident to one-line lesson
 - Drop: file creation mechanics, bytecode compilation rounds,
   hook/linter recovery
-- Organisation: single document under `_history/iteration-2/`
+- Organisation: `_history/iteration-2.md`

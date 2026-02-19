@@ -53,14 +53,14 @@ items by interest.
 
 ## History
 
-- `_history/iteration-3/` — software-changes spec rewrite grounded
+- `_history/iteration-3.md` — software-changes spec rewrite grounded
   in existing platform architecture.
-- `_history/iteration-2/` — worked example validation, needs guiding
+- `_history/iteration-2.md` — worked example validation, needs guiding
   principle, storage format, needs lifecycle/evolution/hygiene.
-- `_history/iteration-1/` — extraction of accumulator items from
+- `_history/iteration-1.md` — extraction of accumulator items from
   iteration-0, needs-driven model refinement, Beck-Larman testing
   deliberation, eligibility council + operator security correction.
-- `_history/iteration-0/` — compressed output of the conversation that
+- `_history/iteration-0.md` — compressed output of the conversation that
   identified the general pattern, ran a jedi council deliberation on
   client expertise accumulation, and refined the observation-routing
   architecture through operator negotiation.
