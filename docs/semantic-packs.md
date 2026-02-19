@@ -184,9 +184,12 @@ each step is small.
 The summary generation step requires LLM cost per changed item. The
 compilation step (writing to `_bytecode/`) is mechanical. A pack is
 **clean** when every item's `_bytecode/` mirror is newer than the item
-itself, **dirty** when at least one item is newer than its mirror, and
-the compilation is **absent** when no `_bytecode/` directory exists.
-These three states are represented by `CompilationState` in
+itself, **dirty** when at least one item is newer than its mirror,
+**absent** when no `_bytecode/` directory exists, and **corrupt** when
+`_bytecode/` contains orphan mirrors — summaries with no corresponding
+source item. Corruption is structural damage (a renamed or deleted item
+whose mirror was not cleaned up) and must be resolved before compiling.
+These four states are represented by `CompilationState` in
 `practice.entities`.
 
 Pack-and-wrap is protocol-agnostic. It compresses any item regardless
@@ -263,9 +266,10 @@ class PackItem(Protocol):
     item_type: str
 
 class CompilationState(str, Enum):
-    CLEAN = "clean"   # bytecode newer than all items
-    DIRTY = "dirty"   # at least one item newer than its mirror
+    CLEAN = "clean"    # bytecode newer than all items
+    DIRTY = "dirty"    # at least one item newer than its mirror
     ABSENT = "absent"  # no _bytecode/ directory
+    CORRUPT = "corrupt"  # orphan mirrors with no source item
 ```
 
 Name is derived from the filename. Type is the frontmatter `type:`

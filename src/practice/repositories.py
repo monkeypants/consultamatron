@@ -11,7 +11,13 @@ from pathlib import Path
 from typing import Protocol, runtime_checkable
 
 from practice.content import ProjectContribution
-from practice.entities import Profile, Project, ResearchTopic, SkillsetSource
+from practice.entities import (
+    PackFreshness,
+    Profile,
+    Project,
+    ResearchTopic,
+    SkillsetSource,
+)
 
 
 @runtime_checkable
@@ -127,4 +133,28 @@ class GateInspector(Protocol):
         self, client: str, engagement: str, project: str, gate_path: str
     ) -> bool:
         """Return True if the gate artifact exists."""
+        ...
+
+
+@runtime_checkable
+class FreshnessInspector(Protocol):
+    """Assess compilation freshness of a knowledge pack."""
+
+    def assess(self, pack_root: Path) -> PackFreshness:
+        """Return freshness tree rooted at pack_root.
+
+        Recursively inspects nested packs. Each node in the returned
+        tree has shallow compilation_state for its own level and
+        children for nested packs. Use deep_state for the transitive
+        rollup.
+        """
+        ...
+
+
+@runtime_checkable
+class ItemCompiler(Protocol):
+    """Generate a _bytecode/ summary for a single pack item."""
+
+    def compile(self, item_path: Path, pack_root: Path) -> str:
+        """Read item content, return summary text for _bytecode/ mirror."""
         ...
