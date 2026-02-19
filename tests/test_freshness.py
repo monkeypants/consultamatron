@@ -16,6 +16,10 @@ from bin.cli.infrastructure.filesystem_freshness_inspector import (
 from practice.entities import CompilationState
 from practice.pack_and_wrap import pack_and_wrap
 
+from bin.cli.dtos import PackStatusRequest
+from bin.cli.usecases import PackStatusUseCase
+from practice.exceptions import NotFoundError
+
 from .conftest import StubCompiler, age_file, freshen_file, write_pack
 
 
@@ -472,3 +476,66 @@ class TestPackAndWrap:
         one_idx = next(i for i, s in enumerate(call_stems) if s == "one")
         alpha_idx = next(i for i, s in enumerate(call_stems) if s == "alpha")
         assert deep_idx < one_idx < alpha_idx
+
+
+# ---------------------------------------------------------------------------
+# Phase 4: PackStatusUseCase
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.doctrine
+class TestPackStatusUseCase:
+    """CLI usecase for pack freshness inspection."""
+
+    def test_status_returns_freshness_tree(self, tmp_path):
+        """UseCase returns a response matching the assessed state."""
+        root = write_pack(
+            tmp_path,
+            "pack",
+            {"alpha": "A", "beta": "B"},
+            bytecode={"alpha": "sA", "beta": "sB"},
+        )
+        age_file(root / "alpha.md")
+        age_file(root / "beta.md")
+        freshen_file(root / "_bytecode" / "alpha.md")
+        freshen_file(root / "_bytecode" / "beta.md")
+
+        inspector = FilesystemFreshnessInspector()
+        usecase = PackStatusUseCase(inspector=inspector)
+        resp = usecase.execute(PackStatusRequest(path=str(root)))
+
+        assert resp.compilation_state == "clean"
+        assert resp.deep_state == "clean"
+        assert len(resp.items) == 2
+        assert all(i.state == "clean" for i in resp.items)
+
+    def test_status_missing_pack_raises(self, tmp_path):
+        """Path with no index.md raises NotFoundError."""
+        inspector = FilesystemFreshnessInspector()
+        usecase = PackStatusUseCase(inspector=inspector)
+
+        with pytest.raises(NotFoundError):
+            usecase.execute(PackStatusRequest(path=str(tmp_path)))
+
+    def test_status_nested_pack_includes_children(self, tmp_path):
+        """Pack with child returns children with deep_state."""
+        root = write_pack(
+            tmp_path,
+            "pack",
+            {"alpha": "A"},
+            bytecode={"alpha": "sA", "child": "child summary"},
+            children=[("child", {"one": "1"}, {"one": "s1"})],
+        )
+        age_file(root / "alpha.md", seconds=20)
+        age_file(root / "child" / "one.md", seconds=20)
+        freshen_file(root / "child" / "_bytecode" / "one.md", seconds=1)
+        freshen_file(root / "_bytecode" / "alpha.md", seconds=2)
+        freshen_file(root / "_bytecode" / "child.md", seconds=3)
+
+        inspector = FilesystemFreshnessInspector()
+        usecase = PackStatusUseCase(inspector=inspector)
+        resp = usecase.execute(PackStatusRequest(path=str(root)))
+
+        assert resp.deep_state == "clean"
+        assert len(resp.children) == 1
+        assert resp.children[0].compilation_state == "clean"

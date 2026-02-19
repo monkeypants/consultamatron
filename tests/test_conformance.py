@@ -646,6 +646,70 @@ def _discover_bc_packages():
     return packages
 
 
+# ---------------------------------------------------------------------------
+# 9. Design-time pack freshness — stale bytecode detection
+# ---------------------------------------------------------------------------
+
+
+def _discover_design_time_packs():
+    """Find all version-controlled packs with manifest frontmatter."""
+    results = []
+    for search_root in (_REPO_ROOT / "docs", _REPO_ROOT / "commons"):
+        if not search_root.is_dir():
+            continue
+        for index_md in search_root.rglob("index.md"):
+            fm = _parse_skill_frontmatter(index_md)
+            if "name" in fm and "purpose" in fm:
+                results.append((fm["name"], index_md.parent))
+    return results
+
+
+_DESIGN_TIME_PACKS = _discover_design_time_packs()
+_DESIGN_TIME_PACK_IDS = [name for name, _ in _DESIGN_TIME_PACKS]
+
+
+@pytest.mark.doctrine
+class TestDesignTimePackFreshness:
+    """Version-controlled packs must not have stale or corrupt bytecode.
+
+    ABSENT is tolerated — newly created packs haven't been compiled yet.
+    DIRTY means someone edited content without recompiling.
+    CORRUPT means orphan mirrors need cleanup.
+    """
+
+    @pytest.mark.parametrize(
+        "pack_entry", _DESIGN_TIME_PACKS, ids=_DESIGN_TIME_PACK_IDS
+    )
+    def test_no_dirty_packs(self, pack_entry):
+        """Stale bytecode (DIRTY) is a CI failure."""
+        from bin.cli.infrastructure.filesystem_freshness_inspector import (
+            FilesystemFreshnessInspector,
+        )
+
+        name, pack_root = pack_entry
+        freshness = FilesystemFreshnessInspector().assess(pack_root)
+        assert freshness.deep_state != CompilationState.DIRTY, (
+            f"Pack {name!r} at {pack_root} has stale bytecode (DIRTY). "
+            "Recompile with the agent or pack-and-wrap."
+        )
+
+    @pytest.mark.parametrize(
+        "pack_entry", _DESIGN_TIME_PACKS, ids=_DESIGN_TIME_PACK_IDS
+    )
+    def test_no_corrupt_packs(self, pack_entry):
+        """Orphan mirrors (CORRUPT) need cleanup."""
+        from bin.cli.infrastructure.filesystem_freshness_inspector import (
+            FilesystemFreshnessInspector,
+        )
+
+        name, pack_root = pack_entry
+        freshness = FilesystemFreshnessInspector().assess(pack_root)
+        assert freshness.deep_state != CompilationState.CORRUPT, (
+            f"Pack {name!r} at {pack_root} has orphan bytecode mirrors (CORRUPT). "
+            "Remove orphans from _bytecode/."
+        )
+
+
 _BC_PACKAGES = _discover_bc_packages()
 
 # Build (bc_name, py_file) pairs for parametrization

@@ -86,6 +86,9 @@ __all__ = [
     "ShowSourceResponse",
     "UpdateProspectusRequest",
     "UpdateProspectusResponse",
+    "PackStatusRequest",
+    "PackStatusResponse",
+    "PackItemInfo",
 ]
 
 
@@ -295,3 +298,28 @@ class SkillPathRequest(BaseModel):
 
 class SkillPathResponse(BaseModel):
     path: str
+
+
+# ---------------------------------------------------------------------------
+# PackStatus — knowledge pack freshness inspection
+# ---------------------------------------------------------------------------
+
+
+class PackStatusRequest(BaseModel):
+    """Show compilation freshness of a knowledge pack."""
+
+    path: str = Field(description="Path to the pack root directory.")
+
+
+class PackItemInfo(BaseModel):
+    name: str
+    is_composite: bool
+    state: str
+
+
+class PackStatusResponse(BaseModel):
+    pack_root: str
+    compilation_state: str
+    deep_state: str
+    items: list[PackItemInfo]
+    children: list["PackStatusResponse"] = []
