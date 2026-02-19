@@ -90,7 +90,7 @@ verifies the result; the community shares the knowledge.
 
 ## Component coupling principles
 
-The cross-BC import test (see § 6 of `docs/articles/engagement-protocol.md`)
+The cross-BC import test (see § 6 of `docs/engagement-protocol.md`)
 enforces three of Uncle Bob's component coupling principles:
 
 **Acyclic Dependencies Principle.** No cycles in the package dependency

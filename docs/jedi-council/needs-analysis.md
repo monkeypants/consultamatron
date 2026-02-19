@@ -8,11 +8,11 @@ type: article
 Summon the SWE jedi council.
 
 The subject is the jedi council use case itself. We have a
-[content convention](semantic-packs.md) for storing knowledge in
-dual-fidelity packs. We have an [analysis of knowledge protocols](knowledge-protocols.md)
+[content convention](../semantic-packs.md) for storing knowledge in
+dual-fidelity packs. We have an [analysis of knowledge protocols](../knowledge-protocols.md)
 establishing that protocols emerge when use cases consume pack items
 structurally, and that the pantheon protocol is the first concrete
-instance. We have an [engagement protocol](engagement-protocol.md)
+instance. We have an [engagement protocol](../engagement-protocol.md)
 that orchestrates skillset pipelines through gate artifacts.
 
 The jedi council is the use case that makes the pantheon protocol
