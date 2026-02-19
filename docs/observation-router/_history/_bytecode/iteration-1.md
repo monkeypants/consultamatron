@@ -1,3 +1,6 @@
+---
+source_hash: sha256:74e2c1f476477b1bbd7f0ee116d981982b2439c186ae2aed588b9fc44697ce0d
+---
 Extracted accumulator items from iteration-0 and established the security model through operator refinement and two deliberations.
 
 **Needs-driven observation.** Operator reframed the model: destinations declare information needs (like actor-goals for sensory apparatus), CLI aggregates needs into a brief, skills apply the brief to transient context. Replaces observe-then-classify-then-route — observations made in response to declared needs already carry their destination. Needs compress naturally through deduplication across same-skillset and same-client engagements.

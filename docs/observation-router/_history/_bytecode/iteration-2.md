@@ -1,3 +1,6 @@
+---
+source_hash: sha256:0f69d9dfd1540ed8ea9e1be063abba79ffd9e29768261f90ce1e02ff918cb7a3
+---
 Worked example validated the pattern against a fictional gatepoint scenario, then deepened the needs protocol with lifecycle, evolution, and hygiene models.
 
 **Guiding principle.** Needs are driven by actionability — "what are we able to improve?" Well-formed need test: if the observer finds something, what improves?

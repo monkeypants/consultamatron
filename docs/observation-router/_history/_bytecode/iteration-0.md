@@ -1,3 +1,6 @@
+---
+source_hash: sha256:7858d89761a5e88ceaa8632f59176980125c49e83ff390d1cb6d915a07839d30
+---
 Origin session discovering the observation-routing pattern. Started from client workspace architecture, arrived at a general pattern through jedi council (Evans, Weinberg, Cunningham, Parnas, Larman, Brooks, Anthropic) and operator refinement.
 
 **Council consensus:** Client knowledge is a knowledge pack not entity model. Learning routing is the critical missing capability. Client workspace is a bounded context with Customer-Supplier relationship to methodology skillsets. Review classifies observations, routing dispatches — separate concerns. Start with pack, promote to entities when invariant enforcement needed.
