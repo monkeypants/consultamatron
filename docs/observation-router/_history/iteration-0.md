@@ -1,12 +1,3 @@
----
-name: iteration-0-origin
-purpose: >
-  Compressed output of the conversation that discovered the
-  observation-and-routing pattern. Contains the jedi council
-  deliberation (compressed), operator refinements, and the general
-  pattern specification that emerged.
----
-
 # Iteration 0 — Origin
 
 Session that began with client workspace architecture questions and
@@ -158,7 +149,7 @@ durable value from that transient context before it evaporates.
   shared kernel conversation to completed-output summary, explanatory
   analysis to key claims
 - Drop: file navigation, false starts, meta-discussion, superseded recaps
-- Organisation: stack under `docs/observation-router/_history/iteration-0/`
+- Organisation: `_history/iteration-0.md`
 
 ## What moves to the accumulator (next iteration)
 

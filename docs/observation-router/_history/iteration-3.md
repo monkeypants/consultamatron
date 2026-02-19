@@ -1,11 +1,3 @@
----
-name: iteration-3-software-changes-spec
-purpose: >
-  Compressed output of iteration 3. Updated the stale software-changes
-  specification to reflect all design decisions from iterations 1-2,
-  grounded in the existing platform architecture.
----
-
 # Iteration 3 — Software Changes Specification
 
 Updated the software-changes spec from a vague sketch ("format not
@@ -76,4 +68,4 @@ loop (too specific for a platform spec).
 - Compress: reading/research phase to key conclusions
 - Drop: file read mechanics, bytecode compilation rounds, lint/test
   verification
-- Organisation: single document under `_history/iteration-3/`
+- Organisation: `_history/iteration-3.md`

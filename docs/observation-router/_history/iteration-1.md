@@ -1,12 +1,3 @@
----
-name: iteration-1-extraction-and-security
-purpose: >
-  Compressed output of iteration 1. Extracted accumulator items from
-  iteration-0, refined the model through operator negotiation (needs-driven
-  observation, routing security), ran two deliberations (testing strategy,
-  destination eligibility).
----
-
 # Iteration 1 — Extraction and Security Model
 
 Extracted accumulator items from iteration-0 compressed material.
@@ -144,4 +135,4 @@ Six items in the pack after this iteration:
   conversation to key conclusions
 - Drop: superseded formulations (five-stage, bag of tricks, passive
   domain buckets), meta-discussion, file creation mechanics
-- Organisation: single document under `_history/iteration-1/`
+- Organisation: `_history/iteration-1.md`
