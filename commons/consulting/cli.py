@@ -18,6 +18,7 @@ from consulting.dtos import (
     GetEngagementRequest,
     GetProjectProgressRequest,
     GetProjectRequest,
+    GetWipRequest,
     InitializeWorkspaceRequest,
     ListDecisionsRequest,
     ListEngagementsRequest,
@@ -193,6 +194,22 @@ def _format_research_list(resp: Any) -> None:
         click.echo(f"  {t.filename}  {t.topic}  {t.confidence}  {t.date}")
 
 
+def _format_wip(resp: Any) -> None:
+    if not resp.engagements:
+        click.echo("No work in progress.")
+        return
+    for eng in resp.engagements:
+        click.echo(f"{eng.client}/{eng.engagement_slug} ({eng.status})")
+        for p in eng.projects:
+            label = f"stage {p.current_stage}/{p.total_stages}"
+            click.echo(f"  {p.project_slug} ({p.skillset}): {label}")
+            if p.blocked:
+                click.echo(f"    BLOCKED: {p.blocked_reason}")
+            elif p.next_skill:
+                click.echo(f"    next: {p.next_skill}")
+    _echo_nudges(resp)
+
+
 # ---------------------------------------------------------------------------
 # Registration
 # ---------------------------------------------------------------------------
@@ -200,6 +217,16 @@ def _format_research_list(resp: Any) -> None:
 
 def register_commands(cli: click.Group) -> None:
     """Register consulting commands on the given CLI group."""
+
+    # -- wip (top-level) ---------------------------------------------------
+    cli.add_command(
+        generate_command(
+            name="wip",
+            request_model=GetWipRequest,
+            usecase_attr="get_wip_status_usecase",
+            format_output=_format_wip,
+        )
+    )
 
     # -- project -----------------------------------------------------------
 

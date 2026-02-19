@@ -128,6 +128,10 @@ class ProjectRepository(Protocol):
         """Check whether a client workspace has been initialised."""
         ...
 
+    def list_clients(self) -> list[str]:
+        """List all client workspace slugs."""
+        ...
+
 
 # ---------------------------------------------------------------------------
 # Decision — immutable, append-only log per project

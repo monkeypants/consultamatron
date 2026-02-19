@@ -147,6 +147,15 @@ class JsonProjectRepository:
     def client_exists(self, client: str) -> bool:
         return (self._root / client).is_dir()
 
+    def list_clients(self) -> list[str]:
+        if not self._root.is_dir():
+            return []
+        return sorted(
+            d.name
+            for d in self._root.iterdir()
+            if d.is_dir() and not d.name.startswith(".")
+        )
+
 
 # ---------------------------------------------------------------------------
 # Decision
