@@ -47,6 +47,7 @@ start with `general-pattern.md`, then browse items by interest.
 | `inflection-point-taxonomy.md` | concept | Four inflection point types with context character and needs brief scope |
 | `observation-needs-protocol.md` | concept | Destinations declare information needs; inheritance model; CLI aggregation use case |
 | `observation-routing-split.md` | concept | High-freedom observation vs low-freedom routing; classification collapses into needs |
+| `routing-security-model.md` | concept | Deny-all/allow-some routing policy; three destination classes (personal, engagement-scoped, commons/dark channel); information leak as primary risk |
 | `software-changes.md` | specification | Platform changes: needs protocol, CLI use case, skill changes, routing infrastructure |
 
 ## History
