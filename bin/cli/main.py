@@ -20,6 +20,7 @@ from bin.cli.dtos import (
     ListProfilesRequest,
     ListSkillsetsRequest,
     ListSourcesRequest,
+    PackStatusRequest,
     RegisterProspectusRequest,
     RenderSiteRequest,
     ShowProfileRequest,
@@ -272,6 +273,52 @@ site.add_command(
         request_model=RenderSiteRequest,
         usecase_attr="render_site_usecase",
         format_output=_format_site_render,
+    )
+)
+
+
+# ---------------------------------------------------------------------------
+# pack (cross-BC, stays here)
+# ---------------------------------------------------------------------------
+
+_STATE_COLOURS = {
+    "clean": "green",
+    "dirty": "yellow",
+    "absent": "cyan",
+    "corrupt": "red",
+}
+
+
+def _format_pack_status(resp: Any, indent: int = 0) -> None:
+    prefix = "  " * indent
+    colour = _STATE_COLOURS.get(resp.deep_state, "white")
+    click.echo(f"{prefix}{resp.pack_root}")
+    click.echo(
+        f"{prefix}  state: {click.style(resp.deep_state, fg=colour)}"
+        f"  (shallow: {resp.compilation_state})"
+    )
+    for item in resp.items:
+        kind = "pack" if item.is_composite else "item"
+        item_colour = _STATE_COLOURS.get(item.state, "white")
+        click.echo(
+            f"{prefix}  {click.style(item.state, fg=item_colour):>10s}  "
+            f"{item.name} ({kind})"
+        )
+    for child in resp.children:
+        _format_pack_status(child, indent + 1)
+
+
+@cli.group()
+def pack() -> None:
+    """Knowledge pack operations."""
+
+
+pack.add_command(
+    generate_command(
+        name="status",
+        request_model=PackStatusRequest,
+        usecase_attr="pack_status_usecase",
+        format_output=_format_pack_status,
     )
 )
 
