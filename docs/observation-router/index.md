@@ -27,9 +27,9 @@ inflection points in the consulting practice.
 
 ## Status
 
-Iteration 2 in progress. Worked example traces the pattern through
-a fictional engagement. Needs protocol refined with guiding principle
-and storage format decision.
+Iteration 2 complete (stacked). Seven accumulator items. Key design
+moves: needs guiding principle, storage format, needs lifecycle per
+destination type, self-feeding evolution, needs hygiene model.
 
 ## Routing
 
@@ -44,7 +44,7 @@ items by interest.
 |---|---|---|
 | `general-pattern.md` | concept | The four-stage pattern: inflection point → needs brief → observations → routing |
 | `inflection-point-taxonomy.md` | concept | Four inflection point types with context character and needs brief scope |
-| `observation-needs-protocol.md` | concept | Destinations declare information needs; inheritance model; CLI aggregation use case |
+| `observation-needs-protocol.md` | concept | Destinations declare needs; guiding principle; lifecycle per type; evolution; hygiene |
 | `observation-routing-split.md` | concept | High-freedom observation vs low-freedom routing; classification collapses into needs |
 | `routing-security-model.md` | concept | Deny-all/allow-some routing policy; three destination classes (personal, engagement-scoped, commons/dark channel); information leak as primary risk |
 | `software-changes.md` | specification | Platform changes: needs protocol, CLI use case, skill changes, routing infrastructure |
@@ -52,6 +52,8 @@ items by interest.
 
 ## History
 
+- `_history/iteration-2/` — worked example validation, needs guiding
+  principle, storage format, needs lifecycle/evolution/hygiene.
 - `_history/iteration-1/` — extraction of accumulator items from
   iteration-0, needs-driven model refinement, Beck-Larman testing
   deliberation, eligibility council + operator security correction.
