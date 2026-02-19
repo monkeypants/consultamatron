@@ -371,19 +371,22 @@ def make_pack_freshness(**overrides) -> PackFreshness:
 # ---------------------------------------------------------------------------
 
 
-def write_pack(tmp_path, name, items, *, bytecode=None, children=None):
+def write_pack(tmp_path, name, items, *, bytecode=None, children=None, manifest=None):
     """Create a pack directory with controlled timestamps.
 
     items: dict of {name: content} — creates {name}.md files
     bytecode: dict of {name: content} — creates _bytecode/{name}.md
     children: list of (name, items, bytecode) tuples — nested packs
+    manifest: dict of frontmatter keys — defaults to name + purpose
     Returns the pack root Path.
     """
+    manifest = manifest or {"name": "test", "purpose": "Test pack."}
     pack_root = tmp_path / name
     pack_root.mkdir(parents=True, exist_ok=True)
 
     # Write index.md (manifest)
-    (pack_root / "index.md").write_text("---\nname: test\n---\n")
+    fm = "---\n" + "\n".join(f"{k}: {v}" for k, v in manifest.items()) + "\n---\n"
+    (pack_root / "index.md").write_text(fm)
 
     # Write items
     for item_name, content in items.items():
@@ -401,7 +404,9 @@ def write_pack(tmp_path, name, items, *, bytecode=None, children=None):
         for child_name, child_items, child_bytecode in children:
             child_root = pack_root / child_name
             child_root.mkdir(exist_ok=True)
-            (child_root / "index.md").write_text("---\nname: child\n---\n")
+            (child_root / "index.md").write_text(
+                "---\nname: child\npurpose: Child pack.\n---\n"
+            )
             for item_name, content in child_items.items():
                 (child_root / f"{item_name}.md").write_text(content)
             if child_bytecode is not None:

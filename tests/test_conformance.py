@@ -26,6 +26,7 @@ import pytest
 from bin.cli.config import Config
 from bin.cli.di import Container
 from practice.bc_discovery import discover_all_bc_modules
+from practice.frontmatter import parse_frontmatter
 from consulting.dtos import (
     CreateEngagementRequest,
     GetProjectProgressRequest,
@@ -424,61 +425,8 @@ _NAME_RE = re.compile(r"^[a-z][a-z0-9]*(-[a-z][a-z0-9]*)*$")
 
 
 def _parse_skill_frontmatter(skill_md_path: Path) -> dict:
-    """Parse YAML frontmatter from a SKILL.md file.
-
-    Minimal parser — handles flat ``key: value`` pairs and the YAML
-    ``>`` folded-scalar continuation used for descriptions.  No
-    external YAML dependency required.
-    """
-    text = skill_md_path.read_text()
-    parts = text.split("---", 2)
-    if len(parts) < 3:
-        return {}
-
-    result = {}
-    current_key = None
-    folding = False
-    fold_lines: list[str] = []
-
-    for line in parts[1].splitlines():
-        stripped = line.strip()
-        if not stripped:
-            if folding:
-                fold_lines.append("")
-            continue
-
-        # Indented continuation of a folded scalar
-        if folding and line[0] in (" ", "\t"):
-            fold_lines.append(stripped)
-            continue
-
-        # Flush any accumulated folded text
-        if folding:
-            result[current_key] = " ".join(ln for ln in fold_lines if ln)
-            folding = False
-            fold_lines = []
-
-        if ":" not in stripped:
-            continue
-
-        key, _, value = stripped.partition(":")
-        key = key.strip()
-        value = value.strip()
-
-        if value == ">":
-            current_key = key
-            folding = True
-            fold_lines = []
-        elif value:
-            result[key] = value
-        else:
-            result[key] = ""
-
-    # Flush trailing folded scalar
-    if folding:
-        result[current_key] = " ".join(ln for ln in fold_lines if ln)
-
-    return result
+    """Delegate to the shared frontmatter parser."""
+    return parse_frontmatter(skill_md_path)
 
 
 def _discover_skill_dirs():

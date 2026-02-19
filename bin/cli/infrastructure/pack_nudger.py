@@ -11,64 +11,8 @@ from __future__ import annotations
 from pathlib import Path
 
 from practice.entities import CompilationState
+from practice.frontmatter import parse_frontmatter
 from practice.repositories import FreshnessInspector
-
-
-def _parse_manifest_frontmatter(index_path: Path) -> dict:
-    """Extract frontmatter key-value pairs from an index.md file.
-
-    Minimal parser — handles flat ``key: value`` pairs and the YAML
-    ``>`` folded-scalar continuation.  No external YAML dependency.
-    """
-    text = index_path.read_text()
-    parts = text.split("---", 2)
-    if len(parts) < 3:
-        return {}
-
-    result: dict[str, str] = {}
-    current_key: str | None = None
-    folding = False
-    fold_lines: list[str] = []
-
-    for line in parts[1].splitlines():
-        stripped = line.strip()
-        if not stripped:
-            if folding:
-                fold_lines.append("")
-            continue
-
-        # Indented continuation of a folded scalar
-        if folding and line[0] in (" ", "\t"):
-            fold_lines.append(stripped)
-            continue
-
-        # Flush any accumulated folded text
-        if folding:
-            result[current_key] = " ".join(ln for ln in fold_lines if ln)
-            folding = False
-            fold_lines = []
-
-        if ":" not in stripped:
-            continue
-
-        key, _, value = stripped.partition(":")
-        key = key.strip()
-        value = value.strip()
-
-        if value == ">":
-            current_key = key
-            folding = True
-            fold_lines = []
-        elif value:
-            result[key] = value
-        else:
-            result[key] = ""
-
-    # Flush trailing folded scalar
-    if folding:
-        result[current_key] = " ".join(ln for ln in fold_lines if ln)
-
-    return result
 
 
 def _discover_packs(repo_root: Path) -> list[tuple[str, Path]]:
@@ -90,7 +34,7 @@ def _discover_packs(repo_root: Path) -> list[tuple[str, Path]]:
         if not search_root.is_dir():
             continue
         for index_md in search_root.rglob("index.md"):
-            fm = _parse_manifest_frontmatter(index_md)
+            fm = parse_frontmatter(index_md)
             if "name" in fm and "purpose" in fm:
                 results.append((fm["name"], index_md.parent))
     return results
@@ -106,15 +50,39 @@ _STATE_LABELS = {
 class FilesystemPackNudger:
     """Check design-time packs and return nudge strings."""
 
-    def __init__(self, repo_root: Path, inspector: FreshnessInspector) -> None:
+    def __init__(
+        self,
+        repo_root: Path,
+        inspector: FreshnessInspector,
+        skillset_bc_dirs: dict[str, Path] | None = None,
+    ) -> None:
         self._repo_root = repo_root
         self._inspector = inspector
+        self._skillset_bc_dirs = skillset_bc_dirs or {}
 
     def check(self, skillset_names: list[str] | None = None) -> list[str]:
         packs = _discover_packs(self._repo_root)
         nudges: list[str] = []
 
+        relevant_bc_dirs: set[Path] | None = None
+        if skillset_names is not None:
+            relevant_bc_dirs = {
+                self._skillset_bc_dirs[n]
+                for n in skillset_names
+                if n in self._skillset_bc_dirs
+            }
+
+        docs_root = self._repo_root / "docs"
+
         for name, pack_root in packs:
+            if relevant_bc_dirs is not None:
+                is_platform = pack_root.is_relative_to(docs_root)
+                is_relevant_bc = any(
+                    pack_root.is_relative_to(d) for d in relevant_bc_dirs
+                )
+                if not is_platform and not is_relevant_bc:
+                    continue
+
             freshness = self._inspector.assess(pack_root)
             state = freshness.deep_state
             if state == CompilationState.CLEAN:
