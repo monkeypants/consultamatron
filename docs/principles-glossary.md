@@ -22,20 +22,22 @@ only on protocols and entities).
 **Larman (GRASP).** Assign responsibility to the class that has the
 information needed to fulfil it.
 **Applied:** docstring-conventions.md § The principle (each docstring
-layer documents what its reader needs).
+layer documents what its reader needs); integration-surface.md §
+The hidden decision / information expert pair (who fills each side
+of a capability boundary).
 
 ### Larman's Law 1: Power-Structure Inertia
 **Larman.** Organisations are implicitly optimised to avoid changing
 existing power structures.
-**Applied:** conformance-testing.md § Why structural, not cultural.
+**Applied:** dev/conformance-testing.md § Why structural, not cultural.
 
 ### Larman's Law 2: Terminology Absorption
 **Larman.** New terminology is adopted but behaviour remains unchanged.
-**Applied:** conformance-testing.md § Why structural, not cultural.
+**Applied:** dev/conformance-testing.md § Why structural, not cultural.
 
 ### Larman's Law 3: Pragmatism Defence
 **Larman.** The status quo is defended as the only pragmatic option.
-**Applied:** conformance-testing.md § Why structural, not cultural.
+**Applied:** dev/conformance-testing.md § Why structural, not cultural.
 
 ### Larman's Law 4: Culture Follows Structure
 **Larman.** Culture and behaviour follow organisational structure; to
@@ -46,12 +48,12 @@ documentation).
 ### Feature Teams over Component Teams
 **Larman (LeSS).** Each contributor owns the full vertical slice rather
 than one horizontal layer. No architecture review board.
-**Applied:** conformance-testing.md § Why structural, not cultural.
+**Applied:** dev/conformance-testing.md § Why structural, not cultural.
 
 ### Community of Practice over Review Board
 **Larman.** Quality patterns shared through example and documentation,
 not committee approval.
-**Applied:** conformance-testing.md § Why structural, not cultural.
+**Applied:** dev/conformance-testing.md § Why structural, not cultural.
 
 ---
 
@@ -78,7 +80,9 @@ engagement-protocol.md § 3.
 ### Interface Segregation Principle
 **Uncle Bob (SOLID).** No client should be forced to depend on methods
 it does not use.
-**Applied:** engagement-protocol.md § 5 (GateInspector has one method).
+**Applied:** engagement-protocol.md § 5 (GateInspector has one method);
+integration-surface.md § Why facets, not a monolithic contract (each
+capability is a separate port, not one giant skillset interface).
 
 ### Dependency Inversion Principle
 **Uncle Bob (SOLID).** High-level modules depend on abstractions, not
@@ -94,23 +98,25 @@ GateInspector protocol, not filesystem).
 ### Plugin Architecture
 **Uncle Bob / Fowler.** Core defines ports; extensions satisfy them
 without modifying the core.
-**Applied:** engagement-protocol.md § 11 (skillsets as plugins).
+**Applied:** engagement-protocol.md § 11 (skillsets as plugins);
+integration-surface.md § The pattern (twelve capabilities as typed
+ports that skillsets satisfy).
 
 ### Acyclic Dependencies Principle
 **Uncle Bob.** No cycles in the package dependency graph.
-**Applied:** conformance-testing.md § Component coupling principles
+**Applied:** dev/conformance-testing.md § Component coupling principles
 (cross-BC import test).
 
 ### Stable Dependencies Principle
 **Uncle Bob.** Depend in the direction of stability. Volatile packages
 depend on stable packages, never the reverse.
-**Applied:** conformance-testing.md § Component coupling principles
+**Applied:** dev/conformance-testing.md § Component coupling principles
 (`practice` is stable; BCs depend on it).
 
 ### Stable Abstractions Principle
 **Uncle Bob.** A component should be as abstract as it is stable.
 Concrete implementations belong in volatile packages.
-**Applied:** conformance-testing.md § Component coupling principles
+**Applied:** dev/conformance-testing.md § Component coupling principles
 (`practice` is abstract; BCs are concrete).
 
 ### LLM as Framework Detail
@@ -156,7 +162,44 @@ domain-specific vocabulary).
 **Fowler / Evans (DDD).** A strategic overview of bounded context
 relationships and integration patterns.
 **Applied:** semantic-waist.md § DDD vocabulary for the waist (the
-`engage` skill as executable context map).
+`engage` skill as executable context map);
+context-mapping-the-integration-surface.md (full context map of the
+practice/skillset boundary).
+
+### Conformist
+**Evans (DDD).** A downstream context accepts the upstream model without
+translation, using the upstream types directly.
+**Applied:** context-mapping-the-integration-surface.md § Skillsets are
+Conformists with influence (skillsets populate PipelineStage and
+ProjectContribution directly).
+
+### Customer-Supplier
+**Evans (DDD).** Upstream context plans with downstream needs in mind;
+downstream has influence but not control over the shared model.
+**Applied:** context-mapping-the-integration-surface.md § Skillsets are
+Conformists with influence (practice layer evolves schemas considering
+skillset needs; influence channel is the PR process).
+
+### Open Host Service
+**Evans (DDD).** A context exposes a general-purpose protocol that any
+consumer can use without bilateral negotiation.
+**Applied:** context-mapping-the-integration-surface.md § The practice
+layer is an Open Host Service (semantic pack convention, discovery
+mechanisms, capability contracts).
+
+### Separate Ways
+**Evans (DDD).** Two contexts have no integration and operate
+independently.
+**Applied:** context-mapping-the-integration-surface.md § Separate Ways
+is structural, not accidental (skillsets have no inter-dependencies;
+enforced by `doctrine_no_cross_bc_imports`).
+
+### Partnership
+**Evans (DDD).** Two contexts succeed or fail together and co-evolve
+their integration.
+**Applied:** context-mapping-the-integration-surface.md § Partnership
+exists at the human-agent boundary (propose-negotiate-agree loop;
+gate artifacts require bilateral agreement).
 
 ### Gate Artifacts as Deterministic Backbone
 **Fowler.** The `.agreed` suffix marks the boundary between
@@ -185,6 +228,32 @@ ProjectPipelinePosition).
 **Fowler.** Derive engagement state from existing artifacts rather than
 storing it in a separate database. Gate files are the canonical state.
 **Applied:** engagement-protocol.md § 8.
+
+---
+
+## Parnas (Information Hiding / Modular Decomposition)
+
+### Information Hiding
+**Parnas.** Each module hides a design decision that is likely to change.
+The module interface is stable; the hidden decision varies.
+**Applied:** integration-surface.md § The hidden decision / information
+expert pair (each capability encapsulates one design decision that varies
+independently across skillsets).
+
+### Hard Hiding (Code Enforcement)
+**Parnas / Consultamatron.** The hidden decision is enforced by code —
+Python Protocol classes, type checking, conformance tests. Violation is
+detectable at import time or CI. Zero tokens.
+**Applied:** integration-surface.md § Two mechanisms (code ports enforce
+hard hiding).
+
+### Soft Hiding (Convention Enforcement)
+**Parnas / Consultamatron.** The hidden decision is documented as a
+convention but enforced through language-level evaluation. Violation
+requires token-burning verification to detect.
+**Applied:** integration-surface.md § Two mechanisms (language ports
+enforce soft hiding); articles/language-port-testing.md (the three-tier
+verification strategy for soft hiding).
 
 ---
 
@@ -249,7 +318,7 @@ AI agent consumption.
 ### Grade Outputs, not Process
 **Anthropic.** Evaluate what a component produced, not how it got there.
 Partial credit where possible.
-**Applied:** conformance-testing.md § What conformance does not cover.
+**Applied:** dev/conformance-testing.md § What conformance does not cover.
 
 ### Context Rot
 **Anthropic / transformer architecture.** As context windows fill,
@@ -325,7 +394,7 @@ diamond.
 ### BYOT Contributor Model
 **Consultamatron.** Burn Your Own Tokens — contributors develop
 skillsets at their own expense and submit as pull requests.
-**Applied:** conformance-testing.md § The problem conformance solves.
+**Applied:** dev/conformance-testing.md § The problem conformance solves.
 
 ### L0-L2 Progressive Compression
 **Consultamatron.** L0 = human-readable prose, L1 = structured summary,
@@ -388,3 +457,37 @@ current fluency. New operators need reasoning chains and vocabulary
 reinforcement. Experienced operators need conclusions and evidence.
 Detect fluency from negotiation resolution.
 **Applied:** wetware-efficiency.md § The long game.
+
+### Skillset Capability
+**Consultamatron.** One facet of the integration protocol — a port the
+practice layer defines and the adapter contract a skillset satisfies.
+Twelve capabilities decompose the integration surface by the Parnas
+criterion (each hides one independently varying design decision).
+**Applied:** integration-surface.md (entire document);
+capabilities/index.md (the catalogue).
+
+### Consultamatron Integration Protocol (CIP)
+**Consultamatron.** The collection of all contracts at the
+practice/skillset boundary. Each Skillset Capability is one facet of
+the CIP. The protocol composes from independent facets rather than
+being a monolithic interface.
+**Applied:** integration-surface.md § The pattern;
+context-mapping-the-integration-surface.md (DDD analysis of the CIP).
+
+### Code Port / Language Port
+**Consultamatron.** The two enforcement mechanisms for capabilities.
+Code ports use Python Protocols (zero tokens, CI-enforced). Language
+ports use filesystem conventions (token-burning verification, engineer-
+triggered). The mechanism is determined by whether the contract is
+evaluable by code alone.
+**Applied:** integration-surface.md § Two mechanisms;
+articles/language-port-testing.md (verification strategy for language
+ports).
+
+### Capability Maturity Model
+**Consultamatron.** Three levels: nascent (documented, no enforcement),
+established (structural tests, partial coverage), mature (full
+structural tests, semantic verification defined). Each capability
+progresses independently.
+**Applied:** integration-surface.md § Maturity; capabilities/ pack
+frontmatter (maturity field on each capability).
