@@ -1,0 +1,3 @@
+Observations captured at inflection points, routed to destination knowledge contexts. Five stages: inflection point (boundary with transient context) → reflection strategy (type-specific question bags, grow with experience) → observations (high-freedom judgment about what is interesting or novel) → classification (tag by destination domain, constrained judgment) → routing (mechanical dispatch by tag, no judgment).
+
+Critical design split: observation is rich and varied (requires context, domain knowledge), routing is simple and reliable (requires only tags and dispatch rules). Separating them keeps the routing mechanism stable while observation mechanisms evolve independently.
