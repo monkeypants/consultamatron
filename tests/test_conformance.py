@@ -26,6 +26,7 @@ import pytest
 from bin.cli.config import Config
 from bin.cli.di import Container
 from practice.bc_discovery import discover_all_bc_modules
+from practice.entities import SkillManifest
 from practice.frontmatter import parse_frontmatter
 from consulting.dtos import (
     CreateEngagementRequest,
@@ -50,6 +51,7 @@ from .conftest import (
     make_project,
     make_prospectus,
     make_research,
+    make_skill_manifest,
     make_skillset,
 )
 
@@ -243,6 +245,19 @@ class TestEntityRoundTrip:
                 make_knowledge_pack(compilation_state=CompilationState.CORRUPT),
                 id="KnowledgePack-corrupt",
             ),
+            pytest.param(make_skill_manifest(), id="SkillManifest"),
+            pytest.param(
+                make_skill_manifest(
+                    metadata=dict(
+                        author="monkeypants",
+                        version="0.2",
+                        freedom="high",
+                        skillset="wardley-mapping",
+                        stage="1",
+                    ),
+                ),
+                id="SkillManifest-pipeline",
+            ),
             pytest.param(make_item_freshness(), id="ItemFreshness"),
             pytest.param(
                 make_item_freshness(state="orphan", is_composite=False),
@@ -429,6 +444,12 @@ def _parse_skill_frontmatter(skill_md_path: Path) -> dict:
     return parse_frontmatter(skill_md_path)
 
 
+def _load_skill_manifest(skill_md_path: Path) -> SkillManifest:
+    """Parse and validate a SKILL.md into a SkillManifest entity."""
+    fm = parse_frontmatter(skill_md_path)
+    return SkillManifest.model_validate(fm)
+
+
 def _discover_skill_dirs():
     """Return list of (name, resolved_path) for all skill directories."""
     skills_dir = _REPO_ROOT / ".claude" / "skills"
@@ -495,34 +516,17 @@ class TestSkillFileConformance:
     def test_name_matches_directory(self, skill_dir):
         """SKILL.md name field matches parent directory name."""
         dir_name, path = skill_dir
-        fm = _parse_skill_frontmatter(path / "SKILL.md")
-        assert "name" in fm, f"No name in frontmatter: {path / 'SKILL.md'}"
-        assert fm["name"] == dir_name, (
-            f"Frontmatter name {fm['name']!r} != directory name {dir_name!r}"
+        manifest = _load_skill_manifest(path / "SKILL.md")
+        assert manifest.name == dir_name, (
+            f"Frontmatter name {manifest.name!r} != directory name {dir_name!r}"
         )
 
     @pytest.mark.parametrize("skill_dir", _SKILL_DIRS, ids=_SKILL_DIR_IDS)
-    def test_name_format(self, skill_dir):
-        """name is <=64 chars, lowercase/hyphens, no leading/trailing/consecutive hyphens."""
+    def test_valid_manifest(self, skill_dir):
+        """SKILL.md parses into a valid SkillManifest — name format, description
+        length, and freedom level are all enforced by Pydantic validators."""
         _, path = skill_dir
-        fm = _parse_skill_frontmatter(path / "SKILL.md")
-        name = fm.get("name", "")
-        assert name, f"Empty name in {path / 'SKILL.md'}"
-        assert len(name) <= 64, f"Name {name!r} exceeds 64 chars ({len(name)})"
-        assert _NAME_RE.match(name), (
-            f"Name {name!r} does not match pattern ^[a-z][a-z0-9]*(-[a-z][a-z0-9]*)*$"
-        )
-
-    @pytest.mark.parametrize("skill_dir", _SKILL_DIRS, ids=_SKILL_DIR_IDS)
-    def test_description_length(self, skill_dir):
-        """description is <=1024 characters and non-empty."""
-        _, path = skill_dir
-        fm = _parse_skill_frontmatter(path / "SKILL.md")
-        desc = fm.get("description", "")
-        assert desc, f"Empty description in {path / 'SKILL.md'}"
-        assert len(desc) <= 1024, (
-            f"Description exceeds 1024 chars ({len(desc)}): {path / 'SKILL.md'}"
-        )
+        _load_skill_manifest(path / "SKILL.md")
 
     @pytest.mark.parametrize("skill_dir", _SKILL_DIRS, ids=_SKILL_DIR_IDS)
     def test_line_count(self, skill_dir):
@@ -531,18 +535,6 @@ class TestSkillFileConformance:
         skill_md = path / "SKILL.md"
         line_count = len(skill_md.read_text().splitlines())
         assert line_count < 500, f"{skill_md} has {line_count} lines (limit 500)"
-
-    # --- Freedom levels ---
-
-    @pytest.mark.parametrize("skill_dir", _SKILL_DIRS, ids=_SKILL_DIR_IDS)
-    def test_freedom_declared(self, skill_dir):
-        """Every SKILL.md must declare a freedom level (high/medium/low)."""
-        _, path = skill_dir
-        fm = _parse_skill_frontmatter(path / "SKILL.md")
-        freedom = fm.get("freedom", "")
-        assert freedom in {"high", "medium", "low"}, (
-            f"freedom must be high/medium/low, got {freedom!r}: {path / 'SKILL.md'}"
-        )
 
     # --- Bash wrappers ---
 
@@ -561,9 +553,9 @@ class TestSkillFileConformance:
         skill_md = _REPO_ROOT / ".claude" / "skills" / skill_name / "SKILL.md"
         if not skill_md.is_file():
             pytest.skip(f"No SKILL.md for {skill_name}")
-        fm = _parse_skill_frontmatter(skill_md)
-        assert fm.get("name") == skill_name, (
-            f"Frontmatter name {fm.get('name')!r} != pipeline skill {skill_name!r}"
+        manifest = _load_skill_manifest(skill_md)
+        assert manifest.name == skill_name, (
+            f"Frontmatter name {manifest.name!r} != pipeline skill {skill_name!r}"
         )
 
 
@@ -600,16 +592,13 @@ def _discover_bc_packages():
 
 
 def _discover_design_time_packs():
-    """Find all version-controlled packs with manifest frontmatter."""
-    results = []
-    for search_root in (_REPO_ROOT / "docs", _REPO_ROOT / "commons"):
-        if not search_root.is_dir():
-            continue
-        for index_md in search_root.rglob("index.md"):
-            fm = _parse_skill_frontmatter(index_md)
-            if "name" in fm and "purpose" in fm:
-                results.append((fm["name"], index_md.parent))
-    return results
+    """Find all version-controlled packs via FilesystemKnowledgePackRepository."""
+    from bin.cli.infrastructure.filesystem_knowledge_pack_repository import (
+        FilesystemKnowledgePackRepository,
+    )
+
+    repo = FilesystemKnowledgePackRepository(_REPO_ROOT)
+    return [(pack.name, path) for pack, path in repo.packs_with_paths()]
 
 
 _DESIGN_TIME_PACKS = _discover_design_time_packs()

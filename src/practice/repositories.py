@@ -12,10 +12,12 @@ from typing import Protocol, runtime_checkable
 
 from practice.content import ProjectContribution
 from practice.entities import (
+    KnowledgePack,
     PackFreshness,
     Profile,
     Project,
     ResearchTopic,
+    SkillManifest,
     SkillsetSource,
 )
 
@@ -175,4 +177,30 @@ class ItemCompiler(Protocol):
 
     def compile(self, item_path: Path, pack_root: Path) -> str:
         """Read item content, return summary text for _bytecode/ mirror."""
+        ...
+
+
+@runtime_checkable
+class SkillManifestRepository(Protocol):
+    """Read-only repository for parsed SKILL.md manifests."""
+
+    def get(self, name: str) -> SkillManifest | None:
+        """Retrieve a skill manifest by name."""
+        ...
+
+    def list_all(self) -> list[SkillManifest]:
+        """List all discovered skill manifests."""
+        ...
+
+
+@runtime_checkable
+class KnowledgePackRepository(Protocol):
+    """Read-only repository for knowledge pack manifests."""
+
+    def get(self, name: str) -> KnowledgePack | None:
+        """Retrieve a knowledge pack by name."""
+        ...
+
+    def list_all(self) -> list[KnowledgePack]:
+        """List all discovered knowledge packs."""
         ...

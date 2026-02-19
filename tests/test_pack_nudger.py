@@ -30,10 +30,10 @@ import pytest
 from bin.cli.infrastructure.filesystem_freshness_inspector import (
     FilesystemFreshnessInspector,
 )
-from bin.cli.infrastructure.pack_nudger import (
-    FilesystemPackNudger,
-    _discover_packs,
+from bin.cli.infrastructure.filesystem_knowledge_pack_repository import (
+    FilesystemKnowledgePackRepository,
 )
+from bin.cli.infrastructure.pack_nudger import FilesystemPackNudger
 from practice.frontmatter import parse_frontmatter
 
 from .conftest import age_file, freshen_file, write_pack
@@ -62,13 +62,13 @@ class TestManifestFrontmatter:
         assert fm == {"name": "my-pack", "purpose": "Do things."}
 
     def test_parses_folded_scalar(self, tmp_path):
-        """YAML > continuation joins indented lines into a single string."""
+        """YAML > (folded clip) joins indented lines, keeps trailing newline."""
         index = tmp_path / "index.md"
         index.write_text(
             "---\nname: my-pack\npurpose: >\n  Multi-line\n  purpose text.\n---\n"
         )
         fm = parse_frontmatter(index)
-        assert fm["purpose"] == "Multi-line purpose text."
+        assert fm["purpose"] == "Multi-line purpose text.\n"
 
     def test_no_frontmatter_returns_empty(self, tmp_path):
         """File without --- delimiters → pack has no identity."""
@@ -76,6 +76,40 @@ class TestManifestFrontmatter:
         index.write_text("Just body text, no delimiters.\n")
         fm = parse_frontmatter(index)
         assert fm == {}
+
+    def test_parses_nested_dict(self, tmp_path):
+        """YAML nested mappings are preserved as dicts."""
+        index = tmp_path / "index.md"
+        index.write_text(
+            "---\nname: my-skill\nmetadata:\n  author: monkeypants\n"
+            "  version: '0.2'\n  freedom: high\n---\n"
+        )
+        fm = parse_frontmatter(index)
+        assert fm["metadata"] == {
+            "author": "monkeypants",
+            "version": "0.2",
+            "freedom": "high",
+        }
+
+    def test_parses_list_of_objects(self, tmp_path):
+        """YAML list of objects is preserved."""
+        index = tmp_path / "index.md"
+        index.write_text(
+            "---\nname: my-pack\npurpose: Test.\n"
+            "actor_goals:\n  - actor: engineer\n    goal: build things\n---\n"
+        )
+        fm = parse_frontmatter(index)
+        assert fm["actor_goals"] == [{"actor": "engineer", "goal": "build things"}]
+
+    def test_parses_list_of_strings(self, tmp_path):
+        """YAML list of strings is preserved."""
+        index = tmp_path / "index.md"
+        index.write_text(
+            "---\nname: my-pack\npurpose: Test.\n"
+            "triggers:\n  - first trigger\n  - second trigger\n---\n"
+        )
+        fm = parse_frontmatter(index)
+        assert fm["triggers"] == ["first trigger", "second trigger"]
 
     def test_incomplete_frontmatter_returns_empty(self, tmp_path):
         """Single --- without closing delimiter → pack has no identity."""
@@ -92,7 +126,7 @@ class TestManifestFrontmatter:
 
 @pytest.mark.doctrine
 class TestPackDiscovery:
-    """The practice discovers knowledge packs across four source containers.
+    """The repository discovers knowledge packs across four source containers.
 
     Packs are found by scanning ``docs/``, ``commons/``, ``personal/``
     (when present), and each ``partnerships/{slug}/`` subdirectory for
@@ -100,12 +134,16 @@ class TestPackDiscovery:
     A manifest missing either field is invisible to the system.
     """
 
+    def _discover(self, repo_root):
+        repo = FilesystemKnowledgePackRepository(repo_root)
+        return [(pack.name, path) for pack, path in repo.packs_with_paths()]
+
     def test_discovers_pack_under_docs(self, tmp_path):
         """Platform pack in docs/ with name + purpose → discovered."""
         docs = tmp_path / "docs" / "my-pack"
         docs.mkdir(parents=True)
         (docs / "index.md").write_text("---\nname: my-pack\npurpose: Knowledge.\n---\n")
-        packs = _discover_packs(tmp_path)
+        packs = self._discover(tmp_path)
         assert len(packs) == 1
         assert packs[0] == ("my-pack", docs)
 
@@ -116,7 +154,7 @@ class TestPackDiscovery:
         (nested / "index.md").write_text(
             "---\nname: deep-pack\npurpose: Deep knowledge.\n---\n"
         )
-        packs = _discover_packs(tmp_path)
+        packs = self._discover(tmp_path)
         assert ("deep-pack", nested) in packs
 
     def test_discovers_pack_under_commons(self, tmp_path):
@@ -126,7 +164,7 @@ class TestPackDiscovery:
         (bc_docs / "index.md").write_text(
             "---\nname: bc-pack\npurpose: BC knowledge.\n---\n"
         )
-        packs = _discover_packs(tmp_path)
+        packs = self._discover(tmp_path)
         assert ("bc-pack", bc_docs) in packs
 
     def test_ignores_index_without_purpose(self, tmp_path):
@@ -134,7 +172,7 @@ class TestPackDiscovery:
         docs = tmp_path / "docs" / "half"
         docs.mkdir(parents=True)
         (docs / "index.md").write_text("---\nname: half\n---\n")
-        packs = _discover_packs(tmp_path)
+        packs = self._discover(tmp_path)
         assert packs == []
 
     def test_ignores_index_without_name(self, tmp_path):
@@ -142,7 +180,7 @@ class TestPackDiscovery:
         docs = tmp_path / "docs" / "half"
         docs.mkdir(parents=True)
         (docs / "index.md").write_text("---\npurpose: No name.\n---\n")
-        packs = _discover_packs(tmp_path)
+        packs = self._discover(tmp_path)
         assert packs == []
 
     def test_discovers_under_personal(self, tmp_path):
@@ -152,7 +190,7 @@ class TestPackDiscovery:
         (personal / "index.md").write_text(
             "---\nname: personal-pack\npurpose: Personal knowledge.\n---\n"
         )
-        packs = _discover_packs(tmp_path)
+        packs = self._discover(tmp_path)
         assert ("personal-pack", personal) in packs
 
     def test_discovers_under_partnerships(self, tmp_path):
@@ -162,13 +200,13 @@ class TestPackDiscovery:
         (partner / "index.md").write_text(
             "---\nname: acme-pack\npurpose: Acme knowledge.\n---\n"
         )
-        packs = _discover_packs(tmp_path)
+        packs = self._discover(tmp_path)
         assert ("acme-pack", partner) in packs
 
     def test_skips_missing_dirs(self, tmp_path):
         """Absent personal/ and partnerships/ directories → no error."""
         (tmp_path / "docs").mkdir()
-        packs = _discover_packs(tmp_path)
+        packs = self._discover(tmp_path)
         assert packs == []
 
 
@@ -195,7 +233,10 @@ class TestFilesystemPackNudger:
 
     def _make_nudger(self, repo_root, *, skillset_bc_dirs=None):
         inspector = FilesystemFreshnessInspector()
-        return FilesystemPackNudger(repo_root, inspector, skillset_bc_dirs)
+        knowledge_packs = FilesystemKnowledgePackRepository(repo_root)
+        return FilesystemPackNudger(
+            repo_root, inspector, skillset_bc_dirs, knowledge_packs=knowledge_packs
+        )
 
     # -- Unscoped checks (no skillset filter) --
 

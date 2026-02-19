@@ -20,6 +20,12 @@ from bin.cli.infrastructure.filesystem_profile_repository import (
 from bin.cli.infrastructure.filesystem_freshness_inspector import (
     FilesystemFreshnessInspector,
 )
+from bin.cli.infrastructure.filesystem_knowledge_pack_repository import (
+    FilesystemKnowledgePackRepository,
+)
+from bin.cli.infrastructure.filesystem_skill_manifest_repository import (
+    FilesystemSkillManifestRepository,
+)
 from bin.cli.infrastructure.pack_nudger import FilesystemPackNudger
 from bin.cli.infrastructure.filesystem_gate_inspector import FilesystemGateInspector
 from bin.cli.infrastructure.filesystem_source_repository import (
@@ -81,10 +87,12 @@ from practice.repositories import (
     FreshnessInspector,
     GateInspector,
     IdGenerator,
+    KnowledgePackRepository,
     PackNudger,
     ProfileRepository,
     ProjectPresenter,
     SiteRenderer,
+    SkillManifestRepository,
     SourceRepository,
 )
 
@@ -170,6 +178,12 @@ class Container:
             workspace_root=config.workspace_root,
             repo_root=config.repo_root,
         )
+        self.skill_manifests: SkillManifestRepository = (
+            FilesystemSkillManifestRepository(config.repo_root)
+        )
+        self.knowledge_packs: KnowledgePackRepository = (
+            FilesystemKnowledgePackRepository(config.repo_root)
+        )
 
         # -- BC discovery (presenters + service hooks) -------------------------
         self.presenters: dict[str, ProjectPresenter] = {}
@@ -189,7 +203,10 @@ class Container:
                 register(self)
 
         self.pack_nudger: PackNudger = FilesystemPackNudger(
-            config.repo_root, self.freshness_inspector, skillset_bc_dirs
+            config.repo_root,
+            self.freshness_inspector,
+            skillset_bc_dirs,
+            knowledge_packs=self.knowledge_packs,
         )
 
         # -- Write usecases ------------------------------------------------

@@ -31,6 +31,7 @@ from practice.entities import (
     ProjectPipelinePosition,
     ProjectStatus,
     ResearchTopic,
+    SkillManifest,
     SkillsetSource,
     Skillset,
     SourceType,
@@ -324,6 +325,20 @@ def make_knowledge_pack(**overrides) -> KnowledgePack:
         triggers=["adding a new bounded context"],
     )
     return KnowledgePack(**(defaults | overrides))
+
+
+def make_skill_manifest(**overrides) -> SkillManifest:
+    defaults = dict(
+        name="test-skill",
+        description="A test skill for conformance.",
+        metadata=dict(
+            author="monkeypants",
+            version="0.1",
+            freedom="medium",
+        ),
+    )
+    merged = defaults | overrides
+    return SkillManifest.model_validate(merged)
 
 
 def _write_skillsets(skillsets_root, skillsets):

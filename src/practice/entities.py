@@ -368,9 +368,45 @@ class KnowledgePack(BaseModel):
 
     name: str
     purpose: str
-    actor_goals: list[ActorGoal]
-    triggers: list[str]
+    actor_goals: list[ActorGoal] = []
+    triggers: list[str] = []
     compilation_state: CompilationState = CompilationState.ABSENT
+
+
+# ---------------------------------------------------------------------------
+# Skill Manifest (SKILL.md frontmatter — agentskills.io spec)
+# ---------------------------------------------------------------------------
+
+
+class FreedomLevel(str, Enum):
+    """How much latitude the agent has during skill execution."""
+
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+
+
+class SkillMetadata(BaseModel):
+    """Metadata block nested inside SKILL.md frontmatter."""
+
+    author: str
+    version: str
+    freedom: FreedomLevel
+    skillset: str | None = None
+    stage: str | None = None
+
+
+class SkillManifest(BaseModel):
+    """Parsed identity of a SKILL.md file.
+
+    Validated from YAML frontmatter. The ``name`` field must be
+    kebab-case and at most 64 characters. The ``description`` must
+    be non-empty and at most 1024 characters.
+    """
+
+    name: str = Field(max_length=64, pattern=r"^[a-z][a-z0-9]*(-[a-z][a-z0-9]*)*$")
+    description: str = Field(min_length=1, max_length=1024)
+    metadata: SkillMetadata
 
 
 # ---------------------------------------------------------------------------
