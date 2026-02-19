@@ -27,9 +27,10 @@ inflection points in the consulting practice.
 
 ## Status
 
-Iteration 2 complete (stacked). Seven accumulator items. Key design
-moves: needs guiding principle, storage format, needs lifecycle per
-destination type, self-feeding evolution, needs hygiene model.
+Iteration 3 in progress. Seven accumulator items. Software-changes
+spec updated with concrete entities, repository protocols, use cases,
+and lifecycle/evolution/hygiene support grounded in existing
+architecture.
 
 ## Routing
 
@@ -47,7 +48,7 @@ items by interest.
 | `observation-needs-protocol.md` | concept | Destinations declare needs; guiding principle; lifecycle per type; evolution; hygiene |
 | `observation-routing-split.md` | concept | High-freedom observation vs low-freedom routing; classification collapses into needs |
 | `routing-security-model.md` | concept | Deny-all/allow-some routing policy; three destination classes (personal, engagement-scoped, commons/dark channel); information leak as primary risk |
-| `software-changes.md` | specification | Platform changes: needs protocol, CLI use case, skill changes, routing infrastructure |
+| `software-changes.md` | specification | Platform changes grounded in existing architecture: entities, repository protocols, three use cases, lifecycle/evolution/hygiene support, deny-all routing |
 | `worked-example.md` | scenario | End-to-end trace through a fictional engagement gatepoint |
 
 ## History
