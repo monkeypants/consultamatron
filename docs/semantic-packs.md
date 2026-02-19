@@ -182,9 +182,12 @@ changed, compile it first, then the parent. Bottom-up propagation,
 each step is small.
 
 The summary generation step requires LLM cost per changed item. The
-compilation step (writing to `_bytecode/`) is mechanical. Detecting
-staleness: if an item's modification time is newer than its
-`_bytecode/` mirror, it needs recompilation.
+compilation step (writing to `_bytecode/`) is mechanical. A pack is
+**clean** when every item's `_bytecode/` mirror is newer than the item
+itself, **dirty** when at least one item is newer than its mirror, and
+the compilation is **absent** when no `_bytecode/` directory exists.
+These three states are represented by `CompilationState` in
+`practice.entities`.
 
 Pack-and-wrap is protocol-agnostic. It compresses any item regardless
 of type. Protocol-aware operations (selecting luminaries, matching
@@ -251,13 +254,18 @@ The index.md body contains routing instructions: "humans read
 ## 7. The PackItem protocol
 
 Items declare their type in frontmatter. The infrastructure protocol
-is minimal:
+is defined in `practice.entities`:
 
 ```python
 class PackItem(Protocol):
     """Any item in a knowledge pack."""
     name: str
     item_type: str
+
+class CompilationState(str, Enum):
+    CLEAN = "clean"   # bytecode newer than all items
+    DIRTY = "dirty"   # at least one item newer than its mirror
+    ABSENT = "absent"  # no _bytecode/ directory
 ```
 
 Name is derived from the filename. Type is the frontmatter `type:`
@@ -360,9 +368,11 @@ and gate consumes tests.
 
 ### Doctrine test: compilation freshness
 
-A conformance test can verify that `_bytecode/` is not stale: if any
-item is newer than its `_bytecode/` mirror, the pack needs
-recompilation. This catches the case where a skill author adds
+A conformance test can verify that no pack is dirty: if any item is
+newer than its `_bytecode/` mirror, the pack's `CompilationState` is
+`DIRTY` and it needs recompilation. Absent packs (no `_bytecode/`
+directory) may be acceptable for newly created packs that have not
+yet been compiled. This catches the case where a skill author adds
 content but forgets to re-run pack-and-wrap.
 
 These tests apply uniformly to both runtime and design-time packs.
@@ -386,14 +396,16 @@ structural enforcement.
 - `docs/` is a half-formed design-time pack: articles and conventions
   about the platform, consumed by skill authors, contributors, and
   human/AI dyads
+- `KnowledgePack`, `ActorGoal`, `PackItem`, and `CompilationState`
+  are defined in `practice.entities` (#98) with round-trip conformance
+  tests
 
 **What this article proposes:**
 1. Name the convention (done — this article)
-2. Define the KnowledgePack entity model and PackItem protocol (#98)
-3. Implement pack-and-wrap use cases, test on `docs/` (#99)
-4. Build knowledge protocols as use cases emerge (see
+2. Implement pack-and-wrap use cases, test on `docs/` (#99)
+3. Build knowledge protocols as use cases emerge (see
    [Knowledge Protocols](knowledge-protocols.md))
-5. Extract design-time packs when skillsets need them
+4. Extract design-time packs when skillsets need them
 
 Any directory of markdown files becomes a knowledge pack the moment
 it gets an `index.md` with manifest frontmatter and its files get

@@ -34,12 +34,13 @@ from consulting.dtos import (
     RegisterProjectRequest,
 )
 from practice.discovery import PipelineStage
-from practice.entities import Skillset
+from practice.entities import CompilationState, Skillset
 
 from .conftest import (
     make_decision,
     make_engagement,
     make_engagement_dashboard,
+    make_knowledge_pack,
     make_next_action,
     make_pipeline_position,
     make_profile,
@@ -229,6 +230,11 @@ class TestEntityRoundTrip:
                     description="Test",
                 ),
                 id="PipelineStage",
+            ),
+            pytest.param(make_knowledge_pack(), id="KnowledgePack"),
+            pytest.param(
+                make_knowledge_pack(compilation_state=CompilationState.DIRTY),
+                id="KnowledgePack-dirty",
             ),
         ],
     )
