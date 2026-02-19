@@ -70,7 +70,13 @@ from practice.entities import (
     ResearchTopic,
 )
 from practice.exceptions import DuplicateError, InvalidTransitionError, NotFoundError
-from practice.repositories import Clock, GateInspector, IdGenerator, SourceRepository
+from practice.repositories import (
+    Clock,
+    GateInspector,
+    IdGenerator,
+    PackNudger,
+    SourceRepository,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -452,10 +458,12 @@ class GetProjectProgressUseCase:
         projects: ProjectRepository,
         decisions: DecisionRepository,
         skillsets: SkillsetRepository,
+        pack_nudger: PackNudger | None = None,
     ) -> None:
         self._projects = projects
         self._decisions = decisions
         self._skillsets = skillsets
+        self._pack_nudger = pack_nudger
 
     def execute(self, request: GetProjectProgressRequest) -> GetProjectProgressResponse:
         project = self._projects.get(
@@ -493,6 +501,10 @@ class GetProjectProgressUseCase:
                 current_stage = stage.skill
                 next_prerequisite = stage.prerequisite_gate
 
+        nudges = (
+            self._pack_nudger.check([project.skillset]) if self._pack_nudger else []
+        )
+
         return GetProjectProgressResponse(
             client=request.client,
             project_slug=request.project_slug,
@@ -500,6 +512,7 @@ class GetProjectProgressUseCase:
             stages=stages,
             current_stage=current_stage,
             next_prerequisite=next_prerequisite,
+            nudges=nudges,
         )
 
 
@@ -781,11 +794,13 @@ class GetEngagementStatusUseCase:
         projects: ProjectRepository,
         skillsets: SkillsetRepository,
         gate_inspector: GateInspector,
+        pack_nudger: PackNudger | None = None,
     ) -> None:
         self._engagements = engagements
         self._projects = projects
         self._skillsets = skillsets
         self._gate_inspector = gate_inspector
+        self._pack_nudger = pack_nudger
 
     def execute(self, request: EngagementStatusRequest) -> EngagementStatusResponse:
         engagement = self._engagements.get(request.client, request.engagement)
@@ -796,12 +811,14 @@ class GetEngagementStatusUseCase:
 
         projects = self._projects.list_filtered(request.client, request.engagement)
         positions: list[ProjectPositionInfo] = []
+        skillset_names: list[str] = []
 
         for project in projects:
             skillset = self._skillsets.get(project.skillset)
             if skillset is None or not skillset.is_implemented:
                 continue
 
+            skillset_names.append(project.skillset)
             stages = sorted(skillset.pipeline, key=lambda s: s.order)
             completed_gates: list[str] = []
             next_gate: str | None = None
@@ -830,12 +847,15 @@ class GetEngagementStatusUseCase:
                 )
             )
 
+        nudges = self._pack_nudger.check(skillset_names) if self._pack_nudger else []
+
         return EngagementStatusResponse(
             dashboard=EngagementDashboardInfo(
                 engagement_slug=request.engagement,
                 status=engagement.status.value,
                 projects=positions,
-            )
+            ),
+            nudges=nudges,
         )
 
 
@@ -855,11 +875,13 @@ class GetNextActionUseCase:
         projects: ProjectRepository,
         skillsets: SkillsetRepository,
         gate_inspector: GateInspector,
+        pack_nudger: PackNudger | None = None,
     ) -> None:
         self._engagements = engagements
         self._projects = projects
         self._skillsets = skillsets
         self._gate_inspector = gate_inspector
+        self._pack_nudger = pack_nudger
 
     def execute(self, request: NextActionRequest) -> NextActionResponse:
         engagement = self._engagements.get(request.client, request.engagement)
@@ -871,10 +893,12 @@ class GetNextActionUseCase:
         projects = self._projects.list_filtered(request.client, request.engagement)
         projects.sort(key=lambda p: p.created)
 
+        skillset_names: list[str] = []
         for project in projects:
             skillset = self._skillsets.get(project.skillset)
             if skillset is None or not skillset.is_implemented:
                 continue
+            skillset_names.append(project.skillset)
 
             stages = sorted(skillset.pipeline, key=lambda s: s.order)
             for stage in stages:
@@ -898,6 +922,10 @@ class GetNextActionUseCase:
                 else:
                     prereq_exists = True
 
+                nudges = (
+                    self._pack_nudger.check(skillset_names) if self._pack_nudger else []
+                )
+
                 if not prereq_exists:
                     return NextActionResponse(
                         skill=None,
@@ -906,6 +934,7 @@ class GetNextActionUseCase:
                             f"Blocked: prerequisite {stage.prerequisite_gate} "
                             f"missing for {project.slug}"
                         ),
+                        nudges=nudges,
                     )
 
                 return NextActionResponse(
@@ -919,10 +948,13 @@ class GetNextActionUseCase:
                             else ""
                         )
                     ),
+                    nudges=nudges,
                 )
 
+        nudges = self._pack_nudger.check(skillset_names) if self._pack_nudger else []
         return NextActionResponse(
             skill=None,
             project_slug=None,
             reason="All projects complete — run review",
+            nudges=nudges,
         )
