@@ -1,43 +1,19 @@
 """Check design-time packs for freshness and produce nudge strings.
 
-Discovers knowledge packs under docs/ and commons/ (plus personal/ and
-partnerships/) by scanning for index.md manifests with name + purpose
-frontmatter. Returns human-readable nudge strings for any pack that is
-dirty or corrupt.
+Discovers knowledge packs via ``FilesystemKnowledgePackRepository``
+and checks each for bytecode freshness. Returns human-readable nudge
+strings for any pack that is dirty or corrupt.
 """
 
 from __future__ import annotations
 
 from pathlib import Path
 
+from bin.cli.infrastructure.filesystem_knowledge_pack_repository import (
+    FilesystemKnowledgePackRepository,
+)
 from practice.entities import CompilationState
-from practice.frontmatter import parse_frontmatter
 from practice.repositories import FreshnessInspector
-
-
-def _discover_packs(repo_root: Path) -> list[tuple[str, Path]]:
-    """Find all version-controlled packs with manifest frontmatter."""
-    results: list[tuple[str, Path]] = []
-    search_roots = [repo_root / "docs", repo_root / "commons"]
-
-    personal = repo_root / "personal"
-    if personal.is_dir():
-        search_roots.append(personal)
-
-    partnerships = repo_root / "partnerships"
-    if partnerships.is_dir():
-        for child in sorted(partnerships.iterdir()):
-            if child.is_dir():
-                search_roots.append(child)
-
-    for search_root in search_roots:
-        if not search_root.is_dir():
-            continue
-        for index_md in search_root.rglob("index.md"):
-            fm = parse_frontmatter(index_md)
-            if "name" in fm and "purpose" in fm:
-                results.append((fm["name"], index_md.parent))
-    return results
 
 
 _STATE_LABELS = {
@@ -55,13 +31,22 @@ class FilesystemPackNudger:
         repo_root: Path,
         inspector: FreshnessInspector,
         skillset_bc_dirs: dict[str, Path] | None = None,
+        knowledge_packs: FilesystemKnowledgePackRepository | None = None,
     ) -> None:
         self._repo_root = repo_root
         self._inspector = inspector
         self._skillset_bc_dirs = skillset_bc_dirs or {}
+        self._knowledge_packs = knowledge_packs
 
     def check(self, skillset_names: list[str] | None = None) -> list[str]:
-        packs = _discover_packs(self._repo_root)
+        if self._knowledge_packs is not None:
+            packs = [
+                (pack.name, path)
+                for pack, path in self._knowledge_packs.packs_with_paths()
+            ]
+        else:
+            packs = _discover_packs(self._repo_root)
+
         nudges: list[str] = []
 
         relevant_bc_dirs: set[Path] | None = None
@@ -95,3 +80,33 @@ class FilesystemPackNudger:
             )
 
         return nudges
+
+
+def _discover_packs(repo_root: Path) -> list[tuple[str, Path]]:
+    """Find all version-controlled packs with manifest frontmatter.
+
+    Legacy fallback — used when no knowledge pack repository is injected.
+    """
+    from practice.frontmatter import parse_frontmatter
+
+    results: list[tuple[str, Path]] = []
+    search_roots = [repo_root / "docs", repo_root / "commons"]
+
+    personal = repo_root / "personal"
+    if personal.is_dir():
+        search_roots.append(personal)
+
+    partnerships = repo_root / "partnerships"
+    if partnerships.is_dir():
+        for child in sorted(partnerships.iterdir()):
+            if child.is_dir():
+                search_roots.append(child)
+
+    for search_root in search_roots:
+        if not search_root.is_dir():
+            continue
+        for index_md in search_root.rglob("index.md"):
+            fm = parse_frontmatter(index_md)
+            if "name" in fm and "purpose" in fm:
+                results.append((fm["name"], index_md.parent))
+    return results
