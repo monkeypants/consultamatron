@@ -47,3 +47,5 @@ Humans: browse item files directly.
 
 - `capabilities/` — catalogue of integration facets at the practice/skillset boundary
 - `observation-router/` — design specification for capturing and routing observations at inflection points (WIP)
+- `pedagogic-gradient-descent/` — calibrated operator pedagogy as a cybernetic control loop
+- `voices-protocol/` — deliberation on multiple pedagogic voices for operator comprehension
