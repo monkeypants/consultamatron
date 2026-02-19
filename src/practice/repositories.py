@@ -152,6 +152,24 @@ class FreshnessInspector(Protocol):
 
 
 @runtime_checkable
+class PackNudger(Protocol):
+    """Check design-time packs for freshness and return nudges.
+
+    Usecases call this to discover dirty or corrupt knowledge packs
+    that are contextually relevant to the current operation. The
+    nudges are informational strings appended to response DTOs.
+    """
+
+    def check(self, skillset_names: list[str] | None = None) -> list[str]:
+        """Return nudge strings for non-clean design-time packs.
+
+        When skillset_names is provided, check only packs related to
+        those skillsets. When None, check all design-time packs.
+        """
+        ...
+
+
+@runtime_checkable
 class ItemCompiler(Protocol):
     """Generate a _bytecode/ summary for a single pack item."""
 

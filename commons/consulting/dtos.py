@@ -317,6 +317,7 @@ class GetProjectProgressResponse(BaseModel):
     stages: list[StageProgress]
     current_stage: str | None
     next_prerequisite: str | None
+    nudges: list[str] = []
 
 
 # ---------------------------------------------------------------------------
@@ -464,6 +465,7 @@ class EngagementStatusRequest(BaseModel):
 
 class EngagementStatusResponse(BaseModel):
     dashboard: "EngagementDashboardInfo"
+    nudges: list[str] = []
 
 
 class EngagementDashboardInfo(BaseModel):
@@ -501,3 +503,4 @@ class NextActionResponse(BaseModel):
     skill: str | None
     project_slug: str | None
     reason: str
+    nudges: list[str] = []
