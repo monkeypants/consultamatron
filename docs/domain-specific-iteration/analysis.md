@@ -227,7 +227,7 @@ improvement — how the Consultamatron Army manages its own evolution. It
 belongs in the repository because it is about the platform, not about
 any specific methodology.
 
-The findings from the Cybertrack engagement are real. The wm-chain
+The findings from a recent engagement are real. The wm-chain
 over-decomposition is real. The bmc-segments revenue gap is real. The
 rubber-stamp stages are real. But they are evidence, not issues. They
 are observations that should feed a structured improvement process
