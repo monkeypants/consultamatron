@@ -504,3 +504,43 @@ class NextActionResponse(BaseModel):
     project_slug: str | None
     reason: str
     nudges: list[str] = []
+
+
+# ---------------------------------------------------------------------------
+# 19. WipStatus
+# ---------------------------------------------------------------------------
+
+
+class WipProjectInfo(BaseModel):
+    """Pipeline position for one in-progress project."""
+
+    client: str
+    engagement: str
+    project_slug: str
+    skillset: str
+    current_stage: int
+    total_stages: int
+    next_skill: str | None
+    next_gate: str | None
+    blocked: bool
+    blocked_reason: str | None
+
+
+class WipEngagementInfo(BaseModel):
+    """One engagement with incomplete projects."""
+
+    client: str
+    engagement_slug: str
+    status: str
+    projects: list[WipProjectInfo]
+
+
+class GetWipRequest(BaseModel):
+    """Show all work in progress across clients."""
+
+    client: str | None = Field(default=None, description="Filter to one client.")
+
+
+class GetWipResponse(BaseModel):
+    engagements: list[WipEngagementInfo]
+    nudges: list[str] = []
