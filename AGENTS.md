@@ -79,3 +79,17 @@ The `.agreed.md` and `.agreed.owm` suffixes mean the operator has explicitly
 confirmed the artifact. Never create a gate artifact without operator
 agreement. Use `practice skillset show --name <name>` to see the gate
 sequence for a specific skillset.
+
+## Bytecode maintenance
+
+Directories with an `index.md` manifest are knowledge packs. Each
+item has a `_bytecode/` mirror — a compressed summary for
+token-efficient agent consumption. You are the compiler.
+
+After editing pack items, check freshness and recompile dirty items:
+
+    practice pack status --path <dir>
+
+Read `docs/_bytecode/howto-pack-and-wrap.md` for the compilation
+procedure. `pytest -m doctrine` fails on dirty or corrupt
+design-time packs.
