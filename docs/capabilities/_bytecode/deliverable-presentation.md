@@ -1,3 +1,6 @@
+---
+source_hash: sha256:7df16287bd615979f44aab5abbfb02d4ea66ff1e1c312020cb5ae88ef1d34b50
+---
 Deliverable presentation is the output pipeline. Skillsets implement a `ProjectPresenter` whose `present()` method returns a `ProjectContribution` containing ContentPage groups, NarrativeGroup tours, and Figure elements. The presenter is the Anti-Corruption Layer translating skillset-specific workspace artifacts into the generic content model.
 
 Registration: `PRESENTER_FACTORY` tuple in `__init__.py` mapping skillset name to factory function. Discovery via DI scan. The `SiteRenderer` protocol consumes `ProjectContribution` entities to produce static HTML.

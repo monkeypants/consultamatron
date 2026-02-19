@@ -1,3 +1,6 @@
+---
+source_hash: sha256:210bbe9f3776a3e64a4b9c517a2589d0190a9f12bbbd94dcac4f9321143dabb2
+---
 End-to-end trace through a fictional engagement gatepoint (segments.agreed.md negotiation). Demonstrates all four stages of the pattern against a scenario with three projects (BMC, consulting, wardley-mapping).
 
 Routing table built by deny-all/allow-some: personal/ yes, client workspace yes, all sibling projects within engagement yes (engagement is the trust boundary, not the project), commons/ denied (dark channel only). Needs gathered from type-level (driven by "what can we improve?") and instance-level (client procurement preferences, funding-round signals, cross-project segment assumptions). Needs deduplicate naturally — same skillset across multiple contexts collapses.

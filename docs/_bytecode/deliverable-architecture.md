@@ -1,3 +1,6 @@
+---
+source_hash: sha256:5992c6fe25ebbd41e73f691371a52fb1cf947b9b6906902e594d2b69f9116724
+---
 The deliverable pipeline separates what to present from how to render it. `ProjectPresenter` (per-skillset) assembles workspace artifacts into `ProjectContribution` entities. `SiteRenderer` (single implementation) consumes contributions to produce static HTML.
 
 Domain model: `ProjectContribution` contains `ProjectSection` entries, each holding `ContentPage` lists and `PageGroup` collections. Generic content entities in `bin/cli/content.py`; skillset-specific types behind presenter boundaries.

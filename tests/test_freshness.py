@@ -20,7 +20,7 @@ from bin.cli.dtos import PackStatusRequest
 from bin.cli.usecases import PackStatusUseCase
 from practice.exceptions import NotFoundError
 
-from .conftest import StubCompiler, age_file, freshen_file, write_pack
+from .conftest import StubCompiler, write_pack
 
 
 # ---------------------------------------------------------------------------
@@ -44,38 +44,27 @@ class TestFreshnessDetection:
         result = FilesystemFreshnessInspector().assess(root)
         assert result.compilation_state == CompilationState.ABSENT
 
-    def test_all_mirrors_newer_is_clean(self, tmp_path):
-        """All _bytecode/ mirrors newer than items → CLEAN."""
+    def test_all_hashes_match_is_clean(self, tmp_path):
+        """All _bytecode/ mirrors have matching source hashes → CLEAN."""
         root = write_pack(
             tmp_path,
             "pack",
             {"alpha": "A", "beta": "B"},
             bytecode={"alpha": "summary A", "beta": "summary B"},
         )
-        # Age items, freshen mirrors
-        age_file(root / "alpha.md")
-        age_file(root / "beta.md")
-        freshen_file(root / "_bytecode" / "alpha.md")
-        freshen_file(root / "_bytecode" / "beta.md")
-
         result = FilesystemFreshnessInspector().assess(root)
         assert result.compilation_state == CompilationState.CLEAN
 
-    def test_one_item_newer_than_mirror_is_dirty(self, tmp_path):
-        """One item newer than its mirror → DIRTY, only that item dirty."""
+    def test_one_item_changed_is_dirty(self, tmp_path):
+        """One item modified after bytecode written → DIRTY, only that item dirty."""
         root = write_pack(
             tmp_path,
             "pack",
             {"alpha": "A", "beta": "B", "gamma": "C"},
             bytecode={"alpha": "sA", "beta": "sB", "gamma": "sC"},
         )
-        # Make all items old, all mirrors fresh
-        for name in ("alpha", "beta", "gamma"):
-            age_file(root / f"{name}.md", seconds=20)
-            freshen_file(root / "_bytecode" / f"{name}.md")
-        # Make beta dirty: item newer than its mirror
-        age_file(root / "_bytecode" / "beta.md", seconds=10)
-        age_file(root / "beta.md", seconds=5)
+        # Modify beta's source — hash in bytecode no longer matches
+        (root / "beta.md").write_text("B modified")
 
         result = FilesystemFreshnessInspector().assess(root)
         assert result.compilation_state == CompilationState.DIRTY
@@ -91,9 +80,6 @@ class TestFreshnessDetection:
             {"alpha": "A", "beta": "B"},
             bytecode={"alpha": "sA"},  # no mirror for beta
         )
-        age_file(root / "alpha.md")
-        freshen_file(root / "_bytecode" / "alpha.md")
-
         result = FilesystemFreshnessInspector().assess(root)
         assert result.compilation_state == CompilationState.DIRTY
         absent = [i for i in result.items if i.state == "absent"]
@@ -108,33 +94,28 @@ class TestFreshnessDetection:
             {"alpha": "A"},
             bytecode={"alpha": "sA", "ghost": "orphan summary"},
         )
-        age_file(root / "alpha.md")
-        freshen_file(root / "_bytecode" / "alpha.md")
-        freshen_file(root / "_bytecode" / "ghost.md")
-
         result = FilesystemFreshnessInspector().assess(root)
         assert result.compilation_state == CompilationState.CORRUPT
         orphans = [i for i in result.items if i.state == "orphan"]
         assert len(orphans) == 1
         assert orphans[0].name == "ghost"
 
-    def test_edited_index_all_mirrors_fresh_is_clean(self, tmp_path):
-        """index.md newer than everything, all mirrors fresh → CLEAN."""
+    def test_edited_index_all_hashes_match_is_clean(self, tmp_path):
+        """index.md modified, all item hashes still match → CLEAN."""
         root = write_pack(
             tmp_path,
             "pack",
             {"alpha": "A"},
             bytecode={"alpha": "sA"},
         )
-        age_file(root / "alpha.md")
-        freshen_file(root / "_bytecode" / "alpha.md")
-        freshen_file(root / "index.md", seconds=10)
+        # Modify index — not a source item, should not affect freshness
+        (root / "index.md").write_text("---\nname: updated\npurpose: New.\n---\n")
 
         result = FilesystemFreshnessInspector().assess(root)
         assert result.compilation_state == CompilationState.CLEAN
 
-    def test_edited_summary_all_mirrors_fresh_is_clean(self, tmp_path):
-        """summary.md newer than everything → CLEAN."""
+    def test_edited_summary_all_hashes_match_is_clean(self, tmp_path):
+        """summary.md modified → CLEAN (not a source item)."""
         root = write_pack(
             tmp_path,
             "pack",
@@ -142,9 +123,6 @@ class TestFreshnessDetection:
             bytecode={"alpha": "sA"},
         )
         (root / "summary.md").write_text("Human summary")
-        age_file(root / "alpha.md")
-        freshen_file(root / "_bytecode" / "alpha.md")
-        freshen_file(root / "summary.md", seconds=10)
 
         result = FilesystemFreshnessInspector().assess(root)
         assert result.compilation_state == CompilationState.CLEAN
@@ -157,9 +135,8 @@ class TestFreshnessDetection:
             {"alpha": "A"},
             bytecode={"alpha": "sA", "ghost": "orphan"},
         )
-        # alpha is dirty (item newer than mirror)
-        age_file(root / "_bytecode" / "alpha.md", seconds=10)
-        age_file(root / "alpha.md", seconds=5)
+        # Make alpha dirty by changing source
+        (root / "alpha.md").write_text("A modified")
 
         result = FilesystemFreshnessInspector().assess(root)
         assert result.compilation_state == CompilationState.CORRUPT
@@ -175,7 +152,7 @@ class TestNestedFreshness:
     """Deep freshness traversal across nested packs."""
 
     def test_parent_clean_child_clean_is_clean(self, tmp_path):
-        """Both levels have fresh mirrors → deep_state is CLEAN."""
+        """Both levels have matching hashes → deep_state is CLEAN."""
         root = write_pack(
             tmp_path,
             "pack",
@@ -183,21 +160,13 @@ class TestNestedFreshness:
             bytecode={"alpha": "sA", "child": "child summary"},
             children=[("child", {"one": "1"}, {"one": "s1"})],
         )
-        # Age all items, freshen all mirrors.
-        # Parent's child mirror must be newer than child's bytecode.
-        age_file(root / "alpha.md", seconds=20)
-        age_file(root / "child" / "one.md", seconds=20)
-        freshen_file(root / "child" / "_bytecode" / "one.md", seconds=1)
-        freshen_file(root / "_bytecode" / "alpha.md", seconds=2)
-        freshen_file(root / "_bytecode" / "child.md", seconds=3)
-
         inspector = FilesystemFreshnessInspector()
         result = inspector.assess(root)
         assert result.compilation_state == CompilationState.CLEAN
         assert result.deep_state == CompilationState.CLEAN
 
     def test_parent_clean_child_dirty_is_dirty(self, tmp_path):
-        """Parent's own items fresh, child has stale item → deep DIRTY."""
+        """Parent's own items match, child has changed item → deep DIRTY."""
         root = write_pack(
             tmp_path,
             "pack",
@@ -205,22 +174,19 @@ class TestNestedFreshness:
             bytecode={"alpha": "sA", "child": "child summary"},
             children=[("child", {"one": "1"}, {"one": "s1"})],
         )
-        age_file(root / "alpha.md", seconds=20)
-        freshen_file(root / "_bytecode" / "alpha.md", seconds=2)
-        freshen_file(root / "_bytecode" / "child.md", seconds=3)
-        # Child item is newer than its mirror
-        age_file(root / "child" / "_bytecode" / "one.md", seconds=10)
-        age_file(root / "child" / "one.md", seconds=5)
+        # Make child item dirty
+        (root / "child" / "one.md").write_text("1 modified")
 
         inspector = FilesystemFreshnessInspector()
         result = inspector.assess(root)
-        # Parent sees child is dirty → marks composite item as dirty
         assert result.compilation_state == CompilationState.DIRTY
         assert result.deep_state == CompilationState.DIRTY
 
     def test_three_level_cascade(self, tmp_path):
         """Grandchild dirty → child and parent deep_state DIRTY."""
-        # Build bottom-up: grandchild, then child, then parent
+        from practice.content_hash import hash_children, hash_content
+        from practice.frontmatter import format_frontmatter
+
         root = tmp_path / "pack"
         root.mkdir()
         (root / "index.md").write_text("---\nname: root\n---\n")
@@ -236,32 +202,43 @@ class TestNestedFreshness:
         (grandchild / "index.md").write_text("---\nname: gc\n---\n")
         (grandchild / "deep.md").write_text("deep content")
 
-        # Create bytecode at all levels
-        for d, items, composites in [
-            (root, ["alpha"], ["child"]),
-            (child, ["one"], ["grandchild"]),
-            (grandchild, ["deep"], []),
-        ]:
-            bc = d / "_bytecode"
-            bc.mkdir()
-            for name in items + composites:
-                (bc / f"{name}.md").write_text(f"summary of {name}")
+        # Build bytecode bottom-up with correct hashes
+        gc_bc = grandchild / "_bytecode"
+        gc_bc.mkdir()
+        (gc_bc / "deep.md").write_text(
+            format_frontmatter(
+                {"source_hash": hash_content("deep content")}, "summary of deep"
+            )
+        )
 
-        # Age everything
-        for d in (root, child, grandchild):
-            for f in d.glob("*.md"):
-                age_file(f, seconds=20)
-            for f in (d / "_bytecode").glob("*.md"):
-                freshen_file(f)
+        child_bc = child / "_bytecode"
+        child_bc.mkdir()
+        (child_bc / "one.md").write_text(
+            format_frontmatter({"source_hash": hash_content("1")}, "summary of one")
+        )
+        (child_bc / "grandchild.md").write_text(
+            format_frontmatter(
+                {"source_hash": hash_children(gc_bc)}, "summary of grandchild"
+            )
+        )
 
-        # Make grandchild item dirty
-        freshen_file(grandchild / "deep.md", seconds=5)
-        age_file(grandchild / "_bytecode" / "deep.md")
+        root_bc = root / "_bytecode"
+        root_bc.mkdir()
+        (root_bc / "alpha.md").write_text(
+            format_frontmatter({"source_hash": hash_content("A")}, "summary of alpha")
+        )
+        (root_bc / "child.md").write_text(
+            format_frontmatter(
+                {"source_hash": hash_children(child_bc)}, "summary of child"
+            )
+        )
+
+        # Now make grandchild dirty
+        (grandchild / "deep.md").write_text("deep content MODIFIED")
 
         inspector = FilesystemFreshnessInspector()
         result = inspector.assess(root)
 
-        # Find grandchild freshness
         child_freshness = result.children[0]
         gc_freshness = child_freshness.children[0]
 
@@ -270,7 +247,7 @@ class TestNestedFreshness:
         assert result.deep_state == CompilationState.DIRTY
 
     def test_parent_summary_stale_after_child_bytecode_changes(self, tmp_path):
-        """Child clean, parent's _bytecode/child.md older than child bytecode → DIRTY."""
+        """Child clean, parent's hash doesn't match child bytecode → DIRTY."""
         root = write_pack(
             tmp_path,
             "pack",
@@ -278,16 +255,13 @@ class TestNestedFreshness:
             bytecode={"alpha": "sA", "child": "old child summary"},
             children=[("child", {"one": "1"}, {"one": "s1"})],
         )
-        # All items old
-        age_file(root / "alpha.md", seconds=20)
-        age_file(root / "child" / "one.md", seconds=20)
+        # Modify a child bytecode file — parent's composite hash now stale
+        from practice.content_hash import hash_content
+        from practice.frontmatter import format_frontmatter
 
-        # Child bytecode is fresh (child was recently recompiled)
-        freshen_file(root / "child" / "_bytecode" / "one.md", seconds=2)
-
-        # Parent mirrors are older than child bytecode
-        freshen_file(root / "_bytecode" / "alpha.md")
-        age_file(root / "_bytecode" / "child.md", seconds=5)
+        (root / "child" / "_bytecode" / "one.md").write_text(
+            format_frontmatter({"source_hash": hash_content("1")}, "UPDATED summary")
+        )
 
         inspector = FilesystemFreshnessInspector()
         result = inspector.assess(root)
@@ -300,14 +274,10 @@ class TestNestedFreshness:
             "pack",
             {"alpha": "A"},
             bytecode={"alpha": "sA", "child": "child summary"},
-            children=[("child", {"one": "1"}, {"one": "s1", "ghost": "orphan"})],
+            children=[("child", {"one": "1"}, {"one": "s1"})],
         )
-        age_file(root / "alpha.md")
-        age_file(root / "child" / "one.md")
-        freshen_file(root / "_bytecode" / "alpha.md")
-        freshen_file(root / "_bytecode" / "child.md")
-        freshen_file(root / "child" / "_bytecode" / "one.md")
-        freshen_file(root / "child" / "_bytecode" / "ghost.md")
+        # Add an orphan to child's bytecode
+        (root / "child" / "_bytecode" / "ghost.md").write_text("orphan")
 
         inspector = FilesystemFreshnessInspector()
         result = inspector.assess(root)
@@ -347,13 +317,8 @@ class TestPackAndWrap:
             {"alpha": "A", "beta": "B", "gamma": "C"},
             bytecode={"alpha": "sA", "beta": "sB", "gamma": "sC"},
         )
-        # All items old, all mirrors fresh
-        for name in ("alpha", "beta", "gamma"):
-            age_file(root / f"{name}.md", seconds=20)
-            freshen_file(root / "_bytecode" / f"{name}.md")
-        # Make beta dirty by aging its mirror below the item
-        age_file(root / "_bytecode" / "beta.md", seconds=10)
-        age_file(root / "beta.md", seconds=5)
+        # Make beta dirty by changing source
+        (root / "beta.md").write_text("B modified")
 
         inspector = FilesystemFreshnessInspector()
         compiler = StubCompiler()
@@ -366,16 +331,13 @@ class TestPackAndWrap:
         assert len(compiler.calls) == 1
 
     def test_compile_clean_pack_is_noop(self, tmp_path):
-        """All mirrors fresh → no compilation, state stays CLEAN."""
+        """All hashes match → no compilation, state stays CLEAN."""
         root = write_pack(
             tmp_path,
             "pack",
             {"alpha": "A"},
             bytecode={"alpha": "sA"},
         )
-        age_file(root / "alpha.md")
-        freshen_file(root / "_bytecode" / "alpha.md")
-
         inspector = FilesystemFreshnessInspector()
         compiler = StubCompiler()
 
@@ -411,9 +373,8 @@ class TestPackAndWrap:
             {"alpha": "A"},
             bytecode={"alpha": "sA", "ghost": "orphan"},
         )
-        # alpha is dirty (item newer than mirror)
-        age_file(root / "_bytecode" / "alpha.md", seconds=10)
-        age_file(root / "alpha.md", seconds=5)
+        # Make alpha dirty by changing source
+        (root / "alpha.md").write_text("A modified")
 
         inspector = FilesystemFreshnessInspector()
         compiler = StubCompiler()
@@ -495,11 +456,6 @@ class TestPackStatusUseCase:
             {"alpha": "A", "beta": "B"},
             bytecode={"alpha": "sA", "beta": "sB"},
         )
-        age_file(root / "alpha.md")
-        age_file(root / "beta.md")
-        freshen_file(root / "_bytecode" / "alpha.md")
-        freshen_file(root / "_bytecode" / "beta.md")
-
         inspector = FilesystemFreshnessInspector()
         usecase = PackStatusUseCase(inspector=inspector)
         resp = usecase.execute(PackStatusRequest(path=str(root)))
@@ -526,12 +482,6 @@ class TestPackStatusUseCase:
             bytecode={"alpha": "sA", "child": "child summary"},
             children=[("child", {"one": "1"}, {"one": "s1"})],
         )
-        age_file(root / "alpha.md", seconds=20)
-        age_file(root / "child" / "one.md", seconds=20)
-        freshen_file(root / "child" / "_bytecode" / "one.md", seconds=1)
-        freshen_file(root / "_bytecode" / "alpha.md", seconds=2)
-        freshen_file(root / "_bytecode" / "child.md", seconds=3)
-
         inspector = FilesystemFreshnessInspector()
         usecase = PackStatusUseCase(inspector=inspector)
         resp = usecase.execute(PackStatusRequest(path=str(root)))

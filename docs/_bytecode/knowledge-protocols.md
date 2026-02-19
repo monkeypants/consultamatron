@@ -1,3 +1,6 @@
+---
+source_hash: sha256:cdb2af997b5965114767bb67eabf13db0fa689f211bbff5d527dbc2e48da6cb9
+---
 A knowledge protocol emerges when a practice-layer use case processes typed pack items structurally. Protocol = type (frontmatter value) + contract (structural expectations) + use case (code that consumes items). Without a use case, items are reference material with a type label.
 
 Four domain-generic protocols: pantheon (contribution + invocation trigger, jedi council selects luminaries), patterns (problem + solution + application trigger), principles (statement + provenance + application trigger), anti-patterns (surface appeal + damage + diagnostic trigger). Same protocols across any consulting domain with different content.

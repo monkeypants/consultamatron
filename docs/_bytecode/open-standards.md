@@ -1,3 +1,6 @@
+---
+source_hash: sha256:ab851782a30e05a6630a7fadf137374abcf35c86f77ca94361c4f4cd4a344cc6
+---
 Agent Skills is the dominant open standard for packaging AI agent skills. Filesystem-based: a directory with `SKILL.md` (YAML frontmatter + markdown instructions), plus optional scripts/, references/, assets/. Progressive disclosure: metadata (~100 tokens) at startup, instructions (<5000 tokens) on activation, resources on reference.
 
 Adopted by 27+ products: Claude Code, OpenAI Codex, GitHub Copilot, VS Code, Gemini CLI, Cursor, and others. Originated Anthropic Oct 2025, published as open standard Dec 2025. Discovery paths vary by platform (.claude/skills/, .agents/skills/, .github/skills/).

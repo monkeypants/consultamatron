@@ -1,3 +1,6 @@
+---
+source_hash: sha256:79cce44c5e8426b311d68a7c6f25d83261053438e283e695d9be6cc24aee9b87
+---
 Jedi council (Weinberg, Cockburn, Brooks, Beck, Evans, Larman, Anthropic) on whether Consultamatron should adopt multiple pedagogic voices. Consensus: the idea addresses a real gap — one delivery channel for a scarce resource (operator cognition) that documentation says should not be wasted. Voice is an output adapter, not an analytical modifier; it never changes the analysis.
 
 Divergence on weight: Beck argues prompt pattern first (YAGNI), Evans argues proper bounded context, Brooks argues proportional machinery. Resolution: two-phase approach — (1) prompt pattern now ("explain that like Feynman"), (2) protocol with semantic pack items when evidence warrants (characterisation drift, preference persistence needed).

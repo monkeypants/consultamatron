@@ -1,3 +1,6 @@
+---
+source_hash: sha256:b7ac8826cf121aa32a79d7268dd68a94773fd9e201c424a0f69a8b3e60b72630
+---
 Pipeline declaration is the foundational integration point. Skillsets declare `SKILLSETS` in `__init__.py` containing `Skillset` entities with ordered `PipelineStage` entries. Each stage declares order, skill name, prerequisite_gate, produces_gate, description, and consumes list.
 
 The practice layer derives engagement state from these declarations: `engagement status` checks gate existence against declared pipelines, `engagement next` recommends the next skill, `project progress` reports current stage. The decision-title join matches recorded decisions against stage descriptions.

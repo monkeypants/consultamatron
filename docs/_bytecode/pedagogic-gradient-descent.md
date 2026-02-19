@@ -1,1 +1,4 @@
+---
+source_hash: sha256:6464f04cc3f61dba904373f6de92be45c8a109dc867efc719888fecacc7e5273
+---
 Design specification for calibrated operator pedagogy as a cybernetic control loop: measure understanding at gatepoints, compare against circumstance requirements, compute steepest learning gradient through concept tree, step with targeted pedagogic strategy, re-measure. Four fluency states (unknown, familiar/overconfident, familiar/knowingly-ignorant, fluent). Append-only evidence architecture with event sourcing and CQRS — recording separated from assessment, assessment strategies swappable. Five trees with shared concept identity: skillset concepts, engagement research, operator evidence, artifact skillset salience, artifact research salience. Differential debt (skillset utilisation vs engagement finishing). Multiple feedback loops from negotiate through rehearsal.

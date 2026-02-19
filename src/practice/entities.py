@@ -325,8 +325,8 @@ class Capability(BaseModel):
 class CompilationState(str, Enum):
     """Freshness of a knowledge pack's compiled _bytecode/ mirror.
 
-    CLEAN: bytecode exists and is newer than all source items.
-    DIRTY: bytecode exists but at least one item is newer.
+    CLEAN: bytecode exists and content hashes match all source items.
+    DIRTY: bytecode exists but at least one hash mismatches.
     ABSENT: no _bytecode/ directory.
     CORRUPT: bytecode has orphan mirrors — summaries with no
         corresponding source item.
