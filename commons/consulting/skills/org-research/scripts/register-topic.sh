@@ -18,8 +18,7 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+REPO_DIR="$(git -C "$(dirname "$0")" rev-parse --show-toplevel)"
 
 CLIENT="" TOPIC="" FILENAME="" CONFIDENCE=""
 while [[ $# -gt 0 ]]; do
