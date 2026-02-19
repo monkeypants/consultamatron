@@ -39,3 +39,12 @@ class TestContainerUsable:
         got = container.projects.get("holloway-group", "strat-1", "maps-1")
         assert got is not None
         assert got.slug == "maps-1"
+
+
+class TestContainerWiring:
+    """Verify DI wiring that cannot be caught by usecase-level tests."""
+
+    def test_pack_nudger_receives_skillset_bc_dirs(self, container):
+        """BC discovery populates the nudger's skillset-to-directory mapping."""
+        # At least one BC module has SKILLSETS → mapping should be non-empty
+        assert container.pack_nudger._skillset_bc_dirs
