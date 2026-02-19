@@ -1,11 +1,3 @@
-Four inflection point types. Three are cross-context (observations route to any domain); one is local.
+Four inflection point types. Three cross-context, one local. At each, the agent requests an observation needs brief shaped by inflection type and relevant destinations.
 
-**Engagement review** — deliberate, comprehensive reflection post-engagement. All four observation domains equally prominent. Catches what opportunistic observation missed.
-
-**Gatepoint** — opportunistic, lightweight reflection during gate artifact negotiation. Captures context-rich signal while transient context is loaded. Any domain may surface.
-
-**Negotiate loop** — multi-scope reflection during propose-negotiate-agree. Operator understanding naturally prominent but client, methodology, and practice observations surface during substantive negotiation. Pedagogic gradient descent is one applicable strategy, not the only one.
-
-**Pack-and-wrap** — content-focused reflection during bytecode compilation. Local routing only (observations about the pack itself). Quality maintenance during routine operations.
-
-Each type has an independently growing "bag of tricks" — type-specific questions worth asking at that moment. Bags not yet specified; grow through practice experience.
+**Engagement review:** deliberate, comprehensive. Full brief from all destinations. Catches what opportunistic observation missed. **Gatepoint:** opportunistic, lightweight. Full brief available but applied only to what surfaced during gate negotiation. Side channel — must not slow negotiation. **Negotiate loop:** multi-scope. Full brief; operator understanding needs naturally prominent but client/methodology/practice needs served by substantive negotiation content. Pedagogic gradient descent is one strategy here, not the only one. **Pack-and-wrap:** content-focused, local only. Pack declares its own compilation-time needs (structural integrity, cross-references). Does not participate in cross-context routing.

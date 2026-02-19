@@ -1,0 +1,57 @@
+---
+name: observation-router
+purpose: >
+  Design specification for the observation-and-routing pattern. How the
+  practice captures useful observations at natural inflection points and
+  routes them to knowledge contexts that declared a need for them. Working
+  toward a platform article and software changes.
+actor_goals:
+  - actor: platform engineer
+    goal: understand what software changes are needed to support observation routing
+  - actor: skill author
+    goal: know which inflection points produce observations and how the needs brief drives them
+  - actor: operator
+    goal: understand how learnings from engagements are captured and where they go
+triggers:
+  - designing the observation routing infrastructure
+  - adding observation support to existing skills
+  - declaring observation needs for a destination
+  - reviewing engagement output for routing
+  - extending the review skill with needs-driven observation
+---
+
+# Observation Router
+
+Design specification for capturing and routing observations at natural
+inflection points in the consulting practice.
+
+## Status
+
+Iteration 1 in progress. Accumulator items extracted from iteration-0
+compressed material. Operator refinement during extraction introduced
+the needs-driven observation model — destinations declare information
+needs, the CLI aggregates them into a brief, skills apply the brief
+to transient context.
+
+## Routing
+
+Agents: read accumulator items for current understanding. For
+background on how we got here, read `_history/iteration-0/`. Humans:
+start with `general-pattern.md`, then browse items by interest.
+
+## Accumulator items (persist, evolve across iterations)
+
+| Item | Type | What it covers |
+|---|---|---|
+| `general-pattern.md` | concept | The four-stage pattern: inflection point → needs brief → observations → routing |
+| `inflection-point-taxonomy.md` | concept | Four inflection point types with context character and needs brief scope |
+| `observation-needs-protocol.md` | concept | Destinations declare information needs; inheritance model; CLI aggregation use case |
+| `observation-routing-split.md` | concept | High-freedom observation vs low-freedom routing; classification collapses into needs |
+| `software-changes.md` | specification | Platform changes: needs protocol, CLI use case, skill changes, routing infrastructure |
+
+## History
+
+- `_history/iteration-0/` — compressed output of the conversation that
+  identified the general pattern, ran a jedi council deliberation on
+  client expertise accumulation, and refined the observation-routing
+  architecture through operator negotiation.
