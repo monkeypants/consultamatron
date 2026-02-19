@@ -36,7 +36,7 @@ from bin.cli.infrastructure.pack_nudger import (
 )
 from practice.frontmatter import parse_frontmatter
 
-from .conftest import age_file, freshen_file, write_pack
+from .conftest import write_pack
 
 
 # ---------------------------------------------------------------------------
@@ -200,7 +200,7 @@ class TestFilesystemPackNudger:
     # -- Unscoped checks (no skillset filter) --
 
     def test_clean_pack_no_nudges(self, tmp_path):
-        """All bytecode fresh → no nudges emitted."""
+        """All bytecode hashes match → no nudges emitted."""
         docs = tmp_path / "docs"
         write_pack(
             docs,
@@ -209,9 +209,6 @@ class TestFilesystemPackNudger:
             bytecode={"alpha": "sA"},
             manifest={"name": "my-pack", "purpose": "Test."},
         )
-        pack_root = docs / "my-pack"
-        age_file(pack_root / "alpha.md")
-        freshen_file(pack_root / "_bytecode" / "alpha.md")
 
         nudger = self._make_nudger(tmp_path)
         assert nudger.check() == []
@@ -219,16 +216,15 @@ class TestFilesystemPackNudger:
     def test_dirty_pack_produces_nudge(self, tmp_path):
         """Stale bytecode in a known pack → operator gets a recompilation hint."""
         docs = tmp_path / "docs"
-        write_pack(
+        pack_root = write_pack(
             docs,
             "my-pack",
             {"alpha": "A"},
             bytecode={"alpha": "sA"},
             manifest={"name": "my-pack", "purpose": "Test."},
         )
-        pack_root = docs / "my-pack"
-        age_file(pack_root / "_bytecode" / "alpha.md", seconds=10)
-        age_file(pack_root / "alpha.md", seconds=5)
+        # Make alpha dirty by changing source
+        (pack_root / "alpha.md").write_text("A modified")
 
         nudger = self._make_nudger(tmp_path)
         nudges = nudger.check()
@@ -260,10 +256,6 @@ class TestFilesystemPackNudger:
             bytecode={"alpha": "sA", "ghost": "orphan"},
             manifest={"name": "my-pack", "purpose": "Test."},
         )
-        pack_root = docs / "my-pack"
-        age_file(pack_root / "alpha.md")
-        freshen_file(pack_root / "_bytecode" / "alpha.md")
-        freshen_file(pack_root / "_bytecode" / "ghost.md")
 
         nudger = self._make_nudger(tmp_path)
         nudges = nudger.check()

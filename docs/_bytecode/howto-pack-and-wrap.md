@@ -1,3 +1,6 @@
+---
+source_hash: sha256:bc590ab14cea4c62bcd52e99b02a7d579792ce26e37958a102dc43fb6cf9b9a1
+---
 Compilation procedure for knowledge pack bytecode. `_bytecode/` mirrors each pack item with a compressed prose summary (no frontmatter). Check freshness with `practice pack status --path <dir>` — reports clean/dirty/absent/corrupt per item.
 
 To compile: read each dirty/absent source item, generate a prose summary at ~10-20% of source token count, write to `_bytecode/{item-name}.md`. Preserve domain vocabulary exactly. Maintain structural fidelity (reflect the source's concerns). Compress examples, rationale, code samples, cross-references.

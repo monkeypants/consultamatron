@@ -1,3 +1,6 @@
+---
+source_hash: sha256:4610481a4c0ea88cb89eeb1eba402bdeaba52f67758c7ad01b8306fb974e7f7a
+---
 DDD context map analysis of the practice/skillset boundary. All eight Evans strategic relationships are observable: the practice layer is an Open Host Service (published protocol, no bilateral negotiation); skillsets are Conformists with Customer-Supplier influence (accept upstream entity schemas, influence via PRs); `resources/` is a small explicit Shared Kernel (immutable after agreement); skillsets follow Separate Ways (no inter-BC dependencies, enforced by doctrine test); per-skillset research skills are Anti-Corruption Layers (translate external mess into semantic pack format); the propose-negotiate-agree loop is a Partnership at the human-agent boundary.
 
 The shared kernel pattern repeats at every hierarchy level: `docs/` (practice), `{skillset}/docs/` (skillset), `resources/` (client/engagement). Each is a knowledge pack serving as shared kernel for its child contexts. See integration-surface.md for the full structural pattern.

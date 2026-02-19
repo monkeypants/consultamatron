@@ -1,3 +1,6 @@
+---
+source_hash: sha256:f7cc75bfb80ee4cde034185e91c44a3b66a26cb6b83590074c9e75c119c1b4b5
+---
 A semantic pack is a directory of markdown files with an `index.md` manifest, `type:` frontmatter on items, and a `_bytecode/` mirror of generated summaries. Two access paths: human (summary.md → item bodies) and agent (`_bytecode/` → selective full reads). Neither path is subordinate.
 
 Items are pure content (minimal frontmatter, human-maintained). `_bytecode/` files are generated prose (no frontmatter, compressed summaries). The `_` prefix signals "generated, don't edit." Pack states: clean (all bytecode newer than sources), dirty (at least one item newer), absent (no `_bytecode/`), corrupt (orphan mirrors).

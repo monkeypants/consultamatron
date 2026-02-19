@@ -1,14 +1,18 @@
 """Filesystem implementation of the FreshnessInspector protocol.
 
-Walks the pack directory tree using stat() calls to determine
-compilation freshness. Stateless — pack_root is passed per call.
+Walks the pack directory tree and compares SHA-256 content hashes
+stored in bytecode frontmatter against live source content to
+determine compilation freshness. Stateless — pack_root is passed
+per call.
 """
 
 from __future__ import annotations
 
 from pathlib import Path
 
+from practice.content_hash import hash_children, hash_content
 from practice.entities import CompilationState, ItemFreshness, PackFreshness
+from practice.frontmatter import split_frontmatter
 
 # Files at the pack root that are not compilable source items.
 _EXCLUDED_NAMES = {"index.md", "summary.md"}
@@ -63,18 +67,21 @@ class FilesystemFreshnessInspector:
                         name=item_path.stem, is_composite=False, state="absent"
                     )
                 )
-            elif item_path.stat().st_mtime > mirror.stat().st_mtime:
-                items.append(
-                    ItemFreshness(
-                        name=item_path.stem, is_composite=False, state="dirty"
-                    )
-                )
             else:
-                items.append(
-                    ItemFreshness(
-                        name=item_path.stem, is_composite=False, state="clean"
+                meta, _ = split_frontmatter(mirror.read_text())
+                expected = hash_content(item_path.read_text())
+                if meta.get("source_hash") == expected:
+                    items.append(
+                        ItemFreshness(
+                            name=item_path.stem, is_composite=False, state="clean"
+                        )
                     )
-                )
+                else:
+                    items.append(
+                        ItemFreshness(
+                            name=item_path.stem, is_composite=False, state="dirty"
+                        )
+                    )
 
         # --- Assess each composite item (child pack) ---
         children: list[PackFreshness] = []
@@ -97,35 +104,25 @@ class FilesystemFreshnessInspector:
                     )
                 )
             else:
-                # Child is clean — check if parent's summary is newer than
-                # the max mtime of files in child/_bytecode/
+                # Child is clean — check if parent's hash matches child bytecode
                 child_bytecode = child_path / "_bytecode"
                 if child_bytecode.is_dir():
-                    child_bc_files = list(child_bytecode.iterdir())
-                    if child_bc_files:
-                        max_child_mtime = max(f.stat().st_mtime for f in child_bc_files)
-                        if mirror.stat().st_mtime < max_child_mtime:
-                            items.append(
-                                ItemFreshness(
-                                    name=child_path.name,
-                                    is_composite=True,
-                                    state="dirty",
-                                )
-                            )
-                        else:
-                            items.append(
-                                ItemFreshness(
-                                    name=child_path.name,
-                                    is_composite=True,
-                                    state="clean",
-                                )
-                            )
-                    else:
+                    meta, _ = split_frontmatter(mirror.read_text())
+                    expected = hash_children(child_bytecode)
+                    if meta.get("source_hash") == expected:
                         items.append(
                             ItemFreshness(
                                 name=child_path.name,
                                 is_composite=True,
                                 state="clean",
+                            )
+                        )
+                    else:
+                        items.append(
+                            ItemFreshness(
+                                name=child_path.name,
+                                is_composite=True,
+                                state="dirty",
                             )
                         )
                 else:

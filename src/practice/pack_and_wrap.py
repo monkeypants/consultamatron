@@ -11,7 +11,9 @@ from pathlib import Path
 
 from pydantic import BaseModel
 
+from practice.content_hash import hash_children, hash_content
 from practice.entities import CompilationState
+from practice.frontmatter import format_frontmatter
 from practice.repositories import FreshnessInspector, ItemCompiler
 
 
@@ -71,8 +73,13 @@ def pack_and_wrap(
                 item_path = pack_root / f"{item.name}.md"
 
             summary = compiler.compile(item_path, pack_root)
+            if item.is_composite:
+                child_bc_dir = item_path / "_bytecode"
+                source_hash = hash_children(child_bc_dir)
+            else:
+                source_hash = hash_content(item_path.read_text())
             mirror = bytecode_dir / f"{item.name}.md"
-            mirror.write_text(summary)
+            mirror.write_text(format_frontmatter({"source_hash": source_hash}, summary))
             compiled_items.append(item.name)
 
     # --- Re-assess for final state ---

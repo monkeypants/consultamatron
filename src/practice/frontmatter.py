@@ -66,3 +66,34 @@ def parse_frontmatter(path: Path) -> dict[str, str]:
         result[current_key] = " ".join(ln for ln in fold_lines if ln)
 
     return result
+
+
+def split_frontmatter(text: str) -> tuple[dict[str, str], str]:
+    """Parse ``---``-delimited frontmatter from a string.
+
+    Returns ``(metadata, body)`` where *metadata* is a flat dict of
+    key-value pairs and *body* is everything after the closing ``---``.
+    Returns ``({}, text)`` when no valid frontmatter is found.
+    """
+    parts = text.split("---", 2)
+    if len(parts) < 3:
+        return {}, text
+
+    result: dict[str, str] = {}
+    for line in parts[1].splitlines():
+        stripped = line.strip()
+        if not stripped or ":" not in stripped:
+            continue
+        key, _, value = stripped.partition(":")
+        result[key.strip()] = value.strip()
+
+    return result, parts[2].lstrip("\n")
+
+
+def format_frontmatter(metadata: dict[str, str], body: str) -> str:
+    """Produce a ``---``-delimited frontmatter block followed by *body*."""
+    lines = ["---"]
+    for key, value in metadata.items():
+        lines.append(f"{key}: {value}")
+    lines.append("---")
+    return "\n".join(lines) + "\n" + body

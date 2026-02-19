@@ -1,3 +1,6 @@
+---
+source_hash: sha256:dc97bd7da9e7ca7ad2dacf91392fb32befc116edc95327d4eec8c4c73456faa4
+---
 Knowledge packs provide dual-audience knowledge management through the semantic pack convention. Skillsets supply directories with `index.md` manifests (name, purpose, actor_goals, triggers), items with `type:` frontmatter, and `_bytecode/` mirrors with generated summaries.
 
 Two access paths: human path (summary.md then item bodies) and agent path (`_bytecode/` mirror for token-efficient progressive disclosure). Design-time packs live in BC source directories; runtime packs in client workspaces.

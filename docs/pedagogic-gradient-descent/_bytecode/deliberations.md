@@ -1,3 +1,6 @@
+---
+source_hash: sha256:4bf8450ad182a6eeaf2a95f99a3424066ea29bcacda61341eafaa76b6bd6549a
+---
 Two jedi councils plus operator negotiation on calibrated operator pedagogy.
 
 **Council 1: Operator knowledge modelling.** Weinberg: model knowledge through observed interaction patterns, not self-assessment. Cockburn: learning needs analysis at per-gate level using actor-goal model. Cunningham: background knowledge debt is compound-interest technical debt — prioritise high-interest cheap-to-service debts. Beck: three-state model (unknown/familiar/fluent), TDD feedback loop for knowledge. Evans: OperatorProfile as cross-engagement aggregate with event-sourced evidence. Brooks: minimal model, match resolution to decision resolution. Anthropic: lightweight artifact, bytecode-compressed, profile is prior not constraint.

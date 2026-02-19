@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 import json
-import os
-import time
 import uuid
 from datetime import date, datetime, timezone
 from pathlib import Path
@@ -372,14 +370,21 @@ def make_pack_freshness(**overrides) -> PackFreshness:
 
 
 def write_pack(tmp_path, name, items, *, bytecode=None, children=None, manifest=None):
-    """Create a pack directory with controlled timestamps.
+    """Create a pack directory with content-hash-based bytecode.
 
     items: dict of {name: content} — creates {name}.md files
     bytecode: dict of {name: content} — creates _bytecode/{name}.md
+              wrapped in frontmatter with the correct source_hash
+              computed from the corresponding source item.
+              If a name appears in bytecode but not in items or
+              children, it is written as-is (orphan test case).
     children: list of (name, items, bytecode) tuples — nested packs
     manifest: dict of frontmatter keys — defaults to name + purpose
     Returns the pack root Path.
     """
+    from practice.content_hash import hash_children, hash_content
+    from practice.frontmatter import format_frontmatter
+
     manifest = manifest or {"name": "test", "purpose": "Test pack."}
     pack_root = tmp_path / name
     pack_root.mkdir(parents=True, exist_ok=True)
@@ -392,16 +397,13 @@ def write_pack(tmp_path, name, items, *, bytecode=None, children=None, manifest=
     for item_name, content in items.items():
         (pack_root / f"{item_name}.md").write_text(content)
 
-    # Write bytecode
-    if bytecode is not None:
-        bc_dir = pack_root / "_bytecode"
-        bc_dir.mkdir(exist_ok=True)
-        for bc_name, content in bytecode.items():
-            (bc_dir / f"{bc_name}.md").write_text(content)
+    # Collect child names for bytecode hash computation
+    child_names = set()
 
-    # Write children (nested packs)
+    # Write children (nested packs) — before bytecode so composite hashes work
     if children is not None:
         for child_name, child_items, child_bytecode in children:
+            child_names.add(child_name)
             child_root = pack_root / child_name
             child_root.mkdir(exist_ok=True)
             (child_root / "index.md").write_text(
@@ -413,21 +415,37 @@ def write_pack(tmp_path, name, items, *, bytecode=None, children=None, manifest=
                 child_bc = child_root / "_bytecode"
                 child_bc.mkdir(exist_ok=True)
                 for bc_name, content in child_bytecode.items():
-                    (child_bc / f"{bc_name}.md").write_text(content)
+                    source_hash = hash_content(child_items.get(bc_name, content))
+                    (child_bc / f"{bc_name}.md").write_text(
+                        format_frontmatter({"source_hash": source_hash}, content)
+                    )
+
+    # Write bytecode with correct source_hash frontmatter
+    if bytecode is not None:
+        bc_dir = pack_root / "_bytecode"
+        bc_dir.mkdir(exist_ok=True)
+        for bc_name, content in bytecode.items():
+            if bc_name in items:
+                # Leaf item — hash from source content
+                source_hash = hash_content(items[bc_name])
+                (bc_dir / f"{bc_name}.md").write_text(
+                    format_frontmatter({"source_hash": source_hash}, content)
+                )
+            elif bc_name in child_names:
+                # Composite item — hash from child bytecode dir
+                child_bc_dir = pack_root / bc_name / "_bytecode"
+                if child_bc_dir.is_dir():
+                    source_hash = hash_children(child_bc_dir)
+                    (bc_dir / f"{bc_name}.md").write_text(
+                        format_frontmatter({"source_hash": source_hash}, content)
+                    )
+                else:
+                    (bc_dir / f"{bc_name}.md").write_text(content)
+            else:
+                # Orphan or raw — write as-is
+                (bc_dir / f"{bc_name}.md").write_text(content)
 
     return pack_root
-
-
-def age_file(path, seconds=10):
-    """Set a file's mtime to ``seconds`` ago."""
-    now = time.time()
-    os.utime(path, (now - seconds, now - seconds))
-
-
-def freshen_file(path, seconds=0):
-    """Set a file's mtime to now + offset."""
-    now = time.time()
-    os.utime(path, (now + seconds, now + seconds))
 
 
 class StubCompiler:

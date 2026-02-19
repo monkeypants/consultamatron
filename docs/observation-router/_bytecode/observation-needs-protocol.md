@@ -1,3 +1,6 @@
+---
+source_hash: sha256:dd1ec5ba9ff4b2494274b5124345abac39957ab59dd802455fadd39cfebbe651
+---
 Protocol: every observation destination declares its information needs. Analogous to actor-goals in pack manifests — destinations are actors with goals for sensory input. Guiding principle: needs are driven by the ability to act — "what are we able to improve?" Purpose of observations is to drive behaviour: continuous improvement, responsiveness, reinforcing positive habits, solving problems, mitigating risks. A well-formed need passes the test: "if the observer finds something, what improves?"
 
 Inheritance model: type-level generic needs (all clients need stakeholder dynamics; all skillsets need what-worked/what-didn't) plus instance-level specific needs (a particular client's pecadilloes). CLI aggregation use case gathers relevant type+instance needs from all destinations, synthesises into a brief the skill consumes. Skill just asks for the brief — no knowledge of destinations, types, or inheritance required. Replaces the vague "bag of tricks" with concrete declared needs owned by destinations.
