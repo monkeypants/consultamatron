@@ -46,3 +46,4 @@ Humans: browse item files directly.
 ## Composite items
 
 - `capabilities/` — catalogue of integration facets at the practice/skillset boundary
+- `observation-router/` — design specification for capturing and routing observations at inflection points (WIP)
