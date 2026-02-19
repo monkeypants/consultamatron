@@ -30,7 +30,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from consulting.entities import DecisionEntry, EngagementEntry
+from practice.entities import DecisionEntry, EngagementEntry
 from practice.entities import (
     Engagement,
     Project,

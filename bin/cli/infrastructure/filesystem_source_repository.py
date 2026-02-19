@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from consulting.repositories import SkillsetRepository
+from practice.repositories import SkillsetRepository
 from practice.bc_discovery import collect_skillsets
 from practice.entities import SkillsetSource, SourceType
 

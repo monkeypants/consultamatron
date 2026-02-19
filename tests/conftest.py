@@ -11,7 +11,7 @@ import pytest
 
 from bin.cli.config import Config
 from bin.cli.di import Container
-from consulting.entities import DecisionEntry, EngagementEntry
+from practice.entities import DecisionEntry, EngagementEntry
 from practice.discovery import PipelineStage
 from practice.entities import (
     ActorGoal,

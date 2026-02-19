@@ -7,7 +7,7 @@ implementation when partnership discovery is added.
 
 from __future__ import annotations
 
-from consulting.repositories import SkillsetRepository
+from practice.repositories import SkillsetRepository
 from practice.entities import SkillsetSource, SourceType
 
 
