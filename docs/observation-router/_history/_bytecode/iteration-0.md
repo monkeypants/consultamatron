@@ -1,0 +1,7 @@
+Origin session discovering the observation-routing pattern. Started from client workspace architecture, arrived at a general pattern through jedi council (Evans, Weinberg, Cunningham, Parnas, Larman, Brooks, Anthropic) and operator refinement.
+
+**Council consensus:** Client knowledge is a knowledge pack not entity model. Learning routing is the critical missing capability. Client workspace is a bounded context with Customer-Supplier relationship to methodology skillsets. Review classifies observations, routing dispatches — separate concerns. Start with pack, promote to entities when invariant enforcement needed.
+
+**Operator refinements:** Observation/routing split (high-freedom judgment vs low-freedom dispatch) is the key architectural insight. Pipeline and opportunistic observation coexist — review catches what gatepoints missed, gatepoints capture context-rich signal. Each inflection point type has its own bag of tricks. Pack-and-wrap reflection is local. Pedagogic gradient descent is an instance of the general pattern.
+
+**General pattern:** Inflection point → Reflection strategy → Observations → Classification → Routing. Four inflection points (engagement review, gatepoint, pack-and-wrap, negotiate loop). Four observation domains (client → client knowledge pack, methodology → skillset source, practice → practice docs, operator → evidence tree). Every inflection point is a moment where rich context is about to be lost.
