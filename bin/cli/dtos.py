@@ -771,3 +771,27 @@ class GetWipRequest(BaseModel):
 class GetWipResponse(BaseModel):
     engagements: list[WipEngagementInfo]
     nudges: list[str] = []
+
+
+# ---------------------------------------------------------------------------
+# Pantheon (cross-skillset luminary aggregation)
+# ---------------------------------------------------------------------------
+
+
+class LuminarySummary(BaseModel):
+    """One luminary from a pantheon knowledge pack."""
+
+    name: str
+    skillset: str
+    summary: str
+
+
+class ListPantheonRequest(BaseModel):
+    """List luminaries from specified skillset pantheons."""
+
+    skillset_names: list[str] = Field(description="Skillset names to query.")
+
+
+class ListPantheonResponse(BaseModel):
+    luminaries: list[LuminarySummary]
+    source_packs: list[str] = []
