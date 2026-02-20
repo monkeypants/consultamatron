@@ -10,6 +10,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from bin.cli.config import Config
 
 
@@ -22,11 +24,8 @@ class TestConfig:
 
     def test_frozen(self):
         config = Config.from_repo_root(Path("/repo"))
-        try:
+        with pytest.raises(AttributeError):
             config.workspace_root = Path("/other")  # type: ignore[misc]
-            assert False, "Should have raised"
-        except AttributeError:
-            pass
 
 
 class TestContainerUsable:
