@@ -177,6 +177,21 @@ class PackNudger(Protocol):
 
 
 @runtime_checkable
+class SkillsetKnowledge(Protocol):
+    """Read typed knowledge items from a skillset's docs pack.
+
+    Each skillset has one docs/ knowledge pack containing items
+    identified by type (pantheon, patterns, principles, anti-patterns).
+    The port abstracts the storage mechanism — filesystem, API, or
+    test double.
+    """
+
+    def read_item(self, skillset_name: str, item_type: str) -> str | None:
+        """Return the body content of a typed item, or None if absent."""
+        ...
+
+
+@runtime_checkable
 class ItemCompiler(Protocol):
     """Generate a _bytecode/ summary for a single pack item."""
 

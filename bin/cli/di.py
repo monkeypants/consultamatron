@@ -26,6 +26,9 @@ from bin.cli.infrastructure.filesystem_knowledge_pack_repository import (
 from bin.cli.infrastructure.filesystem_skill_manifest_repository import (
     FilesystemSkillManifestRepository,
 )
+from bin.cli.infrastructure.filesystem_skillset_knowledge import (
+    FilesystemSkillsetKnowledge,
+)
 from bin.cli.infrastructure.pack_nudger import FilesystemPackNudger
 from bin.cli.infrastructure.filesystem_gate_inspector import FilesystemGateInspector
 from bin.cli.infrastructure.filesystem_source_repository import (
@@ -53,6 +56,7 @@ from bin.cli.usecases import (
     InitializeWorkspaceUseCase,
     ListDecisionsUseCase,
     ListEngagementsUseCase,
+    ListPantheonUseCase,
     ListProfilesUseCase,
     ListProjectsUseCase,
     ListResearchTopicsUseCase,
@@ -88,6 +92,7 @@ from practice.repositories import (
     ResearchTopicRepository,
     SiteRenderer,
     SkillManifestRepository,
+    SkillsetKnowledge,
     SkillsetRepository,
     SourceRepository,
 )
@@ -203,6 +208,9 @@ class Container:
             self.freshness_inspector,
             skillset_bc_dirs,
             knowledge_packs=self.knowledge_packs,
+        )
+        self.skillset_knowledge: SkillsetKnowledge = FilesystemSkillsetKnowledge(
+            skillset_bc_dirs,
         )
 
         # -- Write usecases ------------------------------------------------
@@ -356,4 +364,9 @@ class Container:
         )
         self.pack_status_usecase = PackStatusUseCase(
             inspector=self.freshness_inspector,
+        )
+
+        # -- Pantheon usecases ---------------------------------------------
+        self.list_pantheon_usecase = ListPantheonUseCase(
+            knowledge=self.skillset_knowledge,
         )

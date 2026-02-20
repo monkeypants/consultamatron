@@ -33,6 +33,8 @@ from bin.cli.dtos import (
     ListDecisionsResponse,
     ListEngagementsRequest,
     ListEngagementsResponse,
+    ListPantheonRequest,
+    ListPantheonResponse,
     ListProfilesRequest,
     ListProfilesResponse,
     ListProjectsRequest,
@@ -43,6 +45,7 @@ from bin.cli.dtos import (
     ListSkillsetsResponse,
     ListSourcesRequest,
     ListSourcesResponse,
+    LuminarySummary,
     NextActionRequest,
     NextActionResponse,
     GetWipRequest,
@@ -115,6 +118,7 @@ from practice.repositories import (
     ProjectRepository,
     ResearchTopicRepository,
     SiteRenderer,
+    SkillsetKnowledge,
     SkillsetRepository,
     SourceRepository,
 )
@@ -1456,3 +1460,51 @@ class GetWipStatusUseCase:
             engagements=result_engagements,
             nudges=nudges,
         )
+
+
+# ---------------------------------------------------------------------------
+# Pantheon (cross-skillset luminary aggregation)
+# ---------------------------------------------------------------------------
+
+
+def _parse_pantheon(content: str) -> list[tuple[str, str]]:
+    """Split pantheon markdown into (name, summary) pairs.
+
+    Each luminary is a ``## Name`` section. Text before the first
+    heading is skipped. Empty sections are skipped.
+    """
+    results: list[tuple[str, str]] = []
+    sections = content.split("## ")
+    for section in sections[1:]:  # skip preamble before first ##
+        lines = section.strip().splitlines()
+        if not lines:
+            continue
+        name = lines[0].strip()
+        body = "\n".join(lines[1:]).strip()
+        if not body:
+            continue
+        results.append((name, body))
+    return results
+
+
+class ListPantheonUseCase:
+    """Aggregate luminaries from skillset knowledge packs."""
+
+    def __init__(self, knowledge: SkillsetKnowledge) -> None:
+        self._knowledge = knowledge
+
+    def execute(self, request: ListPantheonRequest) -> ListPantheonResponse:
+        luminaries: list[LuminarySummary] = []
+        for skillset_name in request.skillset_names:
+            content = self._knowledge.read_item(skillset_name, "pantheon")
+            if content is None:
+                continue
+            for name, summary in _parse_pantheon(content):
+                luminaries.append(
+                    LuminarySummary(
+                        name=name,
+                        skillset=skillset_name,
+                        summary=summary,
+                    )
+                )
+        return ListPantheonResponse(luminaries=luminaries)

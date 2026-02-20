@@ -33,6 +33,7 @@ from bin.cli.dtos import (
     ListSkillsetsRequest,
     ListSourcesRequest,
     GetWipRequest,
+    ListPantheonRequest,
     NextActionRequest,
     PackStatusRequest,
     RecordDecisionRequest,
@@ -606,6 +607,52 @@ skill.add_command(
         format_output=_format_skill_path,
     )
 )
+
+
+# ---------------------------------------------------------------------------
+# pantheon (cross-skillset luminary aggregation)
+# ---------------------------------------------------------------------------
+
+
+@cli.group()
+def pantheon() -> None:
+    """Luminary aggregation from knowledge packs."""
+
+
+def _format_list_pantheon(resp: Any) -> None:
+    if not resp.luminaries:
+        click.echo("No luminaries found.")
+        return
+    by_skillset: dict[str, list] = {}
+    for lum in resp.luminaries:
+        by_skillset.setdefault(lum.skillset, []).append(lum)
+    skillsets = sorted(by_skillset)
+    click.echo(
+        f"Pantheon ({len(resp.luminaries)} luminaries from {len(skillsets)} skillsets):"
+    )
+    for ss in skillsets:
+        click.echo(f"\n  {ss}:")
+        for lum in by_skillset[ss]:
+            click.echo(f"    {lum.name}")
+            click.echo(f"      {lum.summary}")
+
+
+@pantheon.command("list")
+@click.option("--skillsets", required=True, help="Comma-separated skillset names.")
+@click.pass_context
+def list_pantheon(ctx: click.Context, skillsets: str) -> None:
+    """List luminaries from specified skillset pantheons."""
+    from practice.exceptions import DomainError
+
+    di = ctx.obj
+    names = [s.strip() for s in skillsets.split(",")]
+    try:
+        resp = di.list_pantheon_usecase.execute(
+            ListPantheonRequest(skillset_names=names)
+        )
+    except DomainError as e:
+        raise click.ClickException(str(e))
+    _format_list_pantheon(resp)
 
 
 # ---------------------------------------------------------------------------
