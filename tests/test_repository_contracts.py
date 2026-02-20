@@ -14,6 +14,8 @@ import json
 
 import pytest
 
+pytestmark = pytest.mark.doctrine
+
 from practice.entities import Confidence, EngagementStatus, ProjectStatus
 
 from .conftest import (
