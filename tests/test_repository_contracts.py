@@ -14,8 +14,6 @@ import json
 
 import pytest
 
-pytestmark = pytest.mark.doctrine
-
 from practice.entities import Confidence, EngagementStatus, ProjectStatus
 
 from .conftest import (
@@ -28,6 +26,8 @@ from .conftest import (
     make_routing_destination,
     make_skillset,
 )
+
+pytestmark = pytest.mark.doctrine
 
 CLIENT = "holloway-group"
 ENGAGEMENT = "strat-1"
@@ -300,8 +300,12 @@ class TestEngagementLogContract:
         assert len(engagement_log_repo.list_all(CLIENT)) == 2
 
     def test_client_isolation(self, engagement_log_repo):
-        engagement_log_repo.save(make_engagement_entry(id="e1", client="holloway-group"))
-        engagement_log_repo.save(make_engagement_entry(id="e2", client="meridian-health"))
+        engagement_log_repo.save(
+            make_engagement_entry(id="e1", client="holloway-group")
+        )
+        engagement_log_repo.save(
+            make_engagement_entry(id="e2", client="meridian-health")
+        )
         assert len(engagement_log_repo.list_all("holloway-group")) == 1
         assert len(engagement_log_repo.list_all("meridian-health")) == 1
 
