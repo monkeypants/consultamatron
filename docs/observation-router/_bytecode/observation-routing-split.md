@@ -1,4 +1,0 @@
----
-source_hash: sha256:df4b0878f1f1bfbd06850ba2e569e4c18231c4b4ac265d385bfeefb5c4888bcc
----
-Observation (high-freedom: applying needs brief to rich context) separated from routing (low-freedom: dispatching to declared destinations). The needs brief decouples further — observation skill knows only the brief, routing knows only classified observations, CLI aggregation is the sole component spanning both sides. Classification collapses into needs — observations made in response to a destination's declared need are already classified. Fan-out supported for observations serving multiple destinations. Pipeline (review) and opportunistic (gatepoint, negotiate loop) coexist — same needs brief mechanism, different thoroughness. Council consensus preserved: Larman's separation of concerns, Parnas's module interfaces, Cunningham's CRC responsibilities — all fulfilled by the needs protocol as the interface.
