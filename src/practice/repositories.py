@@ -233,6 +233,10 @@ class KnowledgePackRepository(Protocol):
         """List all discovered knowledge packs."""
         ...
 
+    def packs_with_paths(self) -> list[tuple[KnowledgePack, Path]]:
+        """Return (pack, pack_root) pairs for all discovered packs."""
+        ...
+
 
 @runtime_checkable
 class EngagementRepository(Protocol):
