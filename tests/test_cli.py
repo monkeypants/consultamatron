@@ -18,29 +18,8 @@ from __future__ import annotations
 
 import json
 
-from click.testing import CliRunner
-
-import pytest
-
-from bin.cli.main import cli
-
 CLIENT = "holloway-group"
 ENGAGEMENT = "strat-1"
-
-
-@pytest.fixture
-def run(tmp_config, monkeypatch):
-    """Invoke CLI commands against a temp workspace with skillsets auto-discovered."""
-    monkeypatch.setattr(
-        "bin.cli.main.Config",
-        type(
-            "Config",
-            (),
-            {"from_repo_root": staticmethod(lambda _: tmp_config)},
-        ),
-    )
-    runner = CliRunner()
-    return lambda *args: runner.invoke(cli, list(args))
 
 
 def _init(run):
