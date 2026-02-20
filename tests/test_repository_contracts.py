@@ -20,7 +20,7 @@ from practice.entities import Confidence, EngagementStatus, ProjectStatus
 
 from .conftest import (
     make_decision,
-    make_engagement,
+    make_engagement_entry,
     make_engagement_entity,
     make_observation,
     make_project,
@@ -288,26 +288,26 @@ class TestEngagementLogContract:
         assert engagement_log_repo.list_all(CLIENT) == []
 
     def test_save_then_get(self, engagement_log_repo):
-        e = make_engagement(id="e1")
+        e = make_engagement_entry(id="e1")
         engagement_log_repo.save(e)
         got = engagement_log_repo.get(CLIENT, "e1")
         assert got is not None
         assert got.title == e.title
 
     def test_save_appends(self, engagement_log_repo):
-        engagement_log_repo.save(make_engagement(id="e1"))
-        engagement_log_repo.save(make_engagement(id="e2"))
+        engagement_log_repo.save(make_engagement_entry(id="e1"))
+        engagement_log_repo.save(make_engagement_entry(id="e2"))
         assert len(engagement_log_repo.list_all(CLIENT)) == 2
 
     def test_client_isolation(self, engagement_log_repo):
-        engagement_log_repo.save(make_engagement(id="e1", client="holloway-group"))
-        engagement_log_repo.save(make_engagement(id="e2", client="meridian-health"))
+        engagement_log_repo.save(make_engagement_entry(id="e1", client="holloway-group"))
+        engagement_log_repo.save(make_engagement_entry(id="e2", client="meridian-health"))
         assert len(engagement_log_repo.list_all("holloway-group")) == 1
         assert len(engagement_log_repo.list_all("meridian-health")) == 1
 
     def test_fields_preserved(self, engagement_log_repo):
         fields = {"Skillset": "wardley-mapping", "Scope": "Full"}
-        engagement_log_repo.save(make_engagement(id="e1", fields=fields))
+        engagement_log_repo.save(make_engagement_entry(id="e1", fields=fields))
         got = engagement_log_repo.get(CLIENT, "e1")
         assert got.fields == fields
 
