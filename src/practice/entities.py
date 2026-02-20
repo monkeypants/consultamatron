@@ -488,3 +488,34 @@ class PackFreshness(BaseModel):
             if s in states:
                 return s
         return CompilationState.CLEAN
+
+
+# ---------------------------------------------------------------------------
+# Observation routing (security boundary — deny-all, allow-some)
+# ---------------------------------------------------------------------------
+
+
+class RoutingDestination(BaseModel):
+    """A permitted target for observation delivery."""
+
+    owner_type: str
+    owner_ref: str
+
+
+class RoutingAllowList(BaseModel):
+    """Set of destinations an engagement is allowed to route to."""
+
+    destinations: list[RoutingDestination]
+
+
+class ObservationNeed(BaseModel):
+    """A declared need for observations from a specific owner."""
+
+    slug: str
+    owner_type: str
+    owner_ref: str
+    level: str
+    need: str
+    rationale: str
+    lifecycle_moment: str
+    served: bool = False
