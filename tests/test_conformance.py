@@ -439,11 +439,6 @@ class TestCliRegistrationProtocol:
 _NAME_RE = re.compile(r"^[a-z][a-z0-9]*(-[a-z][a-z0-9]*)*$")
 
 
-def _parse_skill_frontmatter(skill_md_path: Path) -> dict:
-    """Delegate to the shared frontmatter parser."""
-    return parse_frontmatter(skill_md_path)
-
-
 def _load_skill_manifest(skill_md_path: Path) -> SkillManifest:
     """Parse and validate a SKILL.md into a SkillManifest entity."""
     fm = parse_frontmatter(skill_md_path)
