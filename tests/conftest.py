@@ -38,6 +38,8 @@ from practice.entities import (
     Skillset,
     SourceType,
 )
+from click.testing import CliRunner
+
 from bin.cli.infrastructure.json_entity_store import JsonEntityStore
 from bin.cli.infrastructure.json_repos import (
     JsonDecisionRepository,
@@ -71,6 +73,23 @@ def tmp_config(tmp_path):
 def container(tmp_config):
     """Fully wired container against a temp workspace."""
     return Container(tmp_config)
+
+
+@pytest.fixture
+def run(tmp_config, monkeypatch):
+    """Invoke CLI commands against a temp workspace with skillsets auto-discovered."""
+    from bin.cli.main import cli
+
+    monkeypatch.setattr(
+        "bin.cli.main.Config",
+        type(
+            "Config",
+            (),
+            {"from_repo_root": staticmethod(lambda _: tmp_config)},
+        ),
+    )
+    runner = CliRunner()
+    return lambda *args: runner.invoke(cli, list(args))
 
 
 # -- Parametrized repository fixtures (one per protocol) -------------------

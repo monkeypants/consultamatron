@@ -11,33 +11,13 @@ with varying engagement statuses, project completions, and gate states.
 
 from __future__ import annotations
 
-from click.testing import CliRunner
-
-import pytest
-
 from bin.cli.di import Container
-from bin.cli.main import cli
 from practice.entities import EngagementStatus, ProjectStatus
 
 CLIENT_A = "acme-corp"
 CLIENT_B = "globex-inc"
 ENGAGEMENT_A = "strat-1"
 ENGAGEMENT_B = "strat-2"
-
-
-@pytest.fixture
-def run(tmp_config, monkeypatch):
-    """Invoke CLI commands against a temp workspace with skillsets auto-discovered."""
-    monkeypatch.setattr(
-        "bin.cli.main.Config",
-        type(
-            "Config",
-            (),
-            {"from_repo_root": staticmethod(lambda _: tmp_config)},
-        ),
-    )
-    runner = CliRunner()
-    return lambda *args: runner.invoke(cli, list(args))
 
 
 def _init(run, client):
