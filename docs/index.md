@@ -37,7 +37,6 @@ Humans: browse item files directly.
 - `integration-surface.md` — the practice/skillset integration boundary
 - `knowledge-protocols.md` — typed knowledge consumption patterns
 - `open-standards.md` — external standards the platform builds on
-- `principles-glossary.md` — core design principles and vocabulary
 - `prompt-engineering.md` — prompt design conventions for skills
 - `semantic-packs.md` — the knowledge pack convention
 - `semantic-waist.md` — the narrow typed layer between practice and skillsets
@@ -46,6 +45,3 @@ Humans: browse item files directly.
 ## Composite items
 
 - `capabilities/` — catalogue of integration facets at the practice/skillset boundary
-- `observation-router/` — design specification for capturing and routing observations at inflection points (WIP)
-- `pedagogic-gradient-descent/` — calibrated operator pedagogy as a cybernetic control loop
-- `voices-protocol/` — deliberation on multiple pedagogic voices for operator comprehension

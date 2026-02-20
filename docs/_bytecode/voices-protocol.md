@@ -1,4 +1,0 @@
----
-source_hash: sha256:a159a00f323d89071657966ba87fc79c7622ba6d363f4874215c1b4d53b720e0
----
-Deliberation on adopting multiple pedagogic voices for operator comprehension. Seven luminaries assess through hexagonal architecture, YAGNI, DDD, and essential-vs-accidental complexity. Consensus: voices address a real gap (one delivery channel for scarce operator cognition). Two-phase approach: prompt pattern now, protocol when evidence warrants. Key constraint: voice never modifies analysis. Subsequent work in pedagogic-gradient-descent refines voice selection to be a function of concept gap and evidence level, not blanket preference.
