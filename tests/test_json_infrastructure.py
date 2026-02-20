@@ -57,9 +57,9 @@ class TestPathConventions:
         assert expected.exists()
 
     def test_engagement_file(self, tmp_config, engagement_log_repo):
-        from .conftest import make_engagement
+        from .conftest import make_engagement_entry
 
-        engagement_log_repo.save(make_engagement(client="holloway-group"))
+        engagement_log_repo.save(make_engagement_entry(client="holloway-group"))
         expected = tmp_config.workspace_root / "holloway-group" / "engagement-log.json"
         assert expected.exists()
 

@@ -281,7 +281,7 @@ def make_decision(**overrides) -> DecisionEntry:
     return DecisionEntry(**(defaults | overrides))
 
 
-def make_engagement(**overrides) -> EngagementEntry:
+def make_engagement_entry(**overrides) -> EngagementEntry:
     defaults = dict(
         id=str(uuid.uuid4()),
         client=DEFAULT_CLIENT,

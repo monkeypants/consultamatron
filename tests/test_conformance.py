@@ -40,7 +40,7 @@ from practice.entities import CompilationState, Skillset
 
 from .conftest import (
     make_decision,
-    make_engagement,
+    make_engagement_entry,
     make_engagement_dashboard,
     make_item_freshness,
     make_knowledge_pack,
@@ -222,7 +222,7 @@ class TestEntityRoundTrip:
         [
             pytest.param(make_project(), id="Project"),
             pytest.param(make_decision(), id="DecisionEntry"),
-            pytest.param(make_engagement(), id="EngagementEntry"),
+            pytest.param(make_engagement_entry(), id="EngagementEntry"),
             pytest.param(make_research(), id="ResearchTopic"),
             pytest.param(make_skillset(), id="Skillset"),
             pytest.param(make_prospectus(), id="Skillset-prospectus"),
