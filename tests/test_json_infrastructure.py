@@ -151,10 +151,10 @@ class TestJsonFormat:
 
 
 class TestMissingFileResilience:
-    def testread_json_array_missing_file(self, tmp_path):
+    def test_read_json_array_missing_file(self, tmp_path):
         result = read_json_array(tmp_path / "does-not-exist.json")
         assert result == []
 
-    def testread_json_object_missing_file(self, tmp_path):
+    def test_read_json_object_missing_file(self, tmp_path):
         result = read_json_object(tmp_path / "does-not-exist.json")
         assert result is None
