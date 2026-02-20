@@ -24,7 +24,6 @@ packages = [
     "bin",
     "commons/business_model_canvas",
     "commons/skillset_engineering",
-    "commons/world_domination",
     "src/practice",
     "commons/wardley_mapping",
 ]
