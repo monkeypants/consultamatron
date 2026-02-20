@@ -184,9 +184,7 @@ class TestNestedFreshness:
 
     def test_three_level_cascade(self, tmp_path):
         """Grandchild dirty → child and parent deep_state DIRTY."""
-        from practice.content_hash import hash_children, hash_content
-        from practice.frontmatter import format_frontmatter
-
+        # Build a 3-level hierarchy with no bytecode
         root = tmp_path / "pack"
         root.mkdir()
         (root / "index.md").write_text("---\nname: root\n---\n")
@@ -202,43 +200,16 @@ class TestNestedFreshness:
         (grandchild / "index.md").write_text("---\nname: gc\n---\n")
         (grandchild / "deep.md").write_text("deep content")
 
-        # Build bytecode bottom-up with correct hashes
-        gc_bc = grandchild / "_bytecode"
-        gc_bc.mkdir()
-        (gc_bc / "deep.md").write_text(
-            format_frontmatter(
-                {"source_hash": hash_content("deep content")}, "summary of deep"
-            )
-        )
-
-        child_bc = child / "_bytecode"
-        child_bc.mkdir()
-        (child_bc / "one.md").write_text(
-            format_frontmatter({"source_hash": hash_content("1")}, "summary of one")
-        )
-        (child_bc / "grandchild.md").write_text(
-            format_frontmatter(
-                {"source_hash": hash_children(gc_bc)}, "summary of grandchild"
-            )
-        )
-
-        root_bc = root / "_bytecode"
-        root_bc.mkdir()
-        (root_bc / "alpha.md").write_text(
-            format_frontmatter({"source_hash": hash_content("A")}, "summary of alpha")
-        )
-        (root_bc / "child.md").write_text(
-            format_frontmatter(
-                {"source_hash": hash_children(child_bc)}, "summary of child"
-            )
-        )
+        # Compile the whole tree to establish a clean baseline
+        inspector = FilesystemFreshnessInspector()
+        compiler = StubCompiler()
+        pack_and_wrap(root, inspector, compiler, deep=True)
+        assert inspector.assess(root).deep_state == CompilationState.CLEAN
 
         # Now make grandchild dirty
         (grandchild / "deep.md").write_text("deep content MODIFIED")
 
-        inspector = FilesystemFreshnessInspector()
         result = inspector.assess(root)
-
         child_freshness = result.children[0]
         gc_freshness = child_freshness.children[0]
 
