@@ -29,6 +29,13 @@ from bin.cli.infrastructure.filesystem_skill_manifest_repository import (
 from bin.cli.infrastructure.filesystem_skillset_knowledge import (
     FilesystemSkillsetKnowledge,
 )
+from bin.cli.infrastructure.filesystem_needs_reader import FilesystemNeedsReader
+from bin.cli.infrastructure.filesystem_observation_writer import (
+    FilesystemObservationWriter,
+)
+from bin.cli.infrastructure.filesystem_pending_store import (
+    FilesystemPendingObservationStore,
+)
 from bin.cli.infrastructure.pack_nudger import FilesystemPackNudger
 from bin.cli.infrastructure.filesystem_gate_inspector import FilesystemGateInspector
 from bin.cli.infrastructure.filesystem_source_repository import (
@@ -75,6 +82,8 @@ from bin.cli.usecases import (
     SkillPathUseCase,
     UpdateProjectStatusUseCase,
     UpdateProspectusUseCase,
+    AggregateNeedsBriefUseCase,
+    FlushObservationsUseCase,
 )
 from practice.repositories import (
     Clock,
@@ -85,7 +94,10 @@ from practice.repositories import (
     GateInspector,
     IdGenerator,
     KnowledgePackRepository,
+    NeedsReader,
+    ObservationWriter,
     PackNudger,
+    PendingObservationStore,
     ProfileRepository,
     ProjectPresenter,
     ProjectRepository,
@@ -211,6 +223,10 @@ class Container:
         )
         self.skillset_knowledge: SkillsetKnowledge = FilesystemSkillsetKnowledge(
             skillset_bc_dirs,
+        )
+        self.needs_reader: NeedsReader = FilesystemNeedsReader(
+            repo_root=config.repo_root,
+            workspace_root=config.workspace_root,
         )
 
         # -- Write usecases ------------------------------------------------
@@ -369,4 +385,30 @@ class Container:
         # -- Pantheon usecases ---------------------------------------------
         self.list_pantheon_usecase = ListPantheonUseCase(
             knowledge=self.skillset_knowledge,
+        )
+
+        # -- Observation routing -------------------------------------------
+        self.observation_writer: ObservationWriter = FilesystemObservationWriter(
+            repo_root=config.repo_root,
+            workspace_root=config.workspace_root,
+        )
+        self.pending_store: PendingObservationStore = FilesystemPendingObservationStore(
+            workspace_root=config.workspace_root,
+        )
+        self.aggregate_needs_brief_usecase = AggregateNeedsBriefUseCase(
+            engagements=self.engagement_entities,
+            projects=self.projects,
+            sources=self.sources,
+            needs_reader=self.needs_reader,
+            pack_nudger=self.pack_nudger,
+            workspace_root=config.workspace_root,
+        )
+        self.flush_observations_usecase = FlushObservationsUseCase(
+            engagements=self.engagement_entities,
+            projects=self.projects,
+            sources=self.sources,
+            needs_reader=self.needs_reader,
+            observation_writer=self.observation_writer,
+            pending_store=self.pending_store,
+            workspace_root=config.workspace_root,
         )

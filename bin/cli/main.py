@@ -48,6 +48,8 @@ from bin.cli.dtos import (
     SkillPathRequest,
     UpdateProjectStatusRequest,
     UpdateProspectusRequest,
+    AggregateNeedsBriefRequest,
+    FlushObservationsRequest,
 )
 from bin.cli.introspect import generate_command
 from practice.bc_discovery import discover_all_bc_modules
@@ -756,6 +758,81 @@ pack.add_command(
         request_model=PackStatusRequest,
         usecase_attr="pack_status_usecase",
         format_output=_format_pack_status,
+    )
+)
+
+
+# ---------------------------------------------------------------------------
+# observation (cross-BC, stays here)
+# ---------------------------------------------------------------------------
+
+
+@cli.group()
+def observation() -> None:
+    """Observation routing operations."""
+
+
+def _format_needs_brief(resp: Any) -> None:
+    click.echo("## Observation Brief")
+    click.echo(f"\nYou are at a **{resp.inflection}** inflection point.\n")
+
+    if not resp.needs:
+        click.echo("No observation needs declared for this context.\n")
+    else:
+        click.echo("### What to watch for\n")
+        for i, n in enumerate(resp.needs, 1):
+            served = " (already served)" if n.served else ""
+            click.echo(f"{i}. **{n.slug}** — {n.need}{served}")
+            click.echo(f"   Rationale: {n.rationale}\n")
+
+    click.echo("### How to record observations\n")
+    click.echo("Write each observation as a markdown file in:")
+    click.echo(f"  {resp.pending_dir}/\n")
+    click.echo("Frontmatter template:")
+    click.echo("  ---")
+    click.echo("  slug: <unique-kebab-case>")
+    click.echo(f"  source_inflection: {resp.inflection}")
+    click.echo("  need_refs: [need-slug-1, need-slug-2]")
+    click.echo("  ---")
+    click.echo("  <observation content>\n")
+
+    if resp.destinations:
+        click.echo("### Eligible destinations\n")
+        for d in resp.destinations:
+            click.echo(f"- {d.owner_type}/{d.owner_ref}")
+        click.echo()
+
+    click.echo("### When done\n")
+    click.echo(
+        "Run: practice observation flush --client <client> --engagement <engagement>"
+    )
+
+    if resp.nudges:
+        click.echo("\n### Nudges\n")
+        for nudge in resp.nudges:
+            click.echo(f"- {nudge}")
+
+
+observation.add_command(
+    generate_command(
+        name="brief",
+        request_model=AggregateNeedsBriefRequest,
+        usecase_attr="aggregate_needs_brief_usecase",
+        format_output=_format_needs_brief,
+    )
+)
+
+
+def _format_flush_result(resp: Any) -> None:
+    click.echo(f"Flushed: {resp.flushed} routed, {resp.rejected} rejected")
+
+
+observation.add_command(
+    generate_command(
+        name="flush",
+        request_model=FlushObservationsRequest,
+        usecase_attr="flush_observations_usecase",
+        format_output=_format_flush_result,
     )
 )
 

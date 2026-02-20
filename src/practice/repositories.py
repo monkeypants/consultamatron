@@ -16,6 +16,8 @@ from practice.entities import (
     Engagement,
     EngagementEntry,
     KnowledgePack,
+    Observation,
+    ObservationNeed,
     PackFreshness,
     Profile,
     Project,
@@ -188,6 +190,46 @@ class SkillsetKnowledge(Protocol):
 
     def read_item(self, skillset_name: str, item_type: str) -> str | None:
         """Return the body content of a typed item, or None if absent."""
+        ...
+
+
+@runtime_checkable
+class NeedsReader(Protocol):
+    """Read observation needs declarations from their storage locations.
+
+    Type-level needs live in practice layer manifests — one per
+    destination type. Instance-level needs live with the destination
+    instance (in its workspace, config, or brief).
+    """
+
+    def type_level_needs(self, owner_type: str) -> list[ObservationNeed]:
+        """Read type-level needs for a destination type."""
+        ...
+
+    def instance_needs(self, owner_type: str, owner_ref: str) -> list[ObservationNeed]:
+        """Read instance-level needs for a specific destination."""
+        ...
+
+
+@runtime_checkable
+class ObservationWriter(Protocol):
+    """Write observations to their routed destinations."""
+
+    def write(self, observation: Observation) -> None:
+        """Persist an observation to all its resolved destinations."""
+        ...
+
+
+@runtime_checkable
+class PendingObservationStore(Protocol):
+    """Read and clear pending observation files from the staging directory."""
+
+    def read_pending(self, client: str, engagement: str) -> list[Observation]:
+        """Read all pending observations for an engagement."""
+        ...
+
+    def clear_pending(self, client: str, engagement: str) -> None:
+        """Remove all pending observation files for an engagement."""
         ...
 
 

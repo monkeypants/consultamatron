@@ -795,3 +795,56 @@ class ListPantheonRequest(BaseModel):
 class ListPantheonResponse(BaseModel):
     luminaries: list[LuminarySummary]
     source_packs: list[str] = []
+
+
+# ---------------------------------------------------------------------------
+# Observation routing — needs aggregation and routing
+# ---------------------------------------------------------------------------
+
+
+class ObservationNeedInfo(BaseModel):
+    slug: str
+    owner_type: str
+    owner_ref: str
+    level: str
+    need: str
+    rationale: str
+    lifecycle_moment: str
+    served: bool
+
+
+class RoutingDestinationInfo(BaseModel):
+    owner_type: str
+    owner_ref: str
+
+
+class AggregateNeedsBriefRequest(BaseModel):
+    """Aggregate observation needs for an engagement context."""
+
+    client: str = Field(description="Client slug.")
+    engagement: str = Field(description="Engagement slug.")
+    inflection: str = Field(
+        default="gatepoint",
+        description="Inflection point type (e.g. gatepoint, review).",
+    )
+
+
+class AggregateNeedsBriefResponse(BaseModel):
+    needs: list[ObservationNeedInfo]
+    destinations: list[RoutingDestinationInfo]
+    pending_dir: str
+    inflection: str
+    nudges: list[str] = []
+
+
+class FlushObservationsRequest(BaseModel):
+    """Flush pending observations to their routed destinations."""
+
+    client: str = Field(description="Client slug.")
+    engagement: str = Field(description="Engagement slug.")
+
+
+class FlushObservationsResponse(BaseModel):
+    routed: int
+    rejected: int
+    flushed: int
