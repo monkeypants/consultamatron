@@ -23,12 +23,16 @@ from practice.entities import (
     ItemFreshness,
     KnowledgePack,
     NextAction,
+    Observation,
+    ObservationNeed,
     PackFreshness,
     Profile,
     Project,
     ProjectPipelinePosition,
     ProjectStatus,
     ResearchTopic,
+    RoutingAllowList,
+    RoutingDestination,
     SkillManifest,
     SkillsetSource,
     Skillset,
@@ -107,6 +111,42 @@ def engagement_entity_repo(request, tmp_config):
 def research_repo(request, tmp_config):
     if request.param == "json":
         return JsonResearchTopicRepository(tmp_config.workspace_root)
+
+
+@pytest.fixture(params=["filesystem"])
+def needs_reader(request, tmp_path):
+    if request.param == "filesystem":
+        from bin.cli.infrastructure.filesystem_needs_reader import FilesystemNeedsReader
+
+        return FilesystemNeedsReader(
+            repo_root=tmp_path,
+            workspace_root=tmp_path / "clients",
+        )
+
+
+@pytest.fixture(params=["filesystem"])
+def observation_writer(request, tmp_path):
+    if request.param == "filesystem":
+        from bin.cli.infrastructure.filesystem_observation_writer import (
+            FilesystemObservationWriter,
+        )
+
+        return FilesystemObservationWriter(
+            repo_root=tmp_path,
+            workspace_root=tmp_path / "clients",
+        )
+
+
+@pytest.fixture(params=["filesystem"])
+def pending_store(request, tmp_path):
+    if request.param == "filesystem":
+        from bin.cli.infrastructure.filesystem_pending_store import (
+            FilesystemPendingObservationStore,
+        )
+
+        return FilesystemPendingObservationStore(
+            workspace_root=tmp_path / "clients",
+        )
 
 
 @pytest.fixture(params=["json"])
@@ -337,6 +377,46 @@ def make_skill_manifest(**overrides) -> SkillManifest:
     )
     merged = defaults | overrides
     return SkillManifest.model_validate(merged)
+
+
+def make_observation_need(**overrides) -> ObservationNeed:
+    defaults = dict(
+        slug="client-strategic-gaps",
+        owner_type="client",
+        owner_ref="holloway-group",
+        level="type",
+        need="Watch for strategic gaps in freight operations",
+        rationale="Improves next engagement scoping",
+        lifecycle_moment="research",
+        served=False,
+    )
+    return ObservationNeed(**(defaults | overrides))
+
+
+def make_routing_destination(**overrides) -> RoutingDestination:
+    defaults = dict(
+        owner_type="client",
+        owner_ref="holloway-group",
+    )
+    return RoutingDestination(**(defaults | overrides))
+
+
+def make_routing_allow_list(**overrides) -> RoutingAllowList:
+    defaults = dict(
+        destinations=[make_routing_destination()],
+    )
+    return RoutingAllowList(**(defaults | overrides))
+
+
+def make_observation(**overrides) -> Observation:
+    defaults = dict(
+        slug="freight-digital-gap",
+        source_inflection="gatepoint",
+        need_refs=["client-strategic-gaps"],
+        content="Digital platform trails industry evolution by two stages.",
+        destinations=[make_routing_destination()],
+    )
+    return Observation(**(defaults | overrides))
 
 
 def _write_skillsets(skillsets_root, skillsets):

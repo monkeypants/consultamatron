@@ -12,14 +12,18 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
 from practice.entities import Confidence, EngagementStatus, ProjectStatus
 
 from .conftest import (
     make_decision,
     make_engagement,
     make_engagement_entity,
+    make_observation,
     make_project,
     make_research,
+    make_routing_destination,
     make_skillset,
 )
 
@@ -344,3 +348,199 @@ class TestResearchTopicContract:
         research_repo.save(make_research(client="meridian-health"))
         assert len(research_repo.list_all("holloway-group")) == 1
         assert len(research_repo.list_all("meridian-health")) == 1
+
+
+# ---------------------------------------------------------------------------
+# NeedsReader contract tests
+# ---------------------------------------------------------------------------
+
+_NEED_FRONTMATTER = """\
+---
+slug: strategic-gaps
+owner_type: client
+owner_ref: client
+level: type
+need: Watch for strategic gaps
+rationale: Improves scoping
+lifecycle_moment: research
+served: false
+---
+Body prose about the need.
+"""
+
+
+@pytest.mark.doctrine
+class TestNeedsReaderContract:
+    """NeedsReader implementations must satisfy these contracts."""
+
+    def test_empty_dir_returns_empty(self, needs_reader):
+        assert needs_reader.type_level_needs("client") == []
+
+    def test_type_level_need_from_file(self, needs_reader, tmp_path):
+        needs_dir = tmp_path / "docs" / "observation-needs"
+        needs_dir.mkdir(parents=True)
+        (needs_dir / "client.md").write_text(_NEED_FRONTMATTER)
+
+        result = needs_reader.type_level_needs("client")
+        assert len(result) == 1
+        assert result[0].slug == "strategic-gaps"
+        assert result[0].level == "type"
+        assert result[0].owner_type == "client"
+
+    def test_instance_needs_from_client_dir(self, needs_reader, tmp_path):
+        needs_dir = tmp_path / "clients" / "holloway-group" / "observation-needs"
+        needs_dir.mkdir(parents=True)
+        (needs_dir / "freight-gaps.md").write_text(
+            _NEED_FRONTMATTER.replace("slug: strategic-gaps", "slug: freight-gaps")
+            .replace("level: type", "level: instance")
+            .replace("owner_ref: client", "owner_ref: holloway-group")
+        )
+
+        result = needs_reader.instance_needs("client", "holloway-group")
+        assert len(result) == 1
+        assert result[0].slug == "freight-gaps"
+        assert result[0].level == "instance"
+
+    def test_missing_client_dir_returns_empty(self, needs_reader):
+        result = needs_reader.instance_needs("client", "nonexistent-corp")
+        assert result == []
+
+    def test_multiple_files_returns_all(self, needs_reader, tmp_path):
+        needs_dir = tmp_path / "clients" / "holloway-group" / "observation-needs"
+        needs_dir.mkdir(parents=True)
+        for i in range(3):
+            (needs_dir / f"need-{i}.md").write_text(
+                _NEED_FRONTMATTER.replace("slug: strategic-gaps", f"slug: need-{i}")
+                .replace("level: type", "level: instance")
+                .replace("owner_ref: client", "owner_ref: holloway-group")
+            )
+
+        result = needs_reader.instance_needs("client", "holloway-group")
+        assert len(result) == 3
+
+
+# ---------------------------------------------------------------------------
+# ObservationWriter contract tests
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.doctrine
+class TestObservationWriterContract:
+    """ObservationWriter implementations must satisfy these contracts."""
+
+    def test_write_creates_file_in_client_dir(self, observation_writer, tmp_path):
+        obs = make_observation(
+            destinations=[
+                make_routing_destination(
+                    owner_type="client", owner_ref="holloway-group"
+                )
+            ]
+        )
+        observation_writer.write(obs)
+        obs_dir = tmp_path / "clients" / "holloway-group" / "observations"
+        assert obs_dir.is_dir()
+        files = list(obs_dir.glob("*.md"))
+        assert len(files) == 1
+
+    def test_slug_round_trips_through_frontmatter(self, observation_writer, tmp_path):
+        from practice.frontmatter import parse_frontmatter
+
+        obs = make_observation(
+            slug="test-obs",
+            destinations=[
+                make_routing_destination(
+                    owner_type="client", owner_ref="holloway-group"
+                )
+            ],
+        )
+        observation_writer.write(obs)
+        obs_dir = tmp_path / "clients" / "holloway-group" / "observations"
+        files = list(obs_dir.glob("*.md"))
+        fm = parse_frontmatter(files[0])
+        assert fm["slug"] == "test-obs"
+
+    def test_fan_out_to_multiple_destinations(self, observation_writer, tmp_path):
+        obs = make_observation(
+            destinations=[
+                make_routing_destination(
+                    owner_type="client", owner_ref="holloway-group"
+                ),
+                make_routing_destination(owner_type="personal", owner_ref="personal"),
+            ]
+        )
+        observation_writer.write(obs)
+        client_dir = tmp_path / "clients" / "holloway-group" / "observations"
+        personal_dir = tmp_path / "personal" / "observations"
+        assert len(list(client_dir.glob("*.md"))) == 1
+        assert len(list(personal_dir.glob("*.md"))) == 1
+
+
+# ---------------------------------------------------------------------------
+# PendingObservationStore contract tests
+# ---------------------------------------------------------------------------
+
+
+_PENDING_OBS_TEMPLATE = """\
+---
+slug: {slug}
+source_inflection: gatepoint
+need_refs: [{need_refs}]
+---
+{content}
+"""
+
+
+@pytest.mark.doctrine
+class TestPendingObservationStoreContract:
+    """PendingObservationStore implementations must satisfy these contracts."""
+
+    def test_empty_dir_returns_empty(self, pending_store):
+        result = pending_store.read_pending(CLIENT, ENGAGEMENT)
+        assert result == []
+
+    def test_write_then_read_returns_observation(self, pending_store, tmp_path):
+        pending_dir = (
+            tmp_path
+            / "clients"
+            / CLIENT
+            / "engagements"
+            / ENGAGEMENT
+            / ".observations-pending"
+        )
+        pending_dir.mkdir(parents=True)
+        (pending_dir / "test-obs.md").write_text(
+            _PENDING_OBS_TEMPLATE.format(
+                slug="test-obs",
+                need_refs="some-need",
+                content="An observation.",
+            )
+        )
+        result = pending_store.read_pending(CLIENT, ENGAGEMENT)
+        assert len(result) == 1
+        assert result[0].slug == "test-obs"
+        assert result[0].need_refs == ["some-need"]
+        assert result[0].content == "An observation."
+
+    def test_clear_pending_removes_files(self, pending_store, tmp_path):
+        pending_dir = (
+            tmp_path
+            / "clients"
+            / CLIENT
+            / "engagements"
+            / ENGAGEMENT
+            / ".observations-pending"
+        )
+        pending_dir.mkdir(parents=True)
+        (pending_dir / "test-obs.md").write_text(
+            _PENDING_OBS_TEMPLATE.format(
+                slug="test-obs",
+                need_refs="some-need",
+                content="An observation.",
+            )
+        )
+        pending_store.clear_pending(CLIENT, ENGAGEMENT)
+        assert not list(pending_dir.glob("*.md"))
+
+    def test_nonexistent_dir_returns_empty(self, pending_store):
+        result = pending_store.read_pending("no-such-client", "no-such-engagement")
+        assert result == []

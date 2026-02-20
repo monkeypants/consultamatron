@@ -45,12 +45,16 @@ from .conftest import (
     make_item_freshness,
     make_knowledge_pack,
     make_next_action,
+    make_observation,
+    make_observation_need,
     make_pack_freshness,
     make_pipeline_position,
     make_profile,
     make_project,
     make_prospectus,
     make_research,
+    make_routing_allow_list,
+    make_routing_destination,
     make_skill_manifest,
     make_skillset,
 )
@@ -271,6 +275,14 @@ class TestEntityRoundTrip:
                 ),
                 id="PackFreshness-corrupt",
             ),
+            pytest.param(make_observation_need(), id="ObservationNeed"),
+            pytest.param(
+                make_observation_need(served=True),
+                id="ObservationNeed-served",
+            ),
+            pytest.param(make_routing_destination(), id="RoutingDestination"),
+            pytest.param(make_routing_allow_list(), id="RoutingAllowList"),
+            pytest.param(make_observation(), id="Observation"),
         ],
     )
     def test_json_round_trip(self, entity):

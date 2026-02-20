@@ -257,6 +257,51 @@ class EngagementEntry(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# Observation routing (needs-driven cross-context observation delivery)
+# ---------------------------------------------------------------------------
+
+
+class ObservationNeed(BaseModel):
+    """A single declared information need owned by a destination.
+
+    Type-level needs use owner_ref as the type name (e.g. "client").
+    Instance-level needs use the specific identifier (e.g. "holloway-group").
+    """
+
+    slug: str
+    owner_type: str
+    owner_ref: str
+    level: str
+    need: str
+    rationale: str
+    lifecycle_moment: str
+    served: bool = False
+
+
+class RoutingDestination(BaseModel):
+    """A target that may receive routed observations."""
+
+    owner_type: str
+    owner_ref: str
+
+
+class RoutingAllowList(BaseModel):
+    """The set of destinations allowed to receive observations."""
+
+    destinations: list[RoutingDestination]
+
+
+class Observation(BaseModel):
+    """A single observation extracted at an inflection point."""
+
+    slug: str
+    source_inflection: str
+    need_refs: list[str]
+    content: str
+    destinations: list[RoutingDestination]
+
+
+# ---------------------------------------------------------------------------
 # Skillset Capability (integration protocol — the practice/skillset boundary)
 # ---------------------------------------------------------------------------
 
