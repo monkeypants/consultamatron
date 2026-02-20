@@ -50,7 +50,7 @@ millions.
 ## The scaling problem
 
 The compounding cost problem (identified by Parnas in deliberation):
-as skillsets multiply toward "world domination" — dozens of methodology
+as skillsets multiply — dozens of methodology
 domains, each with its own knowledge packs, protocols, research
 strategies, and analytical vocabulary — the O(n × k) cost becomes a
 ceiling on platform growth.
