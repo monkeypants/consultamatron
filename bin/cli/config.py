@@ -30,16 +30,14 @@ from pathlib import Path
 
 @dataclass(frozen=True)
 class Config:
-    """Root paths for the workspace and skillset manifests."""
+    """Root paths for the workspace."""
 
     repo_root: Path
     workspace_root: Path
-    skillsets_root: Path
 
     @classmethod
     def from_repo_root(cls, repo_root: Path) -> Config:
         return cls(
             repo_root=repo_root,
             workspace_root=repo_root / "clients",
-            skillsets_root=repo_root / "skillsets",
         )

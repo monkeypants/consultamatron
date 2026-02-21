@@ -625,6 +625,10 @@ class RegisterProspectusRequest(BaseModel):
         default="",
         description="Comma-separated evidence references.",
     )
+    source: str = Field(
+        default="personal",
+        description="Source container: 'personal' or a partnership slug.",
+    )
 
 
 class RegisterProspectusResponse(BaseModel):

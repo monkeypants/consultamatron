@@ -1207,6 +1207,7 @@ class RegisterProspectusUseCase:
             deliverables=_split_csv(request.deliverables),
             classification=_split_csv(request.classification),
             evidence=_split_csv(request.evidence),
+            source=request.source,
         )
         return RegisterProspectusResponse(
             name=request.name,
@@ -1310,7 +1311,7 @@ class SkillPathUseCase:
         self._repo_root = repo_root
 
     def execute(self, request: SkillPathRequest) -> SkillPathResponse:
-        for container in ("commons", "personal", "partnerships"):
+        for container in ("skills", "commons", "personal", "partnerships"):
             container_dir = self._repo_root / container
             if not container_dir.is_dir():
                 continue

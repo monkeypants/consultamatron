@@ -13,6 +13,7 @@ import pytest
 
 from bin.cli.config import Config
 from bin.cli.di import Container
+from .conftest import _HAS_BC_PACKAGES
 from bin.cli.dtos import RenderSiteRequest
 from bin.cli.infrastructure.code_skillset_repository import CodeSkillsetRepository
 from bin.cli.dtos import (
@@ -49,11 +50,12 @@ def _build_research(ws: Path) -> None:
 @pytest.fixture(scope="module")
 def rendered_site(tmp_path_factory):
     """Build a minimal workspace and render the site."""
+    if not _HAS_BC_PACKAGES:
+        pytest.skip("No BC packages installed")
     tmp_path = tmp_path_factory.mktemp("site")
     config = Config(
         repo_root=_REPO_ROOT,
         workspace_root=tmp_path / "clients",
-        skillsets_root=tmp_path / "skillsets",
     )
     container = Container(config)
 

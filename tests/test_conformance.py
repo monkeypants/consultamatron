@@ -84,7 +84,6 @@ def _tmp_config(tmp_path: Path) -> Config:
     return Config(
         repo_root=_REPO_ROOT,
         workspace_root=tmp_path / "clients",
-        skillsets_root=tmp_path / "skillsets",
     )
 
 

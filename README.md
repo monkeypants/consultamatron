@@ -92,8 +92,8 @@ The short version:
 
 1. Clone this repository.
 2. Set up a private repo for your client workspaces in `clients/`.
-3. Set up a private repo for your personal vault in `partners/`.
-4. Clone any partnership repos into `partners/`.
+3. Set up a private repo for your personal vault in `personal/`.
+4. Clone any partnership repos into `partnerships/`.
 5. Start a session with your agent:
 
    > Research Acme Corp for me.
@@ -140,13 +140,23 @@ skills.
 
 ## Extending the practice
 
-Additional skillsets can be added by:
-1. Creating a bounded context package with a `SKILLSETS` declaration
-2. Creating skill directories with `SKILL.md` files
-3. Registering the module in `bin/cli/di.py`
+Source containers use a consistent directory convention:
 
-The `engage` skill discovers skillsets automatically from the manifests.
-No changes to shared infrastructure are required.
+```
+{source}/
+├── skillsets/    # BC packages (scanned for SKILLSETS attribute)
+├── skills/       # Generic skills with SKILL.md
+└── ...           # Other content (knowledge packs, etc.)
+```
+
+Additional skillsets can be added by:
+1. Creating a BC package under `personal/skillsets/` (or
+   `partnerships/{slug}/skillsets/` for partnership work)
+2. Declaring `SKILLSETS` in its `__init__.py`
+3. Creating skill directories with `SKILL.md` files
+
+Commons BCs live in `commons/{org}/{repo}/` as git submodules.
+Discovery is automatic — no changes to shared infrastructure required.
 
 ---
 

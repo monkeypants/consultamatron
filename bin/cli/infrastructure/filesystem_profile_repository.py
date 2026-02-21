@@ -1,9 +1,9 @@
 """ProfileRepository that reads skillset-profiles.json from each source.
 
-Scans three locations for profile definitions:
-- ``{repo_root}/skillset-profiles.json`` (commons)
-- ``{repo_root}/personal/skillset-profiles.json`` (personal)
-- ``{repo_root}/partnerships/{slug}/skillset-profiles.json`` (each partnership)
+Scans source containers for profile definitions:
+- ``commons/{org}/{repo}/skillsets/skillset-profiles.json`` (each submodule)
+- ``personal/skillsets/skillset-profiles.json`` (personal)
+- ``partnerships/{slug}/skillsets/skillset-profiles.json`` (each partnership)
 
 Validates that each profile only references skillsets from its own source.
 Invalid profiles are skipped at load time.
@@ -38,25 +38,36 @@ class FilesystemProfileRepository:
     def _load_all(self) -> list[tuple[Profile, str]]:
         results: list[tuple[Profile, str]] = []
 
-        # Commons
-        results.extend(
-            self._load_file(self._repo_root / "skillset-profiles.json", "commons")
-        )
+        # Commons: commons/{org}/{repo}/skillsets/skillset-profiles.json
+        commons = self._repo_root / "commons"
+        if commons.is_dir():
+            for org in sorted(commons.iterdir()):
+                if not org.is_dir() or org.name.startswith("."):
+                    continue
+                for repo in sorted(org.iterdir()):
+                    if not repo.is_dir():
+                        continue
+                    path = repo / "skillsets" / "skillset-profiles.json"
+                    results.extend(self._load_file(path, "commons"))
 
-        # Personal
+        # Personal: personal/skillsets/skillset-profiles.json
         results.extend(
             self._load_file(
-                self._repo_root / "personal" / "skillset-profiles.json", "personal"
+                self._repo_root / "personal" / "skillsets" / "skillset-profiles.json",
+                "personal",
             )
         )
 
-        # Partnerships
+        # Partnerships: partnerships/{slug}/skillsets/skillset-profiles.json
         partnerships_dir = self._repo_root / "partnerships"
         if partnerships_dir.is_dir():
             for subdir in sorted(partnerships_dir.iterdir()):
                 if subdir.is_dir():
                     results.extend(
-                        self._load_file(subdir / "skillset-profiles.json", subdir.name)
+                        self._load_file(
+                            subdir / "skillsets" / "skillset-profiles.json",
+                            subdir.name,
+                        )
                     )
 
         return results

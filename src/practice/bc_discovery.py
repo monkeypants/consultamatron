@@ -1,9 +1,16 @@
-"""Shared BC package discovery for all three source containers.
+"""Shared BC package discovery for all source containers.
 
 Single source of truth for finding bounded context packages at runtime.
-Scans ``commons/``, ``personal/``, and ``partnerships/{slug}/`` for
-directories containing ``__init__.py`` with a ``PIPELINES`` attribute
-(falling back to ``SKILLSETS`` for backward compatibility).
+Source containers use a consistent layout convention:
+
+    {source}/
+    ├── skillsets/    # BC packages (scanned for PIPELINES attribute)
+    ├── skills/       # Generic skills with SKILL.md
+    └── ...           # Other content (knowledge packs, etc.)
+
+Commons sources live under ``commons/{org}/{repo}/`` and are consumed
+as git submodules.  Personal and partnership sources live at
+``personal/`` and ``partnerships/{slug}/`` respectively.
 
 The ``pyproject.toml`` packages list is *not* consulted here — it exists
 only for hatch build/editable-install.
@@ -19,11 +26,98 @@ from types import ModuleType
 from practice.entities import Pipeline
 
 
+def bc_package_dirs(repo_root: Path) -> list[Path]:
+    """Return directories that contain BC packages.
+
+    Each returned path is a directory whose immediate children may be
+    BC packages (directories with ``__init__.py`` exporting ``SKILLSETS``).
+
+    Sources:
+    - ``commons/{org}/{repo}/skillsets/`` (two levels of nesting)
+    - ``personal/skillsets/`` (if present)
+    - ``partnerships/{slug}/skillsets/`` (if present)
+    """
+    dirs: list[Path] = []
+
+    # Commons: commons/{org}/{repo}/skillsets/
+    commons = repo_root / "commons"
+    if commons.is_dir():
+        for org in sorted(commons.iterdir()):
+            if not org.is_dir() or org.name.startswith("."):
+                continue
+            for repo in sorted(org.iterdir()):
+                if not repo.is_dir():
+                    continue
+                skillsets_dir = repo / "skillsets"
+                if skillsets_dir.is_dir():
+                    dirs.append(skillsets_dir)
+
+    # Personal: personal/skillsets/
+    personal_ss = repo_root / "personal" / "skillsets"
+    if personal_ss.is_dir():
+        dirs.append(personal_ss)
+
+    # Partnerships: partnerships/{slug}/skillsets/
+    partnerships = repo_root / "partnerships"
+    if partnerships.is_dir():
+        for child in sorted(partnerships.iterdir()):
+            if not child.is_dir():
+                continue
+            ss = child / "skillsets"
+            if ss.is_dir():
+                dirs.append(ss)
+
+    return dirs
+
+
+def skill_search_dirs(repo_root: Path) -> list[Path]:
+    """Return directories to scan for SKILL.md files.
+
+    - ``{repo_root}/skills/`` (repo-root generic skills)
+    - ``personal/`` (full recursive scan)
+    - ``partnerships/{slug}/`` (full recursive scan)
+    - ``commons/{org}/{repo}/skillsets/`` (only skillset-owned skills)
+    """
+    dirs: list[Path] = []
+
+    # Repo-root generic skills
+    root_skills = repo_root / "skills"
+    if root_skills.is_dir():
+        dirs.append(root_skills)
+
+    # Personal — full scan (skills/ and skillsets/)
+    personal = repo_root / "personal"
+    if personal.is_dir():
+        dirs.append(personal)
+
+    # Partnerships — full scan per slug
+    partnerships = repo_root / "partnerships"
+    if partnerships.is_dir():
+        for child in sorted(partnerships.iterdir()):
+            if child.is_dir():
+                dirs.append(child)
+
+    # Commons — only skillset-owned skills (not top-level skills/)
+    commons = repo_root / "commons"
+    if commons.is_dir():
+        for org in sorted(commons.iterdir()):
+            if not org.is_dir() or org.name.startswith("."):
+                continue
+            for repo in sorted(org.iterdir()):
+                if not repo.is_dir():
+                    continue
+                skillsets_dir = repo / "skillsets"
+                if skillsets_dir.is_dir():
+                    dirs.append(skillsets_dir)
+
+    return dirs
+
+
 def source_container_dirs(repo_root: Path) -> list[Path]:
     """Return existing source container directories.
 
-    Returns ``commons/``, ``personal/`` (if present), and each
-    ``partnerships/{slug}/`` subdirectory (if present).
+    Legacy interface — returns ``commons/``, ``personal/`` (if present),
+    and each ``partnerships/{slug}/`` subdirectory (if present).
     """
     dirs: list[Path] = []
 
@@ -87,10 +181,10 @@ def scan_bc_packages(source_dir: Path) -> list[ModuleType]:
 
 
 def discover_all_bc_modules(repo_root: Path) -> list[ModuleType]:
-    """Scan all source containers and return every BC module."""
+    """Scan all BC package directories and return every BC module."""
     modules: list[ModuleType] = []
-    for container_dir in source_container_dirs(repo_root):
-        modules.extend(scan_bc_packages(container_dir))
+    for pkg_dir in bc_package_dirs(repo_root):
+        modules.extend(scan_bc_packages(pkg_dir))
     return modules
 
 
