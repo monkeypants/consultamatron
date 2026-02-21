@@ -2,7 +2,8 @@
 
 Single source of truth for finding bounded context packages at runtime.
 Scans ``commons/``, ``personal/``, and ``partnerships/{slug}/`` for
-directories containing ``__init__.py`` with a ``SKILLSETS`` attribute.
+directories containing ``__init__.py`` with a ``PIPELINES`` attribute
+(falling back to ``SKILLSETS`` for backward compatibility).
 
 The ``pyproject.toml`` packages list is *not* consulted here — it exists
 only for hatch build/editable-install.
@@ -15,7 +16,7 @@ import sys
 from pathlib import Path
 from types import ModuleType
 
-from practice.entities import Skillset
+from practice.entities import Pipeline
 
 
 def source_container_dirs(repo_root: Path) -> list[Path]:
@@ -50,11 +51,22 @@ def ensure_on_sys_path(directory: Path) -> None:
         sys.path.insert(0, path_str)
 
 
+def _has_pipelines(mod: ModuleType) -> bool:
+    """True if *mod* exports PIPELINES or SKILLSETS."""
+    return hasattr(mod, "PIPELINES") or hasattr(mod, "SKILLSETS")
+
+
+def _get_pipelines(mod: ModuleType) -> list[Pipeline]:
+    """Return pipelines from *mod*, preferring PIPELINES over SKILLSETS."""
+    return getattr(mod, "PIPELINES", getattr(mod, "SKILLSETS", []))
+
+
 def scan_bc_packages(source_dir: Path) -> list[ModuleType]:
-    """Import BC packages from *source_dir* and return those with SKILLSETS.
+    """Import BC packages from *source_dir* and return those with PIPELINES.
 
     Adds *source_dir* to ``sys.path`` persistently, then imports each
-    subdirectory containing ``__init__.py`` that exports ``SKILLSETS``.
+    subdirectory containing ``__init__.py`` that exports ``PIPELINES``
+    (or the legacy ``SKILLSETS`` attribute).
     """
     if not source_dir.is_dir():
         return []
@@ -67,7 +79,7 @@ def scan_bc_packages(source_dir: Path) -> list[ModuleType]:
             continue
         try:
             mod = importlib.import_module(child.name)
-            if hasattr(mod, "SKILLSETS"):
+            if _has_pipelines(mod):
                 modules.append(mod)
         except ImportError:
             continue
@@ -82,9 +94,13 @@ def discover_all_bc_modules(repo_root: Path) -> list[ModuleType]:
     return modules
 
 
-def collect_skillsets(source_dir: Path) -> list[Skillset]:
-    """Scan *source_dir* for BC packages and return their skillsets."""
-    result: list[Skillset] = []
+def collect_pipelines(source_dir: Path) -> list[Pipeline]:
+    """Scan *source_dir* for BC packages and return their pipelines."""
+    result: list[Pipeline] = []
     for mod in scan_bc_packages(source_dir):
-        result.extend(getattr(mod, "SKILLSETS", []))
+        result.extend(_get_pipelines(mod))
     return result
+
+
+# Backwards-compatible alias
+collect_skillsets = collect_pipelines

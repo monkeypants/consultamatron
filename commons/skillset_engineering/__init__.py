@@ -9,7 +9,7 @@ conformance tests that comprise a consulting methodology.
 from __future__ import annotations
 
 from practice.discovery import PipelineStage
-from practice.entities import Skillset
+from practice.entities import Pipeline
 
 
 def _create_presenter(workspace_root, repo_root):
@@ -23,8 +23,8 @@ PRESENTER_FACTORY = [
     ("refine-skillset", _create_presenter),
 ]
 
-SKILLSETS: list[Skillset] = [
-    Skillset(
+PIPELINES: list[Pipeline] = [
+    Pipeline(
         name="new-skillset",
         display_name="New Skillset",
         description=(
@@ -36,25 +36,7 @@ SKILLSETS: list[Skillset] = [
             " agent operation."
         ),
         slug_pattern="skillset-{n}",
-        problem_domain="Practice engineering",
-        value_proposition=(
-            "Systematise the creation of new consulting products so they"
-            " are consistent, discoverable, and conformance-tested from"
-            " the moment they ship."
-        ),
-        deliverables=[
-            "Skillset prospectus or implemented BC package",
-            "Skill files with methodology guides",
-            "Bash script wrappers for CLI operations",
-            "Semantic bytecode reference hierarchy",
-            "Presenter and test infrastructure",
-        ],
-        classification=["meta", "practice-engineering"],
-        evidence=[
-            "Consultamatron conformance test suite",
-            "Existing WM and BMC skillset implementations",
-        ],
-        pipeline=[
+        stages=[
             PipelineStage(
                 order=1,
                 skill="ns-brief",
@@ -89,7 +71,7 @@ SKILLSETS: list[Skillset] = [
             ),
         ],
     ),
-    Skillset(
+    Pipeline(
         name="refine-skillset",
         display_name="Refine Skillset",
         description=(
@@ -102,24 +84,7 @@ SKILLSETS: list[Skillset] = [
             " of evidence volume."
         ),
         slug_pattern="refine-{n}",
-        problem_domain="Practice engineering",
-        value_proposition=(
-            "Continuously improve consulting methodologies through"
-            " structured assessment and iteration, ensuring skillsets"
-            " stay sharp as domains evolve and usage patterns reveal"
-            " weaknesses."
-        ),
-        deliverables=[
-            "Quality assessment report",
-            "Improvement plan with prioritised changes",
-            "Updated skillset artifacts",
-        ],
-        classification=["meta", "practice-engineering"],
-        evidence=[
-            "Consultamatron conformance test suite",
-            "Feedback from skillset usage",
-        ],
-        pipeline=[
+        stages=[
             PipelineStage(
                 order=1,
                 skill="rs-assess",

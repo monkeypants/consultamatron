@@ -2,12 +2,12 @@
 
 Scans three source containers for BC packages:
 
-- **commons** — skillsets from the injected SkillsetRepository
+- **commons** — pipelines from the injected SkillsetRepository
 - **personal** — BC packages in ``{repo_root}/personal/``
 - **partnerships** — BC packages in ``{repo_root}/partnerships/{slug}/``
 
 All three use the same BC package discovery: directories containing
-``__init__.py`` with a ``SKILLSETS`` attribute.
+``__init__.py`` with a ``PIPELINES`` attribute.
 """
 
 from __future__ import annotations
@@ -15,7 +15,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from practice.repositories import SkillsetRepository
-from practice.bc_discovery import collect_skillsets
+from practice.bc_discovery import collect_pipelines
 from practice.entities import SkillsetSource, SourceType
 
 
@@ -73,7 +73,7 @@ class FilesystemSourceRepository:
 
     def _scan_personal(self) -> list[str]:
         """Scan personal/ for BC packages, returning skillset names."""
-        skillsets = collect_skillsets(self._repo_root / "personal")
+        skillsets = collect_pipelines(self._repo_root / "personal")
         return [s.name for s in skillsets]
 
     def _scan_partnerships(self) -> dict[str, list[str]]:
@@ -85,7 +85,7 @@ class FilesystemSourceRepository:
         for subdir in sorted(partnerships_dir.iterdir()):
             if not subdir.is_dir():
                 continue
-            skillsets = collect_skillsets(subdir)
+            skillsets = collect_pipelines(subdir)
             if skillsets:
                 result[subdir.name] = [s.name for s in skillsets]
         return result

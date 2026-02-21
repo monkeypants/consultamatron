@@ -24,7 +24,7 @@ from .conftest import (
     make_project,
     make_research,
     make_routing_destination,
-    make_skillset,
+    make_pipeline,
 )
 
 pytestmark = pytest.mark.doctrine
@@ -47,7 +47,7 @@ class TestSkillsetContract:
 
     def test_round_trip_via_file(self, skillset_repo, tmp_config):
         """Seed the backing store and verify get/list work."""
-        s = make_skillset(name="test-skillset")
+        s = make_pipeline(name="test-skillset")
         data = [s.model_dump(mode="json")]
         path = tmp_config.skillsets_root / "index.json"
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -58,7 +58,7 @@ class TestSkillsetContract:
         assert len(skillset_repo.list_all()) == 1
 
     def test_get_wrong_name_returns_none(self, skillset_repo, tmp_config):
-        s = make_skillset(name="alpha")
+        s = make_pipeline(name="alpha")
         path = tmp_config.skillsets_root / "index.json"
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps([s.model_dump(mode="json")]))

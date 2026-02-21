@@ -21,24 +21,56 @@ from practice.discovery import PipelineStage
 
 
 # ---------------------------------------------------------------------------
-# Skillset (discovery vocabulary — every BC declares these)
+# Pipeline (use case within a skillset — BC modules export these)
+# ---------------------------------------------------------------------------
+
+
+class PipelineTrigger(BaseModel):
+    """When you might reach for this pipeline."""
+
+    need: str
+    circumstance: str
+
+
+class Pipeline(BaseModel):
+    """A consulting product pipeline declared by a skillset BC.
+
+    Each pipeline is a use case — a tool in the skillset's toolkit.
+    A Pipeline with stages is implemented; empty stages = prospectus.
+    """
+
+    name: str
+    display_name: str
+    description: str
+    stages: list[PipelineStage] = []
+    slug_pattern: str
+    prerequisites: list[str] = []
+    achieves: str = ""
+    actor_goals: list[ActorGoal] = []
+    triggers: list[PipelineTrigger] = []
+
+    @property
+    def is_implemented(self) -> bool:
+        """True when the pipeline has at least one stage."""
+        return len(self.stages) > 0
+
+
+# ---------------------------------------------------------------------------
+# Skillset (BC-level metadata — wraps one or more pipelines)
 # ---------------------------------------------------------------------------
 
 
 class Skillset(BaseModel):
     """A consulting product line declared in bounded context modules.
 
-    A Skillset with a populated pipeline is implemented — projects can
-    be created and driven through the pipeline. A Skillset with an empty
-    pipeline is a prospectus — it describes a methodology that is not yet
-    operational.
+    A Skillset groups one or more pipelines under a shared problem
+    domain. Each pipeline is a use case within the skillset.
     """
 
     name: str
     display_name: str
     description: str
-    pipeline: list[PipelineStage] = []
-    slug_pattern: str
+    pipelines: list[Pipeline] = []
     problem_domain: str = ""
     deliverables: list[str] = []
     value_proposition: str = ""
@@ -47,8 +79,8 @@ class Skillset(BaseModel):
 
     @property
     def is_implemented(self) -> bool:
-        """True when the pipeline has at least one stage."""
-        return len(self.pipeline) > 0
+        """True when any pipeline has at least one stage."""
+        return any(p.is_implemented for p in self.pipelines)
 
 
 # ---------------------------------------------------------------------------
