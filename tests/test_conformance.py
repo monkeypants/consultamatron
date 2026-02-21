@@ -35,8 +35,9 @@ from bin.cli.dtos import (
     RecordDecisionRequest,
     RegisterProjectRequest,
 )
+from practice.bc_discovery import _get_pipelines
 from practice.discovery import PipelineStage
-from practice.entities import CompilationState, Skillset
+from practice.entities import CompilationState, Pipeline
 
 from .conftest import (
     make_decision,
@@ -48,6 +49,7 @@ from .conftest import (
     make_observation,
     make_observation_need,
     make_pack_freshness,
+    make_pipeline,
     make_pipeline_position,
     make_profile,
     make_project,
@@ -68,13 +70,13 @@ CLIENT = "conformance-corp"
 
 
 _BC_MODULES = discover_all_bc_modules(_REPO_ROOT)
-_ALL_SKILLSETS: list[Skillset] = [s for mod in _BC_MODULES for s in mod.SKILLSETS]
-_IMPLEMENTED = [s for s in _ALL_SKILLSETS if s.is_implemented]
-_IMPLEMENTED_DICTS = [s.model_dump(mode="json") for s in _IMPLEMENTED]
-_IMPLEMENTED_IDS = [s["name"] for s in _IMPLEMENTED_DICTS]
+_ALL_PIPELINES: list[Pipeline] = [p for mod in _BC_MODULES for p in _get_pipelines(mod)]
+_IMPLEMENTED = [p for p in _ALL_PIPELINES if p.is_implemented]
+_IMPLEMENTED_DICTS = [p.model_dump(mode="json") for p in _IMPLEMENTED]
+_IMPLEMENTED_IDS = [p["name"] for p in _IMPLEMENTED_DICTS]
 
-_ALL_DICTS = [s.model_dump(mode="json") for s in _ALL_SKILLSETS]
-_ALL_IDS = [s["name"] for s in _ALL_DICTS]
+_ALL_DICTS = [p.model_dump(mode="json") for p in _ALL_PIPELINES]
+_ALL_IDS = [p["name"] for p in _ALL_DICTS]
 
 
 def _tmp_config(tmp_path: Path) -> Config:
@@ -93,23 +95,23 @@ def _tmp_config(tmp_path: Path) -> Config:
 
 @pytest.mark.doctrine
 class TestPipelineCoherence:
-    """Structural validation of implemented skillset pipeline definitions."""
+    """Structural validation of implemented pipeline definitions."""
 
-    @pytest.mark.parametrize("skillset", _IMPLEMENTED_DICTS, ids=_IMPLEMENTED_IDS)
-    def test_non_empty(self, skillset):
-        assert len(skillset["pipeline"]) >= 1
+    @pytest.mark.parametrize("pipeline", _IMPLEMENTED_DICTS, ids=_IMPLEMENTED_IDS)
+    def test_non_empty(self, pipeline):
+        assert len(pipeline["stages"]) >= 1
 
-    @pytest.mark.parametrize("skillset", _IMPLEMENTED_DICTS, ids=_IMPLEMENTED_IDS)
-    def test_monotonic_order(self, skillset):
-        orders = [s["order"] for s in skillset["pipeline"]]
+    @pytest.mark.parametrize("pipeline", _IMPLEMENTED_DICTS, ids=_IMPLEMENTED_IDS)
+    def test_monotonic_order(self, pipeline):
+        orders = [s["order"] for s in pipeline["stages"]]
         for i in range(1, len(orders)):
             assert orders[i] > orders[i - 1], (
                 f"Stage order not strictly ascending: {orders}"
             )
 
-    @pytest.mark.parametrize("skillset", _IMPLEMENTED_DICTS, ids=_IMPLEMENTED_IDS)
-    def test_gate_chaining(self, skillset):
-        stages = skillset["pipeline"]
+    @pytest.mark.parametrize("pipeline", _IMPLEMENTED_DICTS, ids=_IMPLEMENTED_IDS)
+    def test_gate_chaining(self, pipeline):
+        stages = pipeline["stages"]
         for i in range(1, len(stages)):
             assert stages[i]["prerequisite_gate"] == stages[i - 1]["produces_gate"], (
                 f"Stage {stages[i]['order']} prerequisite "
@@ -118,27 +120,27 @@ class TestPipelineCoherence:
                 f"({stages[i - 1]['produces_gate']})"
             )
 
-    @pytest.mark.parametrize("skillset", _IMPLEMENTED_DICTS, ids=_IMPLEMENTED_IDS)
-    def test_unique_descriptions(self, skillset):
-        descriptions = [s["description"] for s in skillset["pipeline"]]
+    @pytest.mark.parametrize("pipeline", _IMPLEMENTED_DICTS, ids=_IMPLEMENTED_IDS)
+    def test_unique_descriptions(self, pipeline):
+        descriptions = [s["description"] for s in pipeline["stages"]]
         assert len(descriptions) == len(set(descriptions)), (
-            f"Duplicate descriptions in {skillset['name']}: {descriptions}"
+            f"Duplicate descriptions in {pipeline['name']}: {descriptions}"
         )
 
-    @pytest.mark.parametrize("skillset", _ALL_DICTS, ids=_ALL_IDS)
-    def test_slug_pattern_valid(self, skillset):
-        assert "{n}" in skillset["slug_pattern"], (
-            f"slug_pattern missing {{n}} placeholder: {skillset['slug_pattern']}"
+    @pytest.mark.parametrize("pipeline", _ALL_DICTS, ids=_ALL_IDS)
+    def test_slug_pattern_valid(self, pipeline):
+        assert "{n}" in pipeline["slug_pattern"], (
+            f"slug_pattern missing {{n}} placeholder: {pipeline['slug_pattern']}"
         )
 
-    @pytest.mark.parametrize("skillset", _IMPLEMENTED_DICTS, ids=_IMPLEMENTED_IDS)
-    def test_gate_consumes_declared(self, skillset):
+    @pytest.mark.parametrize("pipeline", _IMPLEMENTED_DICTS, ids=_IMPLEMENTED_IDS)
+    def test_gate_consumes_declared(self, pipeline):
         """Stages with a prerequisite gate must declare what they consume."""
-        for stage in skillset["pipeline"]:
+        for stage in pipeline["stages"]:
             if stage["prerequisite_gate"]:
                 assert stage.get("consumes"), (
                     f"Stage {stage['order']} ({stage['skill']}) in "
-                    f"{skillset['name']} has prerequisite_gate but no consumes"
+                    f"{pipeline['name']} has prerequisite_gate but no consumes"
                 )
 
 
@@ -153,8 +155,8 @@ class TestDecisionTitleJoin:
     PipelineStage.description that drives GetProjectProgressUseCase.
     """
 
-    @pytest.mark.parametrize("skillset", _IMPLEMENTED_DICTS, ids=_IMPLEMENTED_IDS)
-    def test_progress_advances_through_all_stages(self, skillset, tmp_path):
+    @pytest.mark.parametrize("pipeline", _IMPLEMENTED_DICTS, ids=_IMPLEMENTED_IDS)
+    def test_progress_advances_through_all_stages(self, pipeline, tmp_path):
         di = Container(_tmp_config(tmp_path))
 
         # Initialize workspace, create engagement, and register project
@@ -164,18 +166,18 @@ class TestDecisionTitleJoin:
         di.create_engagement_usecase.execute(
             CreateEngagementRequest(client=CLIENT, slug="strat-1")
         )
-        slug = skillset["slug_pattern"].replace("{n}", "1")
+        slug = pipeline["slug_pattern"].replace("{n}", "1")
         di.register_project_usecase.execute(
             RegisterProjectRequest(
                 client=CLIENT,
                 engagement="strat-1",
                 slug=slug,
-                skillset=skillset["name"],
+                skillset=pipeline["name"],
                 scope="Conformance test",
             )
         )
 
-        stages = skillset["pipeline"]
+        stages = pipeline["stages"]
 
         # Walk through each stage, recording a decision with the matching title
         for i, stage in enumerate(stages):
@@ -224,6 +226,8 @@ class TestEntityRoundTrip:
             pytest.param(make_decision(), id="DecisionEntry"),
             pytest.param(make_engagement_entry(), id="EngagementEntry"),
             pytest.param(make_research(), id="ResearchTopic"),
+            pytest.param(make_pipeline(), id="Pipeline"),
+            pytest.param(make_pipeline(stages=[]), id="Pipeline-prospectus"),
             pytest.param(make_skillset(), id="Skillset"),
             pytest.param(make_prospectus(), id="Skillset-prospectus"),
             pytest.param(make_profile(), id="Profile"),
@@ -297,49 +301,49 @@ class TestEntityRoundTrip:
 
 
 @pytest.mark.doctrine
-class TestSkillsetDiscipline:
-    """Every skillset (implemented or prospectus) must declare required fields."""
+class TestPipelineDiscipline:
+    """Every pipeline (implemented or prospectus) must declare required fields."""
 
-    @pytest.mark.parametrize("skillset", _ALL_DICTS, ids=_ALL_IDS)
-    def test_has_name(self, skillset):
-        assert skillset["name"], "Skillset must have a non-empty name"
+    @pytest.mark.parametrize("pipeline", _ALL_DICTS, ids=_ALL_IDS)
+    def test_has_name(self, pipeline):
+        assert pipeline["name"], "Pipeline must have a non-empty name"
 
-    @pytest.mark.parametrize("skillset", _ALL_DICTS, ids=_ALL_IDS)
-    def test_has_display_name(self, skillset):
-        assert skillset["display_name"], "Skillset must have a non-empty display_name"
+    @pytest.mark.parametrize("pipeline", _ALL_DICTS, ids=_ALL_IDS)
+    def test_has_display_name(self, pipeline):
+        assert pipeline["display_name"], "Pipeline must have a non-empty display_name"
 
-    @pytest.mark.parametrize("skillset", _ALL_DICTS, ids=_ALL_IDS)
-    def test_has_description(self, skillset):
-        assert skillset["description"], "Skillset must have a non-empty description"
+    @pytest.mark.parametrize("pipeline", _ALL_DICTS, ids=_ALL_IDS)
+    def test_has_description(self, pipeline):
+        assert pipeline["description"], "Pipeline must have a non-empty description"
 
-    @pytest.mark.parametrize("skillset", _ALL_DICTS, ids=_ALL_IDS)
-    def test_name_is_kebab_case(self, skillset):
+    @pytest.mark.parametrize("pipeline", _ALL_DICTS, ids=_ALL_IDS)
+    def test_name_is_kebab_case(self, pipeline):
         import re
 
-        assert re.match(r"^[a-z][a-z0-9]*(-[a-z0-9]+)*$", skillset["name"]), (
-            f"Skillset name must be kebab-case: {skillset['name']}"
+        assert re.match(r"^[a-z][a-z0-9]*(-[a-z0-9]+)*$", pipeline["name"]), (
+            f"Pipeline name must be kebab-case: {pipeline['name']}"
         )
 
-    @pytest.mark.parametrize("skillset", _ALL_DICTS, ids=_ALL_IDS)
-    def test_unique_names(self, skillset):
-        """Each skillset name appears exactly once across all BCs."""
-        count = sum(1 for s in _ALL_DICTS if s["name"] == skillset["name"])
-        assert count == 1, f"Skillset name {skillset['name']!r} appears {count} times"
+    @pytest.mark.parametrize("pipeline", _ALL_DICTS, ids=_ALL_IDS)
+    def test_unique_names(self, pipeline):
+        """Each pipeline name appears exactly once across all BCs."""
+        count = sum(1 for p in _ALL_DICTS if p["name"] == pipeline["name"])
+        assert count == 1, f"Pipeline name {pipeline['name']!r} appears {count} times"
 
 
 @pytest.mark.doctrine
-class TestSkillsetRegistration:
+class TestPipelineRegistration:
     """Directory scanning discovers all BC packages."""
 
-    def test_directory_scanning_finds_all_skillsets(self):
-        """discover_all_bc_modules finds the same skillsets as direct import."""
+    def test_directory_scanning_finds_all_pipelines(self):
+        """discover_all_bc_modules finds the same pipelines as direct import."""
         from bin.cli.infrastructure.code_skillset_repository import (
             CodeSkillsetRepository,
         )
 
         repo = CodeSkillsetRepository(_REPO_ROOT)
-        discovered_names = {s.name for s in repo.list_all()}
-        expected_names = {s.name for s in _ALL_SKILLSETS}
+        discovered_names = {p.name for p in repo.list_all()}
+        expected_names = {p.name for p in _ALL_PIPELINES}
         assert discovered_names == expected_names, (
             f"Discovery mismatch: found {discovered_names}, expected {expected_names}"
         )
@@ -351,21 +355,21 @@ class TestBoundedContextTestOwnership:
 
     @pytest.mark.parametrize("mod", _BC_MODULES, ids=[m.__name__ for m in _BC_MODULES])
     def test_implemented_bc_has_test_directory(self, mod):
-        if not any(s.is_implemented for s in mod.SKILLSETS):
+        if not any(p.is_implemented for p in _get_pipelines(mod)):
             pytest.skip("Prospectus-only BC")
         bc_dir = Path(mod.__file__).parent
         assert (bc_dir / "tests" / "__init__.py").is_file()
 
     @pytest.mark.parametrize("mod", _BC_MODULES, ids=[m.__name__ for m in _BC_MODULES])
     def test_implemented_bc_has_presenter_test(self, mod):
-        if not any(s.is_implemented for s in mod.SKILLSETS):
+        if not any(p.is_implemented for p in _get_pipelines(mod)):
             pytest.skip("Prospectus-only BC")
         bc_dir = Path(mod.__file__).parent
         assert (bc_dir / "tests" / "test_presenter.py").is_file()
 
     @pytest.mark.parametrize("mod", _BC_MODULES, ids=[m.__name__ for m in _BC_MODULES])
     def test_implemented_bc_has_presenter_factory(self, mod):
-        if not any(s.is_implemented for s in mod.SKILLSETS):
+        if not any(p.is_implemented for p in _get_pipelines(mod)):
             pytest.skip("Prospectus-only BC")
         assert hasattr(mod, "PRESENTER_FACTORY")
 
@@ -376,7 +380,7 @@ class TestBoundedContextTestOwnership:
 
 
 _IMPLEMENTED_MODULES = [
-    m for m in _BC_MODULES if any(s.is_implemented for s in m.SKILLSETS)
+    m for m in _BC_MODULES if any(p.is_implemented for p in _get_pipelines(m))
 ]
 
 
@@ -473,8 +477,8 @@ def _discover_skill_dirs():
 def _discover_pipeline_skills():
     """Return sorted list of skill names referenced by implemented pipelines."""
     names = set()
-    for skillset in _IMPLEMENTED:
-        for stage in skillset.pipeline:
+    for pipeline in _IMPLEMENTED:
+        for stage in pipeline.stages:
             names.add(stage.skill)
     return sorted(names)
 

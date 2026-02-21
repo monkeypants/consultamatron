@@ -933,28 +933,27 @@ class TestRegisterProspectus:
                 )
             )
 
-    def test_csv_fields_split_correctly(self, di):
+    def test_scaffold_round_trips_core_fields(self, di):
         resp = di.register_prospectus_usecase.execute(
             RegisterProspectusRequest(
                 name="scratch-test-method",
                 display_name="Test Method",
                 description="A test.",
                 slug_pattern="test-{n}",
-                deliverables="Report, Dashboard, Slides",
-                classification="strategy, operations",
             )
         )
         self._SCAFFOLDED.append("scratch-test-method")
         # Verify round-trip by parsing the generated __init__.py
         from pathlib import Path
 
-        from bin.cli.infrastructure.skillset_scaffold import _parse_current_skillset
+        from bin.cli.infrastructure.skillset_scaffold import _parse_current_pipeline
 
         init_path = Path(resp.init_path)
-        s = _parse_current_skillset(init_path, "scratch-test-method")
-        assert s.deliverables == ["Report", "Dashboard", "Slides"]
-        assert s.classification == ["strategy", "operations"]
-        assert s.is_implemented is False
+        p = _parse_current_pipeline(init_path, "scratch-test-method")
+        assert p.display_name == "Test Method"
+        assert p.description == "A test."
+        assert p.slug_pattern == "test-{n}"
+        assert p.is_implemented is False
 
 
 # ---------------------------------------------------------------------------
@@ -983,7 +982,7 @@ class TestUpdateProspectus:
 
     def test_scaffold_updates_description(self, di):
         """Scaffold round-trips descriptive field updates."""
-        from bin.cli.infrastructure.skillset_scaffold import _parse_current_skillset
+        from bin.cli.infrastructure.skillset_scaffold import _parse_current_pipeline
 
         scaffold = di.scaffold
         scaffold.create(
@@ -991,13 +990,11 @@ class TestUpdateProspectus:
             display_name="Test Method",
             description="Original.",
             slug_pattern="test-{n}",
-            problem_domain="Testing",
         )
         updated = scaffold.update(name="scratch-update-target", description="Updated.")
-        s = _parse_current_skillset(updated, "scratch-update-target")
-        assert s.description == "Updated."
-        assert s.display_name == "Test Method"  # unchanged
-        assert s.problem_domain == "Testing"  # unchanged
+        p = _parse_current_pipeline(updated, "scratch-update-target")
+        assert p.description == "Updated."
+        assert p.display_name == "Test Method"  # unchanged
 
     def test_nonexistent_skillset_rejected(self, di):
         with pytest.raises(NotFoundError, match="not found"):

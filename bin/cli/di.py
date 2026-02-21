@@ -13,7 +13,7 @@ from pathlib import Path
 
 from bin.cli.config import Config
 from bin.cli.infrastructure.code_skillset_repository import CodeSkillsetRepository
-from practice.bc_discovery import discover_all_bc_modules
+from practice.bc_discovery import _get_pipelines, discover_all_bc_modules
 from bin.cli.infrastructure.filesystem_profile_repository import (
     FilesystemProfileRepository,
 )
@@ -202,8 +202,8 @@ class Container:
         self.presenters: dict[str, ProjectPresenter] = {}
         skillset_bc_dirs: dict[str, Path] = {}
         for mod in discover_all_bc_modules(config.repo_root):
-            for skillset in getattr(mod, "SKILLSETS", []):
-                skillset_bc_dirs[skillset.name] = Path(mod.__file__).resolve().parent
+            for pipeline in _get_pipelines(mod):
+                skillset_bc_dirs[pipeline.name] = Path(mod.__file__).resolve().parent
             factory = getattr(mod, "PRESENTER_FACTORY", None)
             if factory is not None:
                 entries = factory if isinstance(factory, list) else [factory]

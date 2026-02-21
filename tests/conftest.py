@@ -26,6 +26,7 @@ from practice.entities import (
     Observation,
     ObservationNeed,
     PackFreshness,
+    Pipeline,
     Profile,
     Project,
     ProjectPipelinePosition,
@@ -215,12 +216,12 @@ DEFAULT_DATE = date(2025, 6, 1)
 DEFAULT_TIMESTAMP = datetime(2025, 6, 1, 12, 0, 0, tzinfo=timezone.utc)
 
 
-def make_skillset(**overrides) -> Skillset:
+def make_pipeline(**overrides) -> Pipeline:
     defaults = dict(
         name="test-skillset",
         display_name="Test Skillset",
         description="Test methodology.",
-        pipeline=[
+        stages=[
             PipelineStage(
                 order=1,
                 skill="test-stage-1",
@@ -230,6 +231,16 @@ def make_skillset(**overrides) -> Skillset:
             ),
         ],
         slug_pattern="test-{n}",
+    )
+    return Pipeline(**(defaults | overrides))
+
+
+def make_skillset(**overrides) -> Skillset:
+    defaults = dict(
+        name="test-skillset",
+        display_name="Test Skillset",
+        description="Test methodology.",
+        pipelines=[make_pipeline()],
         problem_domain="Testing",
         deliverables=["Test deliverables"],
         value_proposition="Test value.",
@@ -244,8 +255,11 @@ def make_prospectus(**overrides) -> Skillset:
         name="competitive-analysis",
         display_name="Competitive Analysis",
         description="Market positioning methodology.",
-        pipeline=[],
-        slug_pattern="comp-{n}",
+        pipelines=[
+            make_pipeline(
+                name="competitive-analysis", stages=[], slug_pattern="comp-{n}"
+            )
+        ],
         problem_domain="Market positioning",
         deliverables=["Competitor landscape report"],
         value_proposition="Know your rivals.",
@@ -438,12 +452,12 @@ def make_observation(**overrides) -> Observation:
     return Observation(**(defaults | overrides))
 
 
-def _write_skillsets(skillsets_root, skillsets):
-    """Write skillset manifests to the test workspace index."""
+def _write_skillsets(skillsets_root, pipelines):
+    """Write pipeline manifests to the test workspace index."""
     index = skillsets_root / "index.json"
     index.parent.mkdir(parents=True, exist_ok=True)
     index.write_text(
-        json.dumps([s.model_dump(mode="json") for s in skillsets], indent=2) + "\n"
+        json.dumps([p.model_dump(mode="json") for p in pipelines], indent=2) + "\n"
     )
 
 

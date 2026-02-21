@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from practice.discovery import PipelineStage
-from practice.entities import Skillset
+from practice.entities import Pipeline
 
 
 def _create_presenter(workspace_root, repo_root):
@@ -14,8 +14,8 @@ def _create_presenter(workspace_root, repo_root):
 
 PRESENTER_FACTORY = ("business-model-canvas", _create_presenter)
 
-SKILLSETS: list[Skillset] = [
-    Skillset(
+PIPELINES: list[Pipeline] = [
+    Pipeline(
         name="business-model-canvas",
         display_name="Business Model Canvas",
         description=(
@@ -24,7 +24,7 @@ SKILLSETS: list[Skillset] = [
             " grounded in research."
         ),
         slug_pattern="canvas-{n}",
-        pipeline=[
+        stages=[
             PipelineStage(
                 order=1,
                 skill="bmc-research",

@@ -104,12 +104,12 @@ from practice.entities import (
     Observation,
     ObservationNeed,
     PackFreshness,
+    Pipeline,
     Profile,
     Project,
     ProjectStatus,
     ResearchTopic,
     RoutingDestination,
-    Skillset,
     SkillsetSource,
 )
 from practice.exceptions import DuplicateError, InvalidTransitionError, NotFoundError
@@ -545,7 +545,7 @@ class GetProjectProgressUseCase:
         current_stage: str | None = None
         next_prerequisite: str | None = None
 
-        for stage in sorted(skillset.pipeline, key=lambda s: s.order):
+        for stage in sorted(skillset.stages, key=lambda s: s.order):
             completed = stage.description in decision_titles
             stages.append(
                 StageProgress(
@@ -865,7 +865,7 @@ class GetEngagementStatusUseCase:
             if skillset is None or not skillset.is_implemented:
                 continue
 
-            stages = sorted(skillset.pipeline, key=lambda s: s.order)
+            stages = sorted(skillset.stages, key=lambda s: s.order)
             completed_gates: list[str] = []
             next_gate: str | None = None
             current_stage = len(stages) + 1  # past the end = all complete
@@ -940,7 +940,7 @@ class GetNextActionUseCase:
             if skillset is None or not skillset.is_implemented:
                 continue
 
-            stages = sorted(skillset.pipeline, key=lambda s: s.order)
+            stages = sorted(skillset.stages, key=lambda s: s.order)
             for stage in stages:
                 gate_exists = self._gate_inspector.exists(
                     request.client,
@@ -1050,18 +1050,18 @@ class RenderSiteUseCase:
 # ---------------------------------------------------------------------------
 
 
-def _skillset_to_info(s: Skillset) -> SkillsetInfo:
+def _skillset_to_info(s: Pipeline) -> SkillsetInfo:
     return SkillsetInfo(
         name=s.name,
         display_name=s.display_name,
         description=s.description,
         slug_pattern=s.slug_pattern,
         is_implemented=s.is_implemented,
-        problem_domain=s.problem_domain,
-        deliverables=list(s.deliverables),
-        value_proposition=s.value_proposition,
-        classification=list(s.classification),
-        evidence=list(s.evidence),
+        problem_domain="",
+        deliverables=[],
+        value_proposition="",
+        classification=[],
+        evidence=[],
         stages=[
             SkillsetStageInfo(
                 order=st.order,
@@ -1070,7 +1070,7 @@ def _skillset_to_info(s: Skillset) -> SkillsetInfo:
                 prerequisite_gate=st.prerequisite_gate,
                 produces_gate=st.produces_gate,
             )
-            for st in s.pipeline
+            for st in s.stages
         ],
     )
 
@@ -1406,7 +1406,7 @@ class GetWipStatusUseCase:
                         continue
 
                     skillset_names.append(project.skillset)
-                    stages = sorted(skillset.pipeline, key=lambda s: s.order)
+                    stages = sorted(skillset.stages, key=lambda s: s.order)
 
                     completed_count = 0
                     next_skill: str | None = None

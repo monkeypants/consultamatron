@@ -1,7 +1,7 @@
 """Tests for source discovery across all three source containers.
 
 Covers FilesystemSourceRepository (source discovery from filesystem)
-and CodeSkillsetRepository (unified skillset aggregation from commons,
+and CodeSkillsetRepository (unified pipeline aggregation from commons,
 personal, and partnership BC packages).
 """
 
@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import pytest
 
-from practice.bc_discovery import collect_skillsets
+from practice.bc_discovery import collect_pipelines
 from bin.cli.infrastructure.filesystem_source_repository import (
     FilesystemSourceRepository,
 )
@@ -21,10 +21,10 @@ from practice.entities import SourceType
 # ---------------------------------------------------------------------------
 
 
-def _write_bc_package(parent_dir, pkg_name, skillset_defs):
-    """Create a BC package directory with __init__.py exporting SKILLSETS.
+def _write_bc_package(parent_dir, pkg_name, pipeline_defs):
+    """Create a BC package directory with __init__.py exporting PIPELINES.
 
-    skillset_defs is a list of dicts like:
+    pipeline_defs is a list of dicts like:
         [{"name": "acme-analysis", "display_name": "Acme Analysis", ...}]
     """
     pkg_dir = parent_dir / pkg_name
@@ -33,15 +33,15 @@ def _write_bc_package(parent_dir, pkg_name, skillset_defs):
     # Build the Python source for __init__.py
     lines = [
         "from practice.discovery import PipelineStage",
-        "from practice.entities import Skillset",
+        "from practice.entities import Pipeline",
         "",
-        "SKILLSETS = [",
+        "PIPELINES = [",
     ]
-    for sd in skillset_defs:
-        pipeline_src = ""
-        if sd.get("pipeline"):
+    for sd in pipeline_defs:
+        stages_src = ""
+        if sd.get("stages"):
             stages = []
-            for stage in sd["pipeline"]:
+            for stage in sd["stages"]:
                 stages.append(
                     f"        PipelineStage("
                     f"order={stage['order']}, "
@@ -50,18 +50,18 @@ def _write_bc_package(parent_dir, pkg_name, skillset_defs):
                     f"produces_gate={stage['produces_gate']!r}, "
                     f"description={stage['description']!r})"
                 )
-            pipeline_src = ",\n".join(stages)
+            stages_src = ",\n".join(stages)
 
-        lines.append("    Skillset(")
+        lines.append("    Pipeline(")
         lines.append(f"        name={sd['name']!r},")
         lines.append(f"        display_name={sd.get('display_name', 'Test')!r},")
         lines.append(f"        description={sd.get('description', 'A test.')!r},")
         lines.append(
             f"        slug_pattern={sd.get('slug_pattern', sd['name'] + '-{n}')!r},"
         )
-        if pipeline_src:
-            lines.append("        pipeline=[")
-            lines.append(pipeline_src)
+        if stages_src:
+            lines.append("        stages=[")
+            lines.append(stages_src)
             lines.append("        ],")
         lines.append("    ),")
     lines.append("]")
@@ -69,14 +69,14 @@ def _write_bc_package(parent_dir, pkg_name, skillset_defs):
     (pkg_dir / "__init__.py").write_text("\n".join(lines) + "\n")
 
 
-def _make_skillset_def(name, display_name="Test Skillset", description="A test."):
-    """Build a skillset definition dict for _write_bc_package."""
+def _make_pipeline_def(name, display_name="Test Pipeline", description="A test."):
+    """Build a pipeline definition dict for _write_bc_package."""
     return {
         "name": name,
         "display_name": display_name,
         "description": description,
         "slug_pattern": f"{name}-{{n}}",
-        "pipeline": [
+        "stages": [
             {
                 "order": 1,
                 "skill": f"{name}-start",
@@ -91,28 +91,28 @@ def _make_skillset_def(name, display_name="Test Skillset", description="A test."
 class StubSkillsetRepo:
     """Minimal SkillsetRepository for test isolation."""
 
-    def __init__(self, skillsets):
-        self._skillsets = skillsets
+    def __init__(self, pipelines):
+        self._pipelines = pipelines
 
     def get(self, name):
-        for s in self._skillsets:
-            if s.name == name:
-                return s
+        for p in self._pipelines:
+            if p.name == name:
+                return p
         return None
 
     def list_all(self):
-        return list(self._skillsets)
+        return list(self._pipelines)
 
 
 @pytest.fixture
 def commons_repo():
-    """A stub SkillsetRepository with two commons skillsets."""
-    from tests.conftest import make_skillset
+    """A stub SkillsetRepository with two commons pipelines."""
+    from tests.conftest import make_pipeline
 
     return StubSkillsetRepo(
         [
-            make_skillset(name="wardley-mapping"),
-            make_skillset(name="business-model-canvas", slug_pattern="bmc-{n}"),
+            make_pipeline(name="wardley-mapping"),
+            make_pipeline(name="business-model-canvas", slug_pattern="bmc-{n}"),
         ]
     )
 
@@ -156,7 +156,7 @@ class TestFilesystemSourcePersonal:
         _write_bc_package(
             tmp_path / "personal",
             "my_analysis",
-            [_make_skillset_def("my-analysis")],
+            [_make_pipeline_def("my-analysis")],
         )
         repo = FilesystemSourceRepository(tmp_path, commons_repo)
         source = repo.get("personal")
@@ -168,7 +168,7 @@ class TestFilesystemSourcePersonal:
         _write_bc_package(
             tmp_path / "personal",
             "my_analysis",
-            [_make_skillset_def("my-analysis")],
+            [_make_pipeline_def("my-analysis")],
         )
         repo = FilesystemSourceRepository(tmp_path, commons_repo)
         slugs = [s.slug for s in repo.list_all()]
@@ -178,7 +178,7 @@ class TestFilesystemSourcePersonal:
         _write_bc_package(
             tmp_path / "personal",
             "my_analysis",
-            [_make_skillset_def("my-analysis")],
+            [_make_pipeline_def("my-analysis")],
         )
         repo = FilesystemSourceRepository(tmp_path, commons_repo)
         assert repo.skillset_source("my-analysis") == "personal"
@@ -202,7 +202,7 @@ class TestFilesystemSourceSinglePartnership:
         _write_bc_package(
             tmp_path / "partnerships" / "acme-corp",
             "acme_analysis",
-            [_make_skillset_def("acme-analysis")],
+            [_make_pipeline_def("acme-analysis")],
         )
         repo = FilesystemSourceRepository(tmp_path, commons_repo)
         sources = repo.list_all()
@@ -214,7 +214,7 @@ class TestFilesystemSourceSinglePartnership:
         _write_bc_package(
             tmp_path / "partnerships" / "acme-corp",
             "acme_analysis",
-            [_make_skillset_def("acme-analysis")],
+            [_make_pipeline_def("acme-analysis")],
         )
         repo = FilesystemSourceRepository(tmp_path, commons_repo)
         source = repo.get("acme-corp")
@@ -226,7 +226,7 @@ class TestFilesystemSourceSinglePartnership:
         _write_bc_package(
             tmp_path / "partnerships" / "acme-corp",
             "acme_analysis",
-            [_make_skillset_def("acme-analysis")],
+            [_make_pipeline_def("acme-analysis")],
         )
         repo = FilesystemSourceRepository(tmp_path, commons_repo)
         assert repo.skillset_source("wardley-mapping") == "commons"
@@ -235,7 +235,7 @@ class TestFilesystemSourceSinglePartnership:
         _write_bc_package(
             tmp_path / "partnerships" / "acme-corp",
             "acme_analysis",
-            [_make_skillset_def("acme-analysis")],
+            [_make_pipeline_def("acme-analysis")],
         )
         repo = FilesystemSourceRepository(tmp_path, commons_repo)
         assert repo.skillset_source("acme-analysis") == "acme-corp"
@@ -244,7 +244,7 @@ class TestFilesystemSourceSinglePartnership:
         _write_bc_package(
             tmp_path / "partnerships" / "acme-corp",
             "acme_analysis",
-            [_make_skillset_def("acme-analysis")],
+            [_make_pipeline_def("acme-analysis")],
         )
         repo = FilesystemSourceRepository(tmp_path, commons_repo)
         assert repo.skillset_source("nonexistent") is None
@@ -257,14 +257,14 @@ class TestFilesystemSourceMultiplePartnerships:
         _write_bc_package(
             tmp_path / "partnerships" / "acme-corp",
             "acme_analysis",
-            [_make_skillset_def("acme-analysis")],
+            [_make_pipeline_def("acme-analysis")],
         )
         _write_bc_package(
             tmp_path / "partnerships" / "beta-inc",
             "beta_audit",
             [
-                _make_skillset_def("beta-audit"),
-                _make_skillset_def("beta-compliance"),
+                _make_pipeline_def("beta-audit"),
+                _make_pipeline_def("beta-compliance"),
             ],
         )
         repo = FilesystemSourceRepository(tmp_path, commons_repo)
@@ -277,8 +277,8 @@ class TestFilesystemSourceMultiplePartnerships:
             tmp_path / "partnerships" / "beta-inc",
             "beta_audit",
             [
-                _make_skillset_def("beta-audit"),
-                _make_skillset_def("beta-compliance"),
+                _make_pipeline_def("beta-audit"),
+                _make_pipeline_def("beta-compliance"),
             ],
         )
         repo = FilesystemSourceRepository(tmp_path, commons_repo)
@@ -290,12 +290,12 @@ class TestFilesystemSourceMultiplePartnerships:
         _write_bc_package(
             tmp_path / "partnerships" / "acme-corp",
             "acme_analysis",
-            [_make_skillset_def("acme-analysis")],
+            [_make_pipeline_def("acme-analysis")],
         )
         _write_bc_package(
             tmp_path / "partnerships" / "beta-inc",
             "beta_audit",
-            [_make_skillset_def("beta-audit")],
+            [_make_pipeline_def("beta-audit")],
         )
         repo = FilesystemSourceRepository(tmp_path, commons_repo)
         assert repo.skillset_source("acme-analysis") == "acme-corp"
@@ -319,33 +319,44 @@ class TestFilesystemSourceIgnoresInvalid:
 
 
 # ---------------------------------------------------------------------------
-# collect_skillsets — BC package scanning
+# collect_pipelines — BC package scanning
 # ---------------------------------------------------------------------------
 
 
-class TestCollectSkillsets:
+class TestCollectPipelines:
     """Unit tests for the BC package scanner."""
 
     def test_empty_directory(self, tmp_path):
-        assert collect_skillsets(tmp_path) == []
+        assert collect_pipelines(tmp_path) == []
 
     def test_nonexistent_directory(self, tmp_path):
-        assert collect_skillsets(tmp_path / "nope") == []
+        assert collect_pipelines(tmp_path / "nope") == []
 
     def test_discovers_bc_package(self, tmp_path):
-        _write_bc_package(tmp_path, "test_pkg", [_make_skillset_def("test-skillset")])
-        skillsets = collect_skillsets(tmp_path)
-        assert len(skillsets) == 1
-        assert skillsets[0].name == "test-skillset"
+        _write_bc_package(tmp_path, "test_pkg", [_make_pipeline_def("test-pipeline")])
+        pipelines = collect_pipelines(tmp_path)
+        assert len(pipelines) == 1
+        assert pipelines[0].name == "test-pipeline"
 
     def test_ignores_dirs_without_init(self, tmp_path):
         (tmp_path / "no_init").mkdir()
-        assert collect_skillsets(tmp_path) == []
+        assert collect_pipelines(tmp_path) == []
 
     def test_multiple_packages(self, tmp_path):
-        _write_bc_package(tmp_path, "pkg_a", [_make_skillset_def("alpha")])
-        _write_bc_package(tmp_path, "pkg_b", [_make_skillset_def("beta")])
-        skillsets = collect_skillsets(tmp_path)
-        names = [s.name for s in skillsets]
+        _write_bc_package(tmp_path, "pkg_a", [_make_pipeline_def("alpha")])
+        _write_bc_package(tmp_path, "pkg_b", [_make_pipeline_def("beta")])
+        pipelines = collect_pipelines(tmp_path)
+        names = [p.name for p in pipelines]
         assert "alpha" in names
         assert "beta" in names
+
+
+class TestDiscoveryFindsPipelines:
+    """BC discovery finds PIPELINES attribute from modules."""
+
+    def test_discovers_pipelines_attribute(self, tmp_path):
+        _write_bc_package(tmp_path, "test_pkg", [_make_pipeline_def("test-pipeline")])
+        pipelines = collect_pipelines(tmp_path)
+        assert len(pipelines) == 1
+        assert pipelines[0].name == "test-pipeline"
+        assert pipelines[0].slug_pattern == "test-pipeline-{n}"

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from practice.discovery import PipelineStage
-from practice.entities import Skillset
+from practice.entities import Pipeline
 
 
 def _create_presenter(workspace_root, repo_root):
@@ -32,8 +32,8 @@ def register_services(container) -> None:
     )
 
 
-SKILLSETS: list[Skillset] = [
-    Skillset(
+PIPELINES: list[Pipeline] = [
+    Pipeline(
         name="wardley-mapping",
         display_name="Wardley Mapping",
         description=(
@@ -42,7 +42,7 @@ SKILLSETS: list[Skillset] = [
             " OWM map files suitable for strategic decision-making."
         ),
         slug_pattern="maps-{n}",
-        pipeline=[
+        stages=[
             PipelineStage(
                 order=1,
                 skill="wm-research",

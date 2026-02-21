@@ -8,10 +8,11 @@ provide here.
 
 from __future__ import annotations
 
-from practice.entities import EngagementStatus
+from practice.entities import EngagementStatus, Pipeline, PipelineTrigger
 
 from .conftest import (
     make_engagement_entity,
+    make_pipeline,
     make_project,
     make_prospectus,
     make_skillset,
@@ -38,12 +39,47 @@ class TestDefaults:
 
 
 # ---------------------------------------------------------------------------
-# Entity-specific semantics
+# Pipeline entity
+# ---------------------------------------------------------------------------
+
+
+class TestPipelineEntity:
+    """Pipeline serialises, round-trips, and reports implementation status."""
+
+    def test_pipeline_round_trip(self):
+        p = make_pipeline()
+        dumped = p.model_dump(mode="json")
+        restored = Pipeline.model_validate(dumped)
+        assert restored == p
+
+    def test_is_implemented_with_stages(self):
+        p = make_pipeline()
+        assert p.is_implemented is True
+
+    def test_is_not_implemented_without_stages(self):
+        p = make_pipeline(stages=[])
+        assert p.is_implemented is False
+
+
+class TestPipelineTrigger:
+    """PipelineTrigger round-trips through JSON."""
+
+    def test_round_trip(self):
+        t = PipelineTrigger(
+            need="Map supply chain", circumstance="New client engagement"
+        )
+        dumped = t.model_dump(mode="json")
+        restored = PipelineTrigger.model_validate(dumped)
+        assert restored == t
+
+
+# ---------------------------------------------------------------------------
+# Skillset entity
 # ---------------------------------------------------------------------------
 
 
 class TestSkillsetImplementation:
-    """is_implemented reflects whether the pipeline has stages."""
+    """is_implemented delegates to pipelines."""
 
     def test_implemented_with_pipeline(self):
         s = make_skillset()
@@ -53,9 +89,19 @@ class TestSkillsetImplementation:
         s = make_prospectus()
         assert s.is_implemented is False
 
-    def test_empty_pipeline_is_not_implemented(self):
-        s = make_skillset(pipeline=[])
+    def test_empty_pipelines_is_not_implemented(self):
+        s = make_skillset(pipelines=[])
         assert s.is_implemented is False
+
+    def test_pipelines_contains_pipeline_objects(self):
+        s = make_skillset()
+        assert len(s.pipelines) > 0
+        assert isinstance(s.pipelines[0], Pipeline)
+
+
+# ---------------------------------------------------------------------------
+# EngagementStatus lifecycle
+# ---------------------------------------------------------------------------
 
 
 class TestEngagementStatus:

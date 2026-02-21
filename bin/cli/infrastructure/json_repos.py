@@ -33,10 +33,10 @@ from pathlib import Path
 from practice.entities import DecisionEntry, EngagementEntry
 from practice.entities import (
     Engagement,
+    Pipeline,
     Project,
     ProjectStatus,
     ResearchTopic,
-    Skillset,
 )
 from bin.cli.infrastructure.json_store import (
     JsonArrayStore,
@@ -49,16 +49,16 @@ from bin.cli.infrastructure.json_store import (
 
 
 class JsonSkillsetRepository:
-    """Read-only skillset repository backed by a single JSON file."""
+    """Read-only pipeline repository backed by a single JSON file."""
 
     def __init__(self, skillsets_root: Path) -> None:
-        self._store: JsonArrayStore[Skillset] = JsonArrayStore(Skillset, "name")
+        self._store: JsonArrayStore[Pipeline] = JsonArrayStore(Pipeline, "name")
         self._file = skillsets_root / "index.json"
 
-    def get(self, name: str) -> Skillset | None:
+    def get(self, name: str) -> Pipeline | None:
         return self._store.find(self._store.load(self._file), name)
 
-    def list_all(self) -> list[Skillset]:
+    def list_all(self) -> list[Pipeline]:
         return self._store.load(self._file)
 
 

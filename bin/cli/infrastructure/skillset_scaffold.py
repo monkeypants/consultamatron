@@ -1,7 +1,7 @@
 """Scaffold infrastructure for creating and updating skillset stub packages.
 
 Creates bounded context packages with __init__.py files that export
-SKILLSETS declarations.  New packages are placed under ``commons/``.
+PIPELINES declarations.  New packages are placed under ``commons/``.
 """
 
 from __future__ import annotations
@@ -13,7 +13,7 @@ class SkillsetScaffold:
     """Creates and updates skillset stub packages.
 
     A stub package is a Python package with __init__.py that exports
-    a SKILLSETS list.  New packages are placed under ``commons/``.
+    a PIPELINES list.  New packages are placed under ``commons/``.
     """
 
     def __init__(self, repo_root: Path) -> None:
@@ -35,7 +35,7 @@ class SkillsetScaffold:
         classification: list[str] | None = None,
         evidence: list[str] | None = None,
     ) -> Path:
-        """Create a stub BC package with a SKILLSETS declaration.
+        """Create a stub BC package with a PIPELINES declaration.
 
         Also generates a stub presenter, PRESENTER_FACTORY export, and
         test directory so the package passes all conformance tests from
@@ -52,11 +52,6 @@ class SkillsetScaffold:
                 display_name=display_name,
                 description=description,
                 slug_pattern=slug_pattern,
-                problem_domain=problem_domain,
-                value_proposition=value_proposition,
-                deliverables=deliverables or [],
-                classification=classification or [],
-                evidence=evidence or [],
             )
         )
 
@@ -90,7 +85,7 @@ class SkillsetScaffold:
         classification: list[str] | None = None,
         evidence: list[str] | None = None,
     ) -> Path:
-        """Update an existing stub package's SKILLSETS declaration.
+        """Update an existing stub package's PIPELINES declaration.
 
         Reads the current __init__.py, applies changes, rewrites it.
         Returns the path to the updated __init__.py.
@@ -98,7 +93,7 @@ class SkillsetScaffold:
         pkg_dir = self._package_dir(name)
         init_py = pkg_dir / "__init__.py"
 
-        current = _parse_current_skillset(init_py, name)
+        current = _parse_current_pipeline(init_py, name)
 
         init_py.write_text(
             _render_init(
@@ -112,19 +107,6 @@ class SkillsetScaffold:
                 slug_pattern=slug_pattern
                 if slug_pattern is not None
                 else current.slug_pattern,
-                problem_domain=problem_domain
-                if problem_domain is not None
-                else current.problem_domain,
-                value_proposition=value_proposition
-                if value_proposition is not None
-                else current.value_proposition,
-                deliverables=deliverables
-                if deliverables is not None
-                else current.deliverables,
-                classification=classification
-                if classification is not None
-                else current.classification,
-                evidence=evidence if evidence is not None else current.evidence,
             )
         )
         return init_py
@@ -135,18 +117,13 @@ def _render_init(
     display_name: str,
     description: str,
     slug_pattern: str,
-    problem_domain: str,
-    value_proposition: str,
-    deliverables: list[str],
-    classification: list[str],
-    evidence: list[str],
 ) -> str:
     """Render the __init__.py content for a skillset stub package."""
     pkg_python = name.replace("-", "_")
     parts = [
         f'"""{display_name} bounded context."""\n',
         "",
-        "from practice.entities import Skillset",
+        "from practice.entities import Pipeline",
         "",
         "",
         "def _create_presenter(workspace_root, repo_root):",
@@ -157,30 +134,16 @@ def _render_init(
         "",
         f"PRESENTER_FACTORY = ({name!r}, _create_presenter)",
         "",
-        "SKILLSETS: list[Skillset] = [",
-        "    Skillset(",
+        "PIPELINES: list[Pipeline] = [",
+        "    Pipeline(",
         f"        name={name!r},",
         f"        display_name={display_name!r},",
         f"        description={description!r},",
         f"        slug_pattern={slug_pattern!r},",
+        "    ),",
+        "]",
+        "",
     ]
-    if problem_domain:
-        parts.append(f"        problem_domain={problem_domain!r},")
-    if value_proposition:
-        parts.append(f"        value_proposition={value_proposition!r},")
-    if deliverables:
-        parts.append(f"        deliverables={deliverables!r},")
-    if classification:
-        parts.append(f"        classification={classification!r},")
-    if evidence:
-        parts.append(f"        evidence={evidence!r},")
-    parts.extend(
-        [
-            "    ),",
-            "]",
-            "",
-        ]
-    )
     return "\n".join(parts)
 
 
@@ -259,18 +222,18 @@ class TestPresenterContract:
 '''
 
 
-def _parse_current_skillset(init_py: Path, name: str):
-    """Parse the current Skillset from an __init__.py file.
+def _parse_current_pipeline(init_py: Path, name: str):
+    """Parse the current Pipeline from an __init__.py file.
 
     Uses exec to evaluate the module in a controlled namespace.
     """
-    from practice.entities import Skillset
+    from practice.entities import Pipeline
 
-    namespace: dict = {"Skillset": Skillset}
+    namespace: dict = {"Pipeline": Pipeline}
     exec(compile(init_py.read_text(), str(init_py), "exec"), namespace)
-    skillsets = namespace.get("SKILLSETS", [])
-    for s in skillsets:
-        if s.name == name:
-            return s
-    msg = f"Skillset {name!r} not found in {init_py}"
+    pipelines = namespace.get("PIPELINES", [])
+    for p in pipelines:
+        if p.name == name:
+            return p
+    msg = f"Pipeline {name!r} not found in {init_py}"
     raise ValueError(msg)
