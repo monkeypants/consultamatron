@@ -28,12 +28,14 @@ from bin.cli.dtos import (
     CreateEngagementRequest,
     EngagementStatusRequest,
     GetEngagementRequest,
+    GetProjectProgressRequest,
     GetProjectRequest,
     InitializeWorkspaceRequest,
     ListDecisionsRequest,
     ListEngagementsRequest,
     ListProjectsRequest,
     ListResearchTopicsRequest,
+    NextActionRequest,
     RecordDecisionRequest,
     RegisterProjectRequest,
     RegisterResearchTopicRequest,
@@ -1049,3 +1051,125 @@ class TestEngagementStatusNudges:
             EngagementStatusRequest(client=CLIENT, engagement=ENGAGEMENT)
         )
         assert isinstance(resp.nudges, list)
+
+
+# ---------------------------------------------------------------------------
+# Multi-pipeline skillset support
+# ---------------------------------------------------------------------------
+
+
+class TestSkillsetRepositoryReturnsSkillsets:
+    """SkillsetRepository must return Skillset entities, not bare Pipelines."""
+
+    def test_repo_get_returns_skillset(self, di):
+        from practice.entities import Skillset
+
+        result = di.skillsets.get("wardley-mapping")
+        assert result is not None
+        assert isinstance(result, Skillset)
+
+    def test_repo_list_all_returns_skillsets(self, di):
+        from practice.entities import Skillset
+
+        all_items = di.skillsets.list_all()
+        assert len(all_items) > 0
+        assert all(isinstance(s, Skillset) for s in all_items)
+
+
+class TestRegisterProjectWithPipeline:
+    """Projects record both skillset and pipeline."""
+
+    def test_register_with_pipeline(self, workspace):
+        _ensure_engagement(workspace)
+        resp = workspace.register_project_usecase.execute(
+            RegisterProjectRequest(
+                client=CLIENT,
+                engagement=ENGAGEMENT,
+                slug="maps-1",
+                skillset="wardley-mapping",
+                pipeline="create",
+                scope="Freight operations",
+            )
+        )
+        assert resp.pipeline == "create"
+        project = workspace.projects.get(CLIENT, ENGAGEMENT, "maps-1")
+        assert project.pipeline == "create"
+
+    def test_register_validates_pipeline(self, workspace):
+        _ensure_engagement(workspace)
+        with pytest.raises(NotFoundError, match="Pipeline not found"):
+            workspace.register_project_usecase.execute(
+                RegisterProjectRequest(
+                    client=CLIENT,
+                    engagement=ENGAGEMENT,
+                    slug="maps-1",
+                    skillset="wardley-mapping",
+                    pipeline="nonexistent-pipeline",
+                    scope="Test",
+                )
+            )
+
+    def test_register_default_single_pipeline(self, workspace):
+        """Single-pipeline skillset: omitting pipeline auto-selects it."""
+        _ensure_engagement(workspace)
+        resp = workspace.register_project_usecase.execute(
+            RegisterProjectRequest(
+                client=CLIENT,
+                engagement=ENGAGEMENT,
+                slug="maps-1",
+                skillset="wardley-mapping",
+                scope="Freight operations",
+            )
+        )
+        # Should auto-select the only pipeline
+        assert resp.pipeline != ""
+
+
+class TestProgressUsesProjectPipeline:
+    """GetProjectProgress resolves stages from the project's pipeline."""
+
+    def test_progress_uses_project_pipeline(self, workspace):
+        _ensure_engagement(workspace)
+        workspace.register_project_usecase.execute(
+            RegisterProjectRequest(
+                client=CLIENT,
+                engagement=ENGAGEMENT,
+                slug="maps-1",
+                skillset="wardley-mapping",
+                pipeline="create",
+                scope="Freight operations",
+            )
+        )
+        resp = workspace.get_project_progress_usecase.execute(
+            GetProjectProgressRequest(
+                client=CLIENT,
+                engagement=ENGAGEMENT,
+                project_slug="maps-1",
+            )
+        )
+        assert resp.pipeline == "create"
+
+
+class TestNextActionUsesPipeline:
+    """GetNextAction resolves stages from the project's pipeline."""
+
+    def test_next_action_uses_pipeline(self, workspace):
+        _ensure_engagement(workspace)
+        workspace.register_project_usecase.execute(
+            RegisterProjectRequest(
+                client=CLIENT,
+                engagement=ENGAGEMENT,
+                slug="maps-1",
+                skillset="wardley-mapping",
+                pipeline="create",
+                scope="Freight operations",
+            )
+        )
+        resp = workspace.get_next_action_usecase.execute(
+            NextActionRequest(
+                client=CLIENT,
+                engagement=ENGAGEMENT,
+            )
+        )
+        # The next action must come from the project's pipeline
+        assert resp.project_slug == "maps-1"
