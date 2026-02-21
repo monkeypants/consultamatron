@@ -1,4 +1,4 @@
-"""Tests for source discovery across all three source containers.
+"""Tests for source discovery across all source containers.
 
 Covers FilesystemSourceRepository (source discovery from filesystem)
 and CodeSkillsetRepository (unified pipeline aggregation from commons,
@@ -150,11 +150,11 @@ class TestFilesystemSourceEmpty:
 
 
 class TestFilesystemSourcePersonal:
-    """Personal BC packages in personal/."""
+    """Personal BC packages in personal/skillsets/."""
 
     def test_personal_source_discovered(self, tmp_path, commons_repo):
         _write_bc_package(
-            tmp_path / "personal",
+            tmp_path / "personal" / "skillsets",
             "my_analysis",
             [_make_pipeline_def("my-analysis")],
         )
@@ -166,7 +166,7 @@ class TestFilesystemSourcePersonal:
 
     def test_personal_included_in_list(self, tmp_path, commons_repo):
         _write_bc_package(
-            tmp_path / "personal",
+            tmp_path / "personal" / "skillsets",
             "my_analysis",
             [_make_pipeline_def("my-analysis")],
         )
@@ -176,7 +176,7 @@ class TestFilesystemSourcePersonal:
 
     def test_personal_provenance(self, tmp_path, commons_repo):
         _write_bc_package(
-            tmp_path / "personal",
+            tmp_path / "personal" / "skillsets",
             "my_analysis",
             [_make_pipeline_def("my-analysis")],
         )
@@ -200,7 +200,7 @@ class TestFilesystemSourceSinglePartnership:
 
     def test_list_includes_partnership(self, tmp_path, commons_repo):
         _write_bc_package(
-            tmp_path / "partnerships" / "acme-corp",
+            tmp_path / "partnerships" / "acme-corp" / "skillsets",
             "acme_analysis",
             [_make_pipeline_def("acme-analysis")],
         )
@@ -212,7 +212,7 @@ class TestFilesystemSourceSinglePartnership:
 
     def test_get_partnership(self, tmp_path, commons_repo):
         _write_bc_package(
-            tmp_path / "partnerships" / "acme-corp",
+            tmp_path / "partnerships" / "acme-corp" / "skillsets",
             "acme_analysis",
             [_make_pipeline_def("acme-analysis")],
         )
@@ -224,7 +224,7 @@ class TestFilesystemSourceSinglePartnership:
 
     def test_provenance_commons(self, tmp_path, commons_repo):
         _write_bc_package(
-            tmp_path / "partnerships" / "acme-corp",
+            tmp_path / "partnerships" / "acme-corp" / "skillsets",
             "acme_analysis",
             [_make_pipeline_def("acme-analysis")],
         )
@@ -233,7 +233,7 @@ class TestFilesystemSourceSinglePartnership:
 
     def test_provenance_partnership(self, tmp_path, commons_repo):
         _write_bc_package(
-            tmp_path / "partnerships" / "acme-corp",
+            tmp_path / "partnerships" / "acme-corp" / "skillsets",
             "acme_analysis",
             [_make_pipeline_def("acme-analysis")],
         )
@@ -242,7 +242,7 @@ class TestFilesystemSourceSinglePartnership:
 
     def test_provenance_unknown(self, tmp_path, commons_repo):
         _write_bc_package(
-            tmp_path / "partnerships" / "acme-corp",
+            tmp_path / "partnerships" / "acme-corp" / "skillsets",
             "acme_analysis",
             [_make_pipeline_def("acme-analysis")],
         )
@@ -255,12 +255,12 @@ class TestFilesystemSourceMultiplePartnerships:
 
     def test_list_includes_all(self, tmp_path, commons_repo):
         _write_bc_package(
-            tmp_path / "partnerships" / "acme-corp",
+            tmp_path / "partnerships" / "acme-corp" / "skillsets",
             "acme_analysis",
             [_make_pipeline_def("acme-analysis")],
         )
         _write_bc_package(
-            tmp_path / "partnerships" / "beta-inc",
+            tmp_path / "partnerships" / "beta-inc" / "skillsets",
             "beta_audit",
             [
                 _make_pipeline_def("beta-audit"),
@@ -274,7 +274,7 @@ class TestFilesystemSourceMultiplePartnerships:
 
     def test_partnership_multiple_skillsets(self, tmp_path, commons_repo):
         _write_bc_package(
-            tmp_path / "partnerships" / "beta-inc",
+            tmp_path / "partnerships" / "beta-inc" / "skillsets",
             "beta_audit",
             [
                 _make_pipeline_def("beta-audit"),
@@ -288,12 +288,12 @@ class TestFilesystemSourceMultiplePartnerships:
 
     def test_provenance_resolves_correct_source(self, tmp_path, commons_repo):
         _write_bc_package(
-            tmp_path / "partnerships" / "acme-corp",
+            tmp_path / "partnerships" / "acme-corp" / "skillsets",
             "acme_analysis",
             [_make_pipeline_def("acme-analysis")],
         )
         _write_bc_package(
-            tmp_path / "partnerships" / "beta-inc",
+            tmp_path / "partnerships" / "beta-inc" / "skillsets",
             "beta_audit",
             [_make_pipeline_def("beta-audit")],
         )

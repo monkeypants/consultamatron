@@ -2,13 +2,14 @@
 #
 # Maintain agent skill symlinks and instruction-file aliases.
 #
-# Skills live inside BC packages across three source containers:
-#   commons/       (committed)
-#   partnerships/  (gitignored, per-engagement)
-#   personal/      (gitignored, operator-private)
+# Skills are discovered from four locations:
+#   skills/                          (repo-root generic skills)
+#   personal/                        (full scan — skills/ and skillsets/)
+#   partnerships/*/                  (full scan — skills/ and skillsets/)
+#   commons/*/*/skillsets/            (only skillset-owned skills)
 #
 # This script finds every directory containing a SKILL.md under those
-# containers and creates symlinks in .claude/skills/, .agents/skills/,
+# locations and creates symlinks in .claude/skills/, .agents/skills/,
 # .gemini/skills/, and .github/skills/ pointing to the actual location.
 #
 # It also maintains the instruction-file aliases:
@@ -53,21 +54,54 @@ ensure_link "GEMINI.md" "AGENTS.md"
 
 # -- Skill symlinks ---------------------------------------------------------
 
-# Directories to search for SKILL.md files
-SOURCE_DIRS=()
-[ -d "commons" ]      && SOURCE_DIRS+=("commons")
-[ -d "partnerships" ] && SOURCE_DIRS+=("partnerships")
-[ -d "personal" ]     && SOURCE_DIRS+=("personal")
+# Parallel indexed arrays — bash 3.2 compatible (no declare -A).
+SKILL_NAMES=()
+SKILL_DIRS=()
 
-# Collect all skill directories (dirs containing SKILL.md)
-declare -A SKILL_PATHS
-for source_dir in "${SOURCE_DIRS[@]}"; do
+_add_skill() {
+    local name="$1" dir="$2"
+    local i count=${#SKILL_NAMES[@]}
+    for (( i=0; i<count; i++ )); do
+        if [ "${SKILL_NAMES[$i]}" = "$name" ]; then
+            SKILL_DIRS[$i]="$dir"
+            return
+        fi
+    done
+    SKILL_NAMES+=("$name")
+    SKILL_DIRS+=("$dir")
+}
+
+_scan_skills() {
+    local search_root="$1"
+    local skill_md skill_dir skill_name
     while IFS= read -r skill_md; do
         skill_dir="$(dirname "$skill_md")"
         skill_name="$(basename "$skill_dir")"
-        SKILL_PATHS["$skill_name"]="$skill_dir"
-    done < <(find "$source_dir" -name SKILL.md -not -path '*/references/*' -not -path '*/assets/*' 2>/dev/null)
-done
+        _add_skill "$skill_name" "$skill_dir"
+    done < <(find "$search_root" -name SKILL.md -not -path '*/references/*' -not -path '*/assets/*' 2>/dev/null)
+}
+
+# Repo-root generic skills
+[ -d "skills" ] && _scan_skills "skills"
+
+# Personal — full scan (skills/ and skillsets/)
+[ -d "personal" ] && _scan_skills "personal"
+
+# Partnerships — full scan per slug
+if [ -d "partnerships" ]; then
+    for partner_dir in partnerships/*/; do
+        [ -d "$partner_dir" ] && _scan_skills "$partner_dir"
+    done
+fi
+
+# Commons — only skillset-owned skills (not top-level skills/)
+if [ -d "commons" ]; then
+    for repo_dir in commons/*/*/; do
+        [ -d "$repo_dir" ] || continue
+        skillsets_dir="${repo_dir}skillsets"
+        [ -d "$skillsets_dir" ] && _scan_skills "$skillsets_dir"
+    done
+fi
 
 # Create symlinks in each agent's skills directory
 for agent_dir in .claude/skills .agents/skills .gemini/skills .github/skills; do
@@ -85,10 +119,11 @@ for agent_dir in .claude/skills .agents/skills .gemini/skills .github/skills; do
     fi
 
     # Create/fix symlinks for each discovered skill
-    for skill_name in $(echo "${!SKILL_PATHS[@]}" | tr ' ' '\n' | sort); do
-        skill_dir="${SKILL_PATHS[$skill_name]}"
+    count=${#SKILL_NAMES[@]}
+    for (( i=0; i<count; i++ )); do
+        skill_name="${SKILL_NAMES[$i]}"
+        skill_dir="${SKILL_DIRS[$i]}"
         # Compute relative path from agent_dir to skill_dir
-        # e.g. from .claude/skills/wm-research to commons/wardley_mapping/skills/wm-research
         target="$(python3 -c "
 import os.path, sys
 print(os.path.relpath(sys.argv[1], sys.argv[2]))

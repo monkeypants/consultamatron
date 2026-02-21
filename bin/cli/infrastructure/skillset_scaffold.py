@@ -1,7 +1,8 @@
 """Scaffold infrastructure for creating and updating skillset stub packages.
 
 Creates bounded context packages with __init__.py files that export
-PIPELINES declarations.  New packages are placed under ``commons/``.
+PIPELINES declarations.  New packages are placed under the appropriate
+source container's ``skillsets/`` subdirectory.
 """
 
 from __future__ import annotations
@@ -13,15 +14,23 @@ class SkillsetScaffold:
     """Creates and updates skillset stub packages.
 
     A stub package is a Python package with __init__.py that exports
-    a PIPELINES list.  New packages are placed under ``commons/``.
+    a PIPELINES list.  By default, new packages are placed under
+    ``personal/skillsets/``.
     """
 
     def __init__(self, repo_root: Path) -> None:
         self._repo_root = repo_root
 
-    def _package_dir(self, name: str) -> Path:
+    def _package_dir(self, name: str, source: str | None = None) -> Path:
         """Return the filesystem path for a skillset package."""
-        return self._repo_root / "commons" / name.replace("-", "_")
+        pkg = name.replace("-", "_")
+        if source is None or source == "personal":
+            return self._repo_root / "personal" / "skillsets" / pkg
+        if source == "commons":
+            msg = "Cannot scaffold into commons (read-only submodule)"
+            raise ValueError(msg)
+        # Partnership slug
+        return self._repo_root / "partnerships" / source / "skillsets" / pkg
 
     def create(
         self,
@@ -34,6 +43,7 @@ class SkillsetScaffold:
         deliverables: list[str] | None = None,
         classification: list[str] | None = None,
         evidence: list[str] | None = None,
+        source: str | None = None,
     ) -> Path:
         """Create a stub BC package with a PIPELINES declaration.
 
@@ -43,7 +53,7 @@ class SkillsetScaffold:
 
         Returns the path to the created __init__.py.
         """
-        pkg_dir = self._package_dir(name)
+        pkg_dir = self._package_dir(name, source)
         pkg_dir.mkdir(parents=True, exist_ok=True)
         init_py = pkg_dir / "__init__.py"
         init_py.write_text(
@@ -84,13 +94,14 @@ class SkillsetScaffold:
         deliverables: list[str] | None = None,
         classification: list[str] | None = None,
         evidence: list[str] | None = None,
+        source: str | None = None,
     ) -> Path:
         """Update an existing stub package's PIPELINES declaration.
 
         Reads the current __init__.py, applies changes, rewrites it.
         Returns the path to the updated __init__.py.
         """
-        pkg_dir = self._package_dir(name)
+        pkg_dir = self._package_dir(name, source)
         init_py = pkg_dir / "__init__.py"
 
         current = _parse_current_pipeline(init_py, name)

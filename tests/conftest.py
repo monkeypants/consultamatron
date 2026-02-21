@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import uuid
 from datetime import date, datetime, timezone
 from pathlib import Path
@@ -11,6 +10,7 @@ import pytest
 
 from bin.cli.config import Config
 from bin.cli.di import Container
+from practice.bc_discovery import discover_all_bc_modules
 from practice.entities import DecisionEntry, EngagementEntry
 from practice.discovery import PipelineStage
 from practice.entities import (
@@ -48,11 +48,11 @@ from bin.cli.infrastructure.json_repos import (
     JsonEngagementLogRepository,
     JsonProjectRepository,
     JsonResearchTopicRepository,
-    JsonSkillsetRepository,
 )
 
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
+_HAS_BC_PACKAGES = bool(discover_all_bc_modules(_REPO_ROOT))
 
 
 # ---------------------------------------------------------------------------
@@ -61,23 +61,29 @@ _REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
 @pytest.fixture
+def requires_bc_packages():
+    """Skip the test when no BC packages are installed (e.g. CI without commons/)."""
+    if not _HAS_BC_PACKAGES:
+        pytest.skip("No BC packages installed")
+
+
+@pytest.fixture
 def tmp_config(tmp_path):
     """Config with real repo_root for BC discovery, temp workspace for isolation."""
     return Config(
         repo_root=_REPO_ROOT,
         workspace_root=tmp_path / "clients",
-        skillsets_root=tmp_path / "skillsets",
     )
 
 
 @pytest.fixture
-def container(tmp_config):
+def container(tmp_config, requires_bc_packages):
     """Fully wired container against a temp workspace."""
     return Container(tmp_config)
 
 
 @pytest.fixture
-def run(tmp_config, monkeypatch):
+def run(tmp_config, monkeypatch, requires_bc_packages):
     """Invoke CLI commands against a temp workspace with skillsets auto-discovered."""
     from bin.cli.main import cli
 
@@ -95,12 +101,6 @@ def run(tmp_config, monkeypatch):
 
 # -- Parametrized repository fixtures (one per protocol) -------------------
 # Adding an implementation = adding one elif + one params entry.
-
-
-@pytest.fixture(params=["json"])
-def skillset_repo(request, tmp_config):
-    if request.param == "json":
-        return JsonSkillsetRepository(tmp_config.skillsets_root)
 
 
 @pytest.fixture(params=["json"])
@@ -450,23 +450,6 @@ def make_observation(**overrides) -> Observation:
         destinations=[make_routing_destination()],
     )
     return Observation(**(defaults | overrides))
-
-
-def _write_skillsets(skillsets_root, pipelines):
-    """Write pipeline manifests to the test workspace index."""
-    index = skillsets_root / "index.json"
-    index.parent.mkdir(parents=True, exist_ok=True)
-    index.write_text(
-        json.dumps([p.model_dump(mode="json") for p in pipelines], indent=2) + "\n"
-    )
-
-
-def seed_all_skillsets(skillsets_root):
-    """Write all discovered skillsets to a test workspace."""
-    from bin.cli.infrastructure.code_skillset_repository import CodeSkillsetRepository
-
-    repo = CodeSkillsetRepository(_REPO_ROOT)
-    _write_skillsets(skillsets_root, repo.list_all())
 
 
 # ---------------------------------------------------------------------------

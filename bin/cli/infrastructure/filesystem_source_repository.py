@@ -1,12 +1,13 @@
 """SourceRepository that discovers sources from the filesystem.
 
-Scans three source containers for BC packages:
+Scans source containers for BC packages under their ``skillsets/``
+subdirectory:
 
 - **commons** — pipelines from the injected SkillsetRepository
-- **personal** — BC packages in ``{repo_root}/personal/``
-- **partnerships** — BC packages in ``{repo_root}/partnerships/{slug}/``
+- **personal** — BC packages in ``{repo_root}/personal/skillsets/``
+- **partnerships** — BC packages in ``{repo_root}/partnerships/{slug}/skillsets/``
 
-All three use the same BC package discovery: directories containing
+All use the same BC package discovery: directories containing
 ``__init__.py`` with a ``PIPELINES`` attribute.
 """
 
@@ -72,12 +73,12 @@ class FilesystemSourceRepository:
     # -- Internals ----------------------------------------------------------
 
     def _scan_personal(self) -> list[str]:
-        """Scan personal/ for BC packages, returning skillset names."""
-        skillsets = collect_pipelines(self._repo_root / "personal")
+        """Scan personal/skillsets/ for BC packages, returning pipeline names."""
+        skillsets = collect_pipelines(self._repo_root / "personal" / "skillsets")
         return [s.name for s in skillsets]
 
     def _scan_partnerships(self) -> dict[str, list[str]]:
-        """Scan partnerships/ for BC packages, returning {slug: [skillset_names]}."""
+        """Scan partnerships/{slug}/skillsets/ for BC packages."""
         result: dict[str, list[str]] = {}
         partnerships_dir = self._repo_root / "partnerships"
         if not partnerships_dir.is_dir():
@@ -85,7 +86,7 @@ class FilesystemSourceRepository:
         for subdir in sorted(partnerships_dir.iterdir()):
             if not subdir.is_dir():
                 continue
-            skillsets = collect_pipelines(subdir)
+            skillsets = collect_pipelines(subdir / "skillsets")
             if skillsets:
                 result[subdir.name] = [s.name for s in skillsets]
         return result

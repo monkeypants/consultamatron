@@ -21,9 +21,6 @@ a file.
                     └── presentations/
                         └── {tour-name}/
                             └── manifest.json
-
-    {skillsets_root}/
-    └── index.json
 """
 
 from __future__ import annotations
@@ -33,7 +30,6 @@ from pathlib import Path
 from practice.entities import DecisionEntry, EngagementEntry
 from practice.entities import (
     Engagement,
-    Pipeline,
     Project,
     ProjectStatus,
     ResearchTopic,
@@ -41,25 +37,6 @@ from practice.entities import (
 from bin.cli.infrastructure.json_store import (
     JsonArrayStore,
 )
-
-
-# ---------------------------------------------------------------------------
-# Skillset
-# ---------------------------------------------------------------------------
-
-
-class JsonSkillsetRepository:
-    """Read-only pipeline repository backed by a single JSON file."""
-
-    def __init__(self, skillsets_root: Path) -> None:
-        self._store: JsonArrayStore[Pipeline] = JsonArrayStore(Pipeline, "name")
-        self._file = skillsets_root / "index.json"
-
-    def get(self, name: str) -> Pipeline | None:
-        return self._store.find(self._store.load(self._file), name)
-
-    def list_all(self) -> list[Pipeline]:
-        return self._store.load(self._file)
 
 
 # ---------------------------------------------------------------------------

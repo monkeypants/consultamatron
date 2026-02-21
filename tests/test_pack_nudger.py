@@ -575,7 +575,7 @@ class TestSkillManifestRepository:
             FilesystemSkillManifestRepository,
         )
 
-        skill_dir = tmp_path / "commons" / "my_bc" / "skills" / "my-skill"
+        skill_dir = tmp_path / "skills" / "my-skill"
         self._write_skill(skill_dir, "my-skill")
         repo = FilesystemSkillManifestRepository(tmp_path)
         manifest = repo.get("my-skill")
@@ -588,18 +588,17 @@ class TestSkillManifestRepository:
             FilesystemSkillManifestRepository,
         )
 
-        (tmp_path / "commons").mkdir()
         repo = FilesystemSkillManifestRepository(tmp_path)
         assert repo.get("nonexistent") is None
 
     def test_list_all_returns_all_manifests(self, tmp_path):
-        """list_all() discovers manifests from all source containers."""
+        """list_all() discovers manifests from all skill search dirs."""
         from bin.cli.infrastructure.filesystem_skill_manifest_repository import (
             FilesystemSkillManifestRepository,
         )
 
         for name in ("skill-a", "skill-b"):
-            skill_dir = tmp_path / "commons" / "my_bc" / "skills" / name
+            skill_dir = tmp_path / "skills" / name
             self._write_skill(skill_dir, name)
         repo = FilesystemSkillManifestRepository(tmp_path)
         manifests = repo.list_all()
@@ -623,14 +622,14 @@ class TestSkillManifestRepository:
             FilesystemSkillManifestRepository,
         )
 
-        skill_dir = tmp_path / "commons" / "my_bc" / "skills" / "bad-skill"
+        skill_dir = tmp_path / "skills" / "bad-skill"
         skill_dir.mkdir(parents=True)
         # Missing metadata block — validation will fail
         (skill_dir / "SKILL.md").write_text(
             "---\nname: bad-skill\ndescription: Missing metadata.\n---\n"
         )
         # Also write a valid skill to prove discovery continues
-        good_dir = tmp_path / "commons" / "my_bc" / "skills" / "good-skill"
+        good_dir = tmp_path / "skills" / "good-skill"
         self._write_skill(good_dir, "good-skill")
 
         repo = FilesystemSkillManifestRepository(tmp_path)
@@ -643,7 +642,7 @@ class TestSkillManifestRepository:
             FilesystemSkillManifestRepository,
         )
 
-        skill_dir = tmp_path / "commons" / "my_bc" / "skills" / "no-fm"
+        skill_dir = tmp_path / "skills" / "no-fm"
         skill_dir.mkdir(parents=True)
         (skill_dir / "SKILL.md").write_text("# Just a heading, no frontmatter\n")
 

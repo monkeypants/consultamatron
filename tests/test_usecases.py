@@ -53,7 +53,7 @@ ENGAGEMENT = "strat-1"
 
 
 @pytest.fixture
-def di(tmp_config):
+def di(tmp_config, requires_bc_packages):
     """Container with skillsets auto-discovered from BC modules."""
     return Container(tmp_config)
 
@@ -900,7 +900,9 @@ class TestRegisterProspectus:
         self._SCAFFOLDED.clear()
         yield
         for name in self._SCAFFOLDED:
-            pkg_dir = di.config.repo_root / "commons" / name.replace("-", "_")
+            pkg_dir = (
+                di.config.repo_root / "personal" / "skillsets" / name.replace("-", "_")
+            )
             if pkg_dir.exists():
                 shutil.rmtree(pkg_dir)
 
@@ -976,7 +978,9 @@ class TestUpdateProspectus:
         import shutil
 
         yield
-        pkg_dir = di.config.repo_root / "commons" / "scratch_update_target"
+        pkg_dir = (
+            di.config.repo_root / "personal" / "skillsets" / "scratch_update_target"
+        )
         if pkg_dir.exists():
             shutil.rmtree(pkg_dir)
 

@@ -10,9 +10,8 @@ Every contract test runs automatically.
 
 from __future__ import annotations
 
-import json
-
 import pytest
+
 
 from practice.entities import Confidence, EngagementStatus, ProjectStatus
 
@@ -24,46 +23,12 @@ from .conftest import (
     make_project,
     make_research,
     make_routing_destination,
-    make_pipeline,
 )
 
 pytestmark = pytest.mark.doctrine
 
 CLIENT = "holloway-group"
 ENGAGEMENT = "strat-1"
-
-
-# ---------------------------------------------------------------------------
-# Skillset repository contracts
-# ---------------------------------------------------------------------------
-
-
-class TestSkillsetContract:
-    def test_get_missing_returns_none(self, skillset_repo):
-        assert skillset_repo.get("nonexistent") is None
-
-    def test_list_all_empty(self, skillset_repo):
-        assert skillset_repo.list_all() == []
-
-    def test_round_trip_via_file(self, skillset_repo, tmp_config):
-        """Seed the backing store and verify get/list work."""
-        s = make_pipeline(name="test-skillset")
-        data = [s.model_dump(mode="json")]
-        path = tmp_config.skillsets_root / "index.json"
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(data))
-
-        assert skillset_repo.get("test-skillset") is not None
-        assert skillset_repo.get("test-skillset").display_name == "Test Skillset"
-        assert len(skillset_repo.list_all()) == 1
-
-    def test_get_wrong_name_returns_none(self, skillset_repo, tmp_config):
-        s = make_pipeline(name="alpha")
-        path = tmp_config.skillsets_root / "index.json"
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps([s.model_dump(mode="json")]))
-
-        assert skillset_repo.get("beta") is None
 
 
 # ---------------------------------------------------------------------------

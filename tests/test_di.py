@@ -20,7 +20,6 @@ class TestConfig:
         config = Config.from_repo_root(Path("/repo"))
         assert config.repo_root == Path("/repo")
         assert config.workspace_root == Path("/repo/clients")
-        assert config.skillsets_root == Path("/repo/skillsets")
 
     def test_frozen(self):
         config = Config.from_repo_root(Path("/repo"))
