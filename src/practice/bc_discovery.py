@@ -23,7 +23,7 @@ import sys
 from pathlib import Path
 from types import ModuleType
 
-from practice.entities import Pipeline
+from practice.entities import Pipeline, Skillset
 
 
 def bc_package_dirs(repo_root: Path) -> list[Path]:
@@ -155,12 +155,51 @@ def _get_pipelines(mod: ModuleType) -> list[Pipeline]:
     return getattr(mod, "PIPELINES", getattr(mod, "SKILLSETS", []))
 
 
+def _get_skillset(mod: ModuleType) -> Skillset | None:
+    """Extract a Skillset from *mod*, auto-wrapping PIPELINES if needed.
+
+    Priority:
+    1. ``SKILLSET`` attribute → return directly
+    2. ``PIPELINES`` attribute → wrap in Skillset using module name
+    3. ``SKILLSETS`` attribute → return first item (legacy)
+    4. None → return None
+    """
+    if hasattr(mod, "SKILLSET"):
+        return mod.SKILLSET
+
+    if hasattr(mod, "PIPELINES"):
+        pipelines = list(mod.PIPELINES)
+        name = mod.__name__.split(".")[-1].replace("_", "-")
+        return Skillset(
+            name=name,
+            display_name=name,
+            description="",
+            pipelines=pipelines,
+        )
+
+    if hasattr(mod, "SKILLSETS"):
+        items = mod.SKILLSETS
+        if items:
+            return items[0]
+
+    return None
+
+
+def _has_skillset(mod: ModuleType) -> bool:
+    """True if *mod* exports SKILLSET, PIPELINES, or SKILLSETS."""
+    return (
+        hasattr(mod, "SKILLSET")
+        or hasattr(mod, "PIPELINES")
+        or hasattr(mod, "SKILLSETS")
+    )
+
+
 def scan_bc_packages(source_dir: Path) -> list[ModuleType]:
-    """Import BC packages from *source_dir* and return those with PIPELINES.
+    """Import BC packages from *source_dir* and return those with skillset data.
 
     Adds *source_dir* to ``sys.path`` persistently, then imports each
-    subdirectory containing ``__init__.py`` that exports ``PIPELINES``
-    (or the legacy ``SKILLSETS`` attribute).
+    subdirectory containing ``__init__.py`` that exports ``SKILLSET``,
+    ``PIPELINES``, or the legacy ``SKILLSETS`` attribute.
     """
     if not source_dir.is_dir():
         return []
@@ -173,7 +212,7 @@ def scan_bc_packages(source_dir: Path) -> list[ModuleType]:
             continue
         try:
             mod = importlib.import_module(child.name)
-            if _has_pipelines(mod):
+            if _has_skillset(mod):
                 modules.append(mod)
         except ImportError:
             continue
@@ -193,6 +232,16 @@ def collect_pipelines(source_dir: Path) -> list[Pipeline]:
     result: list[Pipeline] = []
     for mod in scan_bc_packages(source_dir):
         result.extend(_get_pipelines(mod))
+    return result
+
+
+def collect_skillset_objects(source_dir: Path) -> list[Skillset]:
+    """Scan *source_dir* for BC packages and return Skillset entities."""
+    result: list[Skillset] = []
+    for mod in scan_bc_packages(source_dir):
+        skillset = _get_skillset(mod)
+        if skillset is not None:
+            result.append(skillset)
     return result
 
 
