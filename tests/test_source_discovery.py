@@ -360,3 +360,50 @@ class TestDiscoveryFindsPipelines:
         assert len(pipelines) == 1
         assert pipelines[0].name == "test-pipeline"
         assert pipelines[0].slug_pattern == "test-pipeline-{n}"
+
+
+# ---------------------------------------------------------------------------
+# collect_skillset_objects — Skillset-level BC package scanning
+# ---------------------------------------------------------------------------
+
+
+class TestCollectSkillsetObjects:
+    """collect_skillset_objects returns Skillset entities from BC modules."""
+
+    def test_collect_skillsets_from_SKILLSET_attr(self, tmp_path):
+        """Module with SKILLSET attribute yields that Skillset directly."""
+        from practice.bc_discovery import collect_skillset_objects
+
+        pkg_dir = tmp_path / "skillset_pkg"
+        pkg_dir.mkdir()
+        (pkg_dir / "__init__.py").write_text(
+            "from practice.entities import Pipeline, Skillset\n"
+            "SKILLSET = Skillset(\n"
+            "    name='test-ss',\n"
+            "    display_name='Test',\n"
+            "    description='A test.',\n"
+            "    pipelines=[Pipeline(\n"
+            "        name='create',\n"
+            "        display_name='Create',\n"
+            "        description='Create something.',\n"
+            "        slug_pattern='test-{n}',\n"
+            "    )],\n"
+            ")\n"
+        )
+        skillsets = collect_skillset_objects(tmp_path)
+        assert len(skillsets) == 1
+        assert skillsets[0].name == "test-ss"
+        assert len(skillsets[0].pipelines) == 1
+        assert skillsets[0].pipelines[0].name == "create"
+
+    def test_collect_skillsets_wraps_PIPELINES(self, tmp_path):
+        """Module with only PIPELINES attribute gets auto-wrapped in Skillset."""
+        from practice.bc_discovery import collect_skillset_objects
+
+        _write_bc_package(
+            tmp_path, "legacy_pkg", [_make_pipeline_def("legacy-pipeline")]
+        )
+        skillsets = collect_skillset_objects(tmp_path)
+        assert len(skillsets) == 1
+        assert isinstance(skillsets[0].pipelines, list)
+        assert skillsets[0].pipelines[0].name == "legacy-pipeline"
