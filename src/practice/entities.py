@@ -82,6 +82,10 @@ class Skillset(BaseModel):
         """True when any pipeline has at least one stage."""
         return any(p.is_implemented for p in self.pipelines)
 
+    def get_pipeline(self, name: str) -> Pipeline | None:
+        """Return the pipeline with the given name, or None."""
+        return next((p for p in self.pipelines if p.name == name), None)
+
 
 # ---------------------------------------------------------------------------
 # Project (shared — appears in ProjectPresenter.present() signature)
@@ -123,6 +127,7 @@ class Project(BaseModel):
     client: str
     engagement: str
     skillset: str
+    pipeline: str = ""
     status: ProjectStatus
     created: date
     notes: str = ""
