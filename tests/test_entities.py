@@ -8,7 +8,7 @@ provide here.
 
 from __future__ import annotations
 
-from practice.entities import EngagementStatus, Pipeline, PipelineTrigger
+from practice.entities import EngagementStatus, Pipeline, PipelineTrigger, Skillset
 
 from .conftest import (
     make_engagement_entity,
@@ -29,6 +29,10 @@ class TestDefaults:
         p = make_project()
         assert p.notes == ""
 
+    def test_project_pipeline_defaults_empty(self):
+        p = make_project()
+        assert p.pipeline == ""
+
     def test_engagement_notes_defaults_empty(self):
         e = make_engagement_entity()
         assert e.notes == ""
@@ -36,6 +40,14 @@ class TestDefaults:
     def test_engagement_allowed_sources_defaults_to_commons_and_personal(self):
         e = make_engagement_entity()
         assert e.allowed_sources == ["commons", "personal"]
+
+
+class TestProjectPipeline:
+    """Project records which pipeline within the skillset it uses."""
+
+    def test_project_stores_pipeline(self):
+        p = make_project(pipeline="create")
+        assert p.pipeline == "create"
 
 
 # ---------------------------------------------------------------------------
@@ -97,6 +109,36 @@ class TestSkillsetImplementation:
         s = make_skillset()
         assert len(s.pipelines) > 0
         assert isinstance(s.pipelines[0], Pipeline)
+
+
+class TestSkillsetGetPipeline:
+    """Skillset.get_pipeline retrieves a pipeline by name."""
+
+    def test_get_pipeline(self):
+        s = Skillset(
+            name="wardley-mapping",
+            display_name="Wardley Mapping",
+            description="Strategic mapping.",
+            pipelines=[
+                make_pipeline(name="create"),
+                make_pipeline(name="refine"),
+            ],
+        )
+        p = s.get_pipeline("create")
+        assert p is not None
+        assert p.name == "create"
+
+    def test_get_pipeline_unknown(self):
+        s = Skillset(
+            name="wardley-mapping",
+            display_name="Wardley Mapping",
+            description="Strategic mapping.",
+            pipelines=[
+                make_pipeline(name="create"),
+                make_pipeline(name="refine"),
+            ],
+        )
+        assert s.get_pipeline("nonexistent") is None
 
 
 # ---------------------------------------------------------------------------
