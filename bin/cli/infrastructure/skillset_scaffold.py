@@ -1,7 +1,7 @@
 """Scaffold infrastructure for creating and updating skillset stub packages.
 
 Creates bounded context packages with __init__.py files that export
-PIPELINES declarations.  New packages are placed under the appropriate
+a SKILLSET declaration.  New packages are placed under the appropriate
 source container's ``skillsets/`` subdirectory.
 """
 
@@ -14,7 +14,7 @@ class SkillsetScaffold:
     """Creates and updates skillset stub packages.
 
     A stub package is a Python package with __init__.py that exports
-    a PIPELINES list.  By default, new packages are placed under
+    a SKILLSET: Skillset.  By default, new packages are placed under
     ``personal/skillsets/``.
     """
 
@@ -45,7 +45,7 @@ class SkillsetScaffold:
         evidence: list[str] | None = None,
         source: str | None = None,
     ) -> Path:
-        """Create a stub BC package with a PIPELINES declaration.
+        """Create a stub BC package with a SKILLSET declaration.
 
         Also generates a stub presenter, PRESENTER_FACTORY export, and
         test directory so the package passes all conformance tests from
@@ -96,7 +96,7 @@ class SkillsetScaffold:
         evidence: list[str] | None = None,
         source: str | None = None,
     ) -> Path:
-        """Update an existing stub package's PIPELINES declaration.
+        """Update an existing stub package's SKILLSET declaration.
 
         Reads the current __init__.py, applies changes, rewrites it.
         Returns the path to the updated __init__.py.
@@ -104,7 +104,8 @@ class SkillsetScaffold:
         pkg_dir = self._package_dir(name, source)
         init_py = pkg_dir / "__init__.py"
 
-        current = _parse_current_pipeline(init_py, name)
+        current = _parse_current_skillset(init_py, name)
+        current_pipeline = current.pipelines[0] if current.pipelines else None
 
         init_py.write_text(
             _render_init(
@@ -117,7 +118,11 @@ class SkillsetScaffold:
                 else current.description,
                 slug_pattern=slug_pattern
                 if slug_pattern is not None
-                else current.slug_pattern,
+                else (
+                    current_pipeline.slug_pattern
+                    if current_pipeline
+                    else f"{name}-{{n}}"
+                ),
             )
         )
         return init_py
@@ -134,7 +139,7 @@ def _render_init(
     parts = [
         f'"""{display_name} bounded context."""\n',
         "",
-        "from practice.entities import Pipeline",
+        "from practice.entities import Pipeline, Skillset",
         "",
         "",
         "def _create_presenter(workspace_root, repo_root):",
@@ -145,14 +150,19 @@ def _render_init(
         "",
         f"PRESENTER_FACTORY = ({name!r}, _create_presenter)",
         "",
-        "PIPELINES: list[Pipeline] = [",
-        "    Pipeline(",
-        f"        name={name!r},",
-        f"        display_name={display_name!r},",
-        f"        description={description!r},",
-        f"        slug_pattern={slug_pattern!r},",
-        "    ),",
-        "]",
+        "SKILLSET = Skillset(",
+        f"    name={name!r},",
+        f"    display_name={display_name!r},",
+        f"    description={description!r},",
+        "    pipelines=[",
+        "        Pipeline(",
+        f"            name={name!r},",
+        f"            display_name={display_name!r},",
+        f"            description={description!r},",
+        f"            slug_pattern={slug_pattern!r},",
+        "        ),",
+        "    ],",
+        ")",
         "",
     ]
     return "\n".join(parts)
@@ -233,18 +243,44 @@ class TestPresenterContract:
 '''
 
 
-def _parse_current_pipeline(init_py: Path, name: str):
-    """Parse the current Pipeline from an __init__.py file.
+def _parse_current_skillset(init_py: Path, name: str):
+    """Parse the current Skillset from an __init__.py file.
 
+    Handles both new SKILLSET format and legacy PIPELINES format.
     Uses exec to evaluate the module in a controlled namespace.
     """
-    from practice.entities import Pipeline
+    from practice.entities import Pipeline, Skillset
 
-    namespace: dict = {"Pipeline": Pipeline}
+    namespace: dict = {"Pipeline": Pipeline, "Skillset": Skillset}
     exec(compile(init_py.read_text(), str(init_py), "exec"), namespace)
+
+    # New format: SKILLSET attribute
+    skillset = namespace.get("SKILLSET")
+    if skillset is not None:
+        return skillset
+
+    # Legacy format: PIPELINES list — wrap in Skillset
     pipelines = namespace.get("PIPELINES", [])
     for p in pipelines:
         if p.name == name:
-            return p
+            return Skillset(
+                name=name,
+                display_name=p.display_name,
+                description=p.description,
+                pipelines=[p],
+            )
+    msg = f"Skillset {name!r} not found in {init_py}"
+    raise ValueError(msg)
+
+
+# Keep backward-compatible alias for existing tests
+def _parse_current_pipeline(init_py: Path, name: str):
+    """Parse the current Pipeline from an __init__.py file.
+
+    Legacy wrapper — returns the first pipeline from the parsed skillset.
+    """
+    skillset = _parse_current_skillset(init_py, name)
+    if skillset.pipelines:
+        return skillset.pipelines[0]
     msg = f"Pipeline {name!r} not found in {init_py}"
     raise ValueError(msg)

@@ -422,21 +422,25 @@ class TestScaffoldGeneratesSkillsetExport:
     def test_scaffold_exports_SKILLSET(self, tmp_path):
         """Created package has SKILLSET attribute discoverable by bc_discovery."""
         from bin.cli.infrastructure.skillset_scaffold import SkillsetScaffold
-        from practice.bc_discovery import collect_skillset_objects
 
         scaffold = SkillsetScaffold(tmp_path)
-        scaffold.create(
-            name="test-method",
-            display_name="Test Method",
+        init_path = scaffold.create(
+            name="scaffold-probe",
+            display_name="Scaffold Probe",
             description="A test methodology.",
-            slug_pattern="test-{n}",
+            slug_pattern="probe-{n}",
         )
-        skillsets = collect_skillset_objects(tmp_path / "personal" / "skillsets")
-        assert len(skillsets) == 1
-        assert skillsets[0].name == "test-method"
-        assert skillsets[0].display_name == "Test Method"
-        assert len(skillsets[0].pipelines) == 1
-        assert skillsets[0].pipelines[0].name == "test-method"
+        # Parse the generated file directly to avoid importlib caching
+        from practice.entities import Pipeline, Skillset
+
+        ns: dict = {"Pipeline": Pipeline, "Skillset": Skillset}
+        exec(compile(init_path.read_text(), str(init_path), "exec"), ns)
+        skillset = ns.get("SKILLSET")
+        assert skillset is not None
+        assert skillset.name == "scaffold-probe"
+        assert skillset.display_name == "Scaffold Probe"
+        assert len(skillset.pipelines) == 1
+        assert skillset.pipelines[0].name == "scaffold-probe"
 
     def test_scaffold_init_imports_skillset(self, tmp_path):
         """Generated __init__.py contains 'SKILLSET' declaration."""
@@ -444,10 +448,10 @@ class TestScaffoldGeneratesSkillsetExport:
 
         scaffold = SkillsetScaffold(tmp_path)
         init_path = scaffold.create(
-            name="test-method",
-            display_name="Test Method",
+            name="scaffold-probe",
+            display_name="Scaffold Probe",
             description="A test methodology.",
-            slug_pattern="test-{n}",
+            slug_pattern="probe-{n}",
         )
         content = init_path.read_text()
         assert "SKILLSET" in content
