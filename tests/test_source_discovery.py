@@ -409,3 +409,46 @@ class TestCollectSkillsetObjects:
         assert len(skillsets) == 1
         assert isinstance(skillsets[0].pipelines, list)
         assert skillsets[0].pipelines[0].name == "legacy-pipeline"
+
+
+# ---------------------------------------------------------------------------
+# Scaffold generates SKILLSET export
+# ---------------------------------------------------------------------------
+
+
+class TestScaffoldGeneratesSkillsetExport:
+    """SkillsetScaffold produces BC packages with SKILLSET: Skillset export."""
+
+    def test_scaffold_exports_SKILLSET(self, tmp_path):
+        """Created package has SKILLSET attribute discoverable by bc_discovery."""
+        from bin.cli.infrastructure.skillset_scaffold import SkillsetScaffold
+        from practice.bc_discovery import collect_skillset_objects
+
+        scaffold = SkillsetScaffold(tmp_path)
+        scaffold.create(
+            name="test-method",
+            display_name="Test Method",
+            description="A test methodology.",
+            slug_pattern="test-{n}",
+        )
+        skillsets = collect_skillset_objects(tmp_path / "personal" / "skillsets")
+        assert len(skillsets) == 1
+        assert skillsets[0].name == "test-method"
+        assert skillsets[0].display_name == "Test Method"
+        assert len(skillsets[0].pipelines) == 1
+        assert skillsets[0].pipelines[0].name == "test-method"
+
+    def test_scaffold_init_imports_skillset(self, tmp_path):
+        """Generated __init__.py contains 'SKILLSET' declaration."""
+        from bin.cli.infrastructure.skillset_scaffold import SkillsetScaffold
+
+        scaffold = SkillsetScaffold(tmp_path)
+        init_path = scaffold.create(
+            name="test-method",
+            display_name="Test Method",
+            description="A test methodology.",
+            slug_pattern="test-{n}",
+        )
+        content = init_path.read_text()
+        assert "SKILLSET" in content
+        assert "Skillset(" in content
