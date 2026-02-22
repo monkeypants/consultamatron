@@ -65,7 +65,8 @@ def _get_all_gates(tmp_config):
 
     c = Container(tmp_config)
     ss = c.skillsets.get("wardley-mapping")
-    return [s.produces_gate for s in sorted(ss.stages, key=lambda s: s.order)]
+    pipeline = ss.pipelines[0]
+    return [s.produces_gate for s in sorted(pipeline.stages, key=lambda s: s.order)]
 
 
 # ---------------------------------------------------------------------------
@@ -203,7 +204,8 @@ class TestWipShowsNextSkill:
         # Write the prerequisite that stage 1 needs so project is unblocked
         c = Container(tmp_config)
         ss = c.skillsets.get("wardley-mapping")
-        stage_1 = sorted(ss.stages, key=lambda s: s.order)[0]
+        pipeline = ss.pipelines[0]
+        stage_1 = sorted(pipeline.stages, key=lambda s: s.order)[0]
 
         if stage_1.prerequisite_gate:
             _write_gate(

@@ -35,9 +35,9 @@ from bin.cli.dtos import (
     RecordDecisionRequest,
     RegisterProjectRequest,
 )
-from practice.bc_discovery import _get_pipelines
+from practice.bc_discovery import _get_skillset
 from practice.discovery import PipelineStage
-from practice.entities import CompilationState, Pipeline
+from practice.entities import CompilationState, Pipeline, Skillset
 
 from .conftest import (
     make_decision,
@@ -70,7 +70,10 @@ CLIENT = "conformance-corp"
 
 
 _BC_MODULES = discover_all_bc_modules(_REPO_ROOT)
-_ALL_PIPELINES: list[Pipeline] = [p for mod in _BC_MODULES for p in _get_pipelines(mod)]
+_ALL_SKILLSETS: list[Skillset] = [
+    s for mod in _BC_MODULES if (s := _get_skillset(mod)) is not None
+]
+_ALL_PIPELINES: list[Pipeline] = [p for s in _ALL_SKILLSETS for p in s.pipelines]
 _IMPLEMENTED = [p for p in _ALL_PIPELINES if p.is_implemented]
 _IMPLEMENTED_DICTS = [p.model_dump(mode="json") for p in _IMPLEMENTED]
 _IMPLEMENTED_IDS = [p["name"] for p in _IMPLEMENTED_DICTS]
@@ -334,15 +337,15 @@ class TestPipelineDiscipline:
 class TestPipelineRegistration:
     """Directory scanning discovers all BC packages."""
 
-    def test_directory_scanning_finds_all_pipelines(self):
-        """discover_all_bc_modules finds the same pipelines as direct import."""
+    def test_directory_scanning_finds_all_skillsets(self):
+        """discover_all_bc_modules finds the same skillsets as direct import."""
         from bin.cli.infrastructure.code_skillset_repository import (
             CodeSkillsetRepository,
         )
 
         repo = CodeSkillsetRepository(_REPO_ROOT)
-        discovered_names = {p.name for p in repo.list_all()}
-        expected_names = {p.name for p in _ALL_PIPELINES}
+        discovered_names = {s.name for s in repo.list_all()}
+        expected_names = {s.name for s in _ALL_SKILLSETS}
         assert discovered_names == expected_names, (
             f"Discovery mismatch: found {discovered_names}, expected {expected_names}"
         )
@@ -354,21 +357,21 @@ class TestBoundedContextTestOwnership:
 
     @pytest.mark.parametrize("mod", _BC_MODULES, ids=[m.__name__ for m in _BC_MODULES])
     def test_implemented_bc_has_test_directory(self, mod):
-        if not any(p.is_implemented for p in _get_pipelines(mod)):
+        if not (ss := _get_skillset(mod)) or not ss.is_implemented:
             pytest.skip("Prospectus-only BC")
         bc_dir = Path(mod.__file__).parent
         assert (bc_dir / "tests" / "__init__.py").is_file()
 
     @pytest.mark.parametrize("mod", _BC_MODULES, ids=[m.__name__ for m in _BC_MODULES])
     def test_implemented_bc_has_presenter_test(self, mod):
-        if not any(p.is_implemented for p in _get_pipelines(mod)):
+        if not (ss := _get_skillset(mod)) or not ss.is_implemented:
             pytest.skip("Prospectus-only BC")
         bc_dir = Path(mod.__file__).parent
         assert (bc_dir / "tests" / "test_presenter.py").is_file()
 
     @pytest.mark.parametrize("mod", _BC_MODULES, ids=[m.__name__ for m in _BC_MODULES])
     def test_implemented_bc_has_presenter_factory(self, mod):
-        if not any(p.is_implemented for p in _get_pipelines(mod)):
+        if not (ss := _get_skillset(mod)) or not ss.is_implemented:
             pytest.skip("Prospectus-only BC")
         assert hasattr(mod, "PRESENTER_FACTORY")
 
@@ -379,7 +382,7 @@ class TestBoundedContextTestOwnership:
 
 
 _IMPLEMENTED_MODULES = [
-    m for m in _BC_MODULES if any(p.is_implemented for p in _get_pipelines(m))
+    m for m in _BC_MODULES if (ss := _get_skillset(m)) is not None and ss.is_implemented
 ]
 
 

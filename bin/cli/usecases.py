@@ -53,6 +53,7 @@ from bin.cli.dtos import (
     PackItemInfo,
     PackStatusRequest,
     PackStatusResponse,
+    PipelineInfo,
     WipEngagementInfo,
     WipProjectInfo,
     ProfileInfo,
@@ -110,9 +111,15 @@ from practice.entities import (
     ProjectStatus,
     ResearchTopic,
     RoutingDestination,
+    Skillset,
     SkillsetSource,
 )
-from practice.exceptions import DuplicateError, InvalidTransitionError, NotFoundError
+from practice.exceptions import (
+    DomainError,
+    DuplicateError,
+    InvalidTransitionError,
+    NotFoundError,
+)
 from practice.repositories import (
     Clock,
     DecisionRepository,
@@ -229,7 +236,8 @@ class RegisterProjectUseCase:
             )
 
         # Validate skillset and source allowlist
-        if self._skillsets.get(request.skillset) is None:
+        skillset = self._skillsets.get(request.skillset)
+        if skillset is None:
             raise NotFoundError(f"Unknown skillset: {request.skillset}")
         source_slug = self._sources.skillset_source(request.skillset)
         if source_slug is not None and source_slug not in engagement.allowed_sources:
@@ -237,6 +245,18 @@ class RegisterProjectUseCase:
                 f"Source '{source_slug}' for skillset '{request.skillset}' "
                 f"is not in engagement's allowed sources"
             )
+
+        # Resolve pipeline
+        pipeline_name = request.pipeline
+        if pipeline_name:
+            if skillset.get_pipeline(pipeline_name) is None:
+                raise NotFoundError(
+                    f"Pipeline not found: {pipeline_name} "
+                    f"in skillset {request.skillset}"
+                )
+        elif len(skillset.pipelines) == 1:
+            pipeline_name = skillset.pipelines[0].name
+        # else: leave empty — multi-pipeline skillsets require explicit selection
 
         if (
             self._projects.get(request.client, request.engagement, request.slug)
@@ -253,6 +273,7 @@ class RegisterProjectUseCase:
                 client=request.client,
                 engagement=request.engagement,
                 skillset=request.skillset,
+                pipeline=pipeline_name,
                 status=ProjectStatus.PLANNING,
                 created=today,
                 notes=request.notes,
@@ -260,6 +281,8 @@ class RegisterProjectUseCase:
         )
 
         fields = {"Skillset": request.skillset, "Scope": request.scope}
+        if pipeline_name:
+            fields["Pipeline"] = pipeline_name
         self._decisions.save(
             DecisionEntry(
                 id=self._id_gen.new_id(),
@@ -289,6 +312,7 @@ class RegisterProjectUseCase:
             engagement=request.engagement,
             slug=request.slug,
             skillset=request.skillset,
+            pipeline=pipeline_name,
         )
 
 
@@ -536,6 +560,8 @@ class GetProjectProgressUseCase:
         if skillset is None:
             raise NotFoundError(f"Skillset not found: {project.skillset}")
 
+        pipeline = _resolve_pipeline(skillset, project)
+
         decisions = self._decisions.list_all(
             request.client, request.engagement, request.project_slug
         )
@@ -545,7 +571,7 @@ class GetProjectProgressUseCase:
         current_stage: str | None = None
         next_prerequisite: str | None = None
 
-        for stage in sorted(skillset.stages, key=lambda s: s.order):
+        for stage in sorted(pipeline.stages, key=lambda s: s.order):
             completed = stage.description in decision_titles
             stages.append(
                 StageProgress(
@@ -563,6 +589,7 @@ class GetProjectProgressUseCase:
             client=request.client,
             project_slug=request.project_slug,
             skillset=project.skillset,
+            pipeline=project.pipeline,
             stages=stages,
             current_stage=current_stage,
             next_prerequisite=next_prerequisite,
@@ -865,7 +892,8 @@ class GetEngagementStatusUseCase:
             if skillset is None or not skillset.is_implemented:
                 continue
 
-            stages = sorted(skillset.stages, key=lambda s: s.order)
+            pipeline = _resolve_pipeline(skillset, project)
+            stages = sorted(pipeline.stages, key=lambda s: s.order)
             completed_gates: list[str] = []
             next_gate: str | None = None
             current_stage = len(stages) + 1  # past the end = all complete
@@ -886,6 +914,7 @@ class GetEngagementStatusUseCase:
                 ProjectPositionInfo(
                     project_slug=project.slug,
                     skillset=project.skillset,
+                    pipeline=project.pipeline,
                     current_stage=current_stage,
                     total_stages=len(stages),
                     completed_gates=completed_gates,
@@ -940,7 +969,8 @@ class GetNextActionUseCase:
             if skillset is None or not skillset.is_implemented:
                 continue
 
-            stages = sorted(skillset.stages, key=lambda s: s.order)
+            pipeline = _resolve_pipeline(skillset, project)
+            stages = sorted(pipeline.stages, key=lambda s: s.order)
             for stage in stages:
                 gate_exists = self._gate_inspector.exists(
                     request.client,
@@ -1050,18 +1080,27 @@ class RenderSiteUseCase:
 # ---------------------------------------------------------------------------
 
 
-def _skillset_to_info(s: Pipeline) -> SkillsetInfo:
-    return SkillsetInfo(
-        name=s.name,
-        display_name=s.display_name,
-        description=s.description,
-        slug_pattern=s.slug_pattern,
-        is_implemented=s.is_implemented,
-        problem_domain="",
-        deliverables=[],
-        value_proposition="",
-        classification=[],
-        evidence=[],
+def _resolve_pipeline(skillset: Skillset, project: Project) -> Pipeline:
+    """Resolve the pipeline for a project within its skillset."""
+    if project.pipeline:
+        p = skillset.get_pipeline(project.pipeline)
+        if p is None:
+            raise NotFoundError(
+                f"Pipeline not found: {project.pipeline} in skillset {skillset.name}"
+            )
+        return p
+    if len(skillset.pipelines) == 1:
+        return skillset.pipelines[0]
+    raise DomainError(f"Skillset '{skillset.name}' has multiple pipelines, specify one")
+
+
+def _pipeline_to_info(p: Pipeline) -> PipelineInfo:
+    return PipelineInfo(
+        name=p.name,
+        display_name=p.display_name,
+        description=p.description,
+        slug_pattern=p.slug_pattern,
+        is_implemented=p.is_implemented,
         stages=[
             SkillsetStageInfo(
                 order=st.order,
@@ -1070,8 +1109,23 @@ def _skillset_to_info(s: Pipeline) -> SkillsetInfo:
                 prerequisite_gate=st.prerequisite_gate,
                 produces_gate=st.produces_gate,
             )
-            for st in s.stages
+            for st in p.stages
         ],
+    )
+
+
+def _skillset_to_info(s: Skillset) -> SkillsetInfo:
+    return SkillsetInfo(
+        name=s.name,
+        display_name=s.display_name,
+        description=s.description,
+        is_implemented=s.is_implemented,
+        problem_domain=s.problem_domain,
+        deliverables=s.deliverables,
+        value_proposition=s.value_proposition,
+        classification=s.classification,
+        evidence=s.evidence,
+        pipelines=[_pipeline_to_info(p) for p in s.pipelines],
     )
 
 
@@ -1406,8 +1460,9 @@ class GetWipStatusUseCase:
                     if skillset is None or not skillset.is_implemented:
                         continue
 
+                    pipeline = _resolve_pipeline(skillset, project)
                     skillset_names.append(project.skillset)
-                    stages = sorted(skillset.stages, key=lambda s: s.order)
+                    stages = sorted(pipeline.stages, key=lambda s: s.order)
 
                     completed_count = 0
                     next_skill: str | None = None

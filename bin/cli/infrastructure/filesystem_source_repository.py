@@ -16,7 +16,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from practice.repositories import SkillsetRepository
-from practice.bc_discovery import collect_pipelines
+from practice.bc_discovery import collect_skillset_objects
 from practice.entities import SkillsetSource, SourceType
 
 
@@ -73,8 +73,8 @@ class FilesystemSourceRepository:
     # -- Internals ----------------------------------------------------------
 
     def _scan_personal(self) -> list[str]:
-        """Scan personal/skillsets/ for BC packages, returning pipeline names."""
-        skillsets = collect_pipelines(self._repo_root / "personal" / "skillsets")
+        """Scan personal/skillsets/ for BC packages, returning skillset names."""
+        skillsets = collect_skillset_objects(self._repo_root / "personal" / "skillsets")
         return [s.name for s in skillsets]
 
     def _scan_partnerships(self) -> dict[str, list[str]]:
@@ -86,7 +86,7 @@ class FilesystemSourceRepository:
         for subdir in sorted(partnerships_dir.iterdir()):
             if not subdir.is_dir():
                 continue
-            skillsets = collect_pipelines(subdir / "skillsets")
+            skillsets = collect_skillset_objects(subdir / "skillsets")
             if skillsets:
                 result[subdir.name] = [s.name for s in skillsets]
         return result
