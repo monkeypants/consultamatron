@@ -797,3 +797,47 @@ class TestSkillsetList:
         )
         assert result.exit_code == 1
         assert "not found" in result.output.lower()
+
+
+# ---------------------------------------------------------------------------
+# project register --pipeline
+# ---------------------------------------------------------------------------
+
+
+class TestProjectRegisterPipeline:
+    """Register a project with an explicit --pipeline flag."""
+
+    def test_pipeline_shown_in_get(self, run):
+        """Explicit --pipeline stored and visible in project get output."""
+        _init(run)
+        _create_engagement(run)
+        result = run(
+            "project",
+            "register",
+            "--client",
+            CLIENT,
+            "--engagement",
+            ENGAGEMENT,
+            "--slug",
+            "maps-1",
+            "--skillset",
+            "wardley-mapping",
+            "--pipeline",
+            "wardley-mapping",
+            "--scope",
+            "Freight operations",
+        )
+        assert result.exit_code == 0
+
+        result = run(
+            "project",
+            "get",
+            "--client",
+            CLIENT,
+            "--engagement",
+            ENGAGEMENT,
+            "--slug",
+            "maps-1",
+        )
+        assert result.exit_code == 0
+        assert "Pipeline: wardley-mapping" in result.output
