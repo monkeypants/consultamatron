@@ -74,7 +74,7 @@ def rendered_site(tmp_path_factory):
     for skillset in repo.list_all():
         if not skillset.is_implemented:
             continue
-        slug = skillset.slug_pattern.replace("{n}", "1")
+        slug = skillset.pipelines[0].slug_pattern.replace("{n}", "1")
         proj_dir = ws / "engagements" / "strat-1" / slug
         _write(proj_dir / "brief.agreed.md", f"# Brief\n\nMinimal {skillset.name}.")
         container.register_project_usecase.execute(

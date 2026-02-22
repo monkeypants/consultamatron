@@ -276,10 +276,12 @@ class TestFilesystemSourceMultiplePartnerships:
         _write_bc_package(
             tmp_path / "partnerships" / "beta-inc" / "skillsets",
             "beta_audit",
-            [
-                _make_pipeline_def("beta-audit"),
-                _make_pipeline_def("beta-compliance"),
-            ],
+            [_make_pipeline_def("beta-audit")],
+        )
+        _write_bc_package(
+            tmp_path / "partnerships" / "beta-inc" / "skillsets",
+            "beta_compliance",
+            [_make_pipeline_def("beta-compliance")],
         )
         repo = FilesystemSourceRepository(tmp_path, commons_repo)
         source = repo.get("beta-inc")

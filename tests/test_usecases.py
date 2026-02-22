@@ -1076,34 +1076,67 @@ class TestSkillsetRepositoryReturnsSkillsets:
         assert all(isinstance(s, Skillset) for s in all_items)
 
 
+class _StubSkillsetRepo:
+    """Test double with a multi-pipeline skillset."""
+
+    def __init__(self):
+        from tests.conftest import make_pipeline, make_skillset
+
+        self._skillset = make_skillset(
+            name="test-multi",
+            pipelines=[
+                make_pipeline(name="create", slug_pattern="create-{n}"),
+                make_pipeline(name="refine", slug_pattern="refine-{n}"),
+            ],
+        )
+
+    def get(self, name):
+        if name == self._skillset.name:
+            return self._skillset
+        return None
+
+    def list_all(self):
+        return [self._skillset]
+
+
 class TestRegisterProjectWithPipeline:
     """Projects record both skillset and pipeline."""
 
-    def test_register_with_pipeline(self, workspace):
-        _ensure_engagement(workspace)
-        resp = workspace.register_project_usecase.execute(
+    @pytest.fixture
+    def multi_workspace(self, workspace):
+        """Workspace with a multi-pipeline stub skillset repo."""
+        workspace.skillsets = _StubSkillsetRepo()
+        workspace.register_project_usecase._skillsets = workspace.skillsets
+        workspace.get_project_progress_usecase._skillsets = workspace.skillsets
+        workspace.get_next_action_usecase._skillsets = workspace.skillsets
+        workspace.get_engagement_status_usecase._skillsets = workspace.skillsets
+        return workspace
+
+    def test_register_with_pipeline(self, multi_workspace):
+        _ensure_engagement(multi_workspace)
+        resp = multi_workspace.register_project_usecase.execute(
             RegisterProjectRequest(
                 client=CLIENT,
                 engagement=ENGAGEMENT,
-                slug="maps-1",
-                skillset="wardley-mapping",
+                slug="test-1",
+                skillset="test-multi",
                 pipeline="create",
-                scope="Freight operations",
+                scope="Test operations",
             )
         )
         assert resp.pipeline == "create"
-        project = workspace.projects.get(CLIENT, ENGAGEMENT, "maps-1")
+        project = multi_workspace.projects.get(CLIENT, ENGAGEMENT, "test-1")
         assert project.pipeline == "create"
 
-    def test_register_validates_pipeline(self, workspace):
-        _ensure_engagement(workspace)
+    def test_register_validates_pipeline(self, multi_workspace):
+        _ensure_engagement(multi_workspace)
         with pytest.raises(NotFoundError, match="Pipeline not found"):
-            workspace.register_project_usecase.execute(
+            multi_workspace.register_project_usecase.execute(
                 RegisterProjectRequest(
                     client=CLIENT,
                     engagement=ENGAGEMENT,
-                    slug="maps-1",
-                    skillset="wardley-mapping",
+                    slug="test-1",
+                    skillset="test-multi",
                     pipeline="nonexistent-pipeline",
                     scope="Test",
                 )
@@ -1111,40 +1144,79 @@ class TestRegisterProjectWithPipeline:
 
     def test_register_default_single_pipeline(self, workspace):
         """Single-pipeline skillset: omitting pipeline auto-selects it."""
+        from tests.conftest import make_pipeline, make_skillset
+
+        class _SinglePipelineRepo:
+            def __init__(self):
+                self._ss = make_skillset(
+                    name="single-pipe",
+                    pipelines=[make_pipeline(name="only-one")],
+                )
+
+            def get(self, name):
+                return self._ss if name == "single-pipe" else None
+
+            def list_all(self):
+                return [self._ss]
+
+        workspace.skillsets = _SinglePipelineRepo()
+        workspace.register_project_usecase._skillsets = workspace.skillsets
+
         _ensure_engagement(workspace)
         resp = workspace.register_project_usecase.execute(
             RegisterProjectRequest(
                 client=CLIENT,
                 engagement=ENGAGEMENT,
-                slug="maps-1",
-                skillset="wardley-mapping",
-                scope="Freight operations",
+                slug="test-1",
+                skillset="single-pipe",
+                scope="Test",
             )
         )
-        # Should auto-select the only pipeline
-        assert resp.pipeline != ""
+        assert resp.pipeline == "only-one"
 
 
 class TestProgressUsesProjectPipeline:
     """GetProjectProgress resolves stages from the project's pipeline."""
 
     def test_progress_uses_project_pipeline(self, workspace):
+        from tests.conftest import make_pipeline, make_skillset
+
+        class _MultiRepo:
+            def __init__(self):
+                self._ss = make_skillset(
+                    name="test-multi",
+                    pipelines=[
+                        make_pipeline(name="create", slug_pattern="create-{n}"),
+                        make_pipeline(name="refine", slug_pattern="refine-{n}"),
+                    ],
+                )
+
+            def get(self, name):
+                return self._ss if name == "test-multi" else None
+
+            def list_all(self):
+                return [self._ss]
+
+        workspace.skillsets = _MultiRepo()
+        workspace.register_project_usecase._skillsets = workspace.skillsets
+        workspace.get_project_progress_usecase._skillsets = workspace.skillsets
+
         _ensure_engagement(workspace)
         workspace.register_project_usecase.execute(
             RegisterProjectRequest(
                 client=CLIENT,
                 engagement=ENGAGEMENT,
-                slug="maps-1",
-                skillset="wardley-mapping",
+                slug="test-1",
+                skillset="test-multi",
                 pipeline="create",
-                scope="Freight operations",
+                scope="Test",
             )
         )
         resp = workspace.get_project_progress_usecase.execute(
             GetProjectProgressRequest(
                 client=CLIENT,
                 engagement=ENGAGEMENT,
-                project_slug="maps-1",
+                project_slug="test-1",
             )
         )
         assert resp.pipeline == "create"
@@ -1154,15 +1226,37 @@ class TestNextActionUsesPipeline:
     """GetNextAction resolves stages from the project's pipeline."""
 
     def test_next_action_uses_pipeline(self, workspace):
+        from tests.conftest import make_pipeline, make_skillset
+
+        class _MultiRepo:
+            def __init__(self):
+                self._ss = make_skillset(
+                    name="test-multi",
+                    pipelines=[
+                        make_pipeline(name="create", slug_pattern="create-{n}"),
+                        make_pipeline(name="refine", slug_pattern="refine-{n}"),
+                    ],
+                )
+
+            def get(self, name):
+                return self._ss if name == "test-multi" else None
+
+            def list_all(self):
+                return [self._ss]
+
+        workspace.skillsets = _MultiRepo()
+        workspace.register_project_usecase._skillsets = workspace.skillsets
+        workspace.get_next_action_usecase._skillsets = workspace.skillsets
+
         _ensure_engagement(workspace)
         workspace.register_project_usecase.execute(
             RegisterProjectRequest(
                 client=CLIENT,
                 engagement=ENGAGEMENT,
-                slug="maps-1",
-                skillset="wardley-mapping",
+                slug="test-1",
+                skillset="test-multi",
                 pipeline="create",
-                scope="Freight operations",
+                scope="Test",
             )
         )
         resp = workspace.get_next_action_usecase.execute(
@@ -1171,5 +1265,4 @@ class TestNextActionUsesPipeline:
                 engagement=ENGAGEMENT,
             )
         )
-        # The next action must come from the project's pipeline
-        assert resp.project_slug == "maps-1"
+        assert resp.project_slug == "test-1"

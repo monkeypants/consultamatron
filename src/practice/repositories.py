@@ -19,12 +19,12 @@ from practice.entities import (
     Observation,
     ObservationNeed,
     PackFreshness,
-    Pipeline,
     Profile,
     Project,
     ProjectStatus,
     ResearchTopic,
     SkillManifest,
+    Skillset,
     SkillsetSource,
 )
 
@@ -262,19 +262,19 @@ class SkillManifestRepository(Protocol):
 
 @runtime_checkable
 class SkillsetRepository(Protocol):
-    """Read-only repository for pipeline manifests.
+    """Read-only repository for skillset manifests.
 
-    Pipelines are reference data declared in bounded context modules
+    Skillsets are reference data declared in bounded context modules
     at import time. They are never created, updated, or deleted through
     the accounting CLI.
     """
 
-    def get(self, name: str) -> Pipeline | None:
-        """Retrieve a pipeline by name."""
+    def get(self, name: str) -> Skillset | None:
+        """Retrieve a skillset by name."""
         ...
 
-    def list_all(self) -> list[Pipeline]:
-        """List all known pipelines."""
+    def list_all(self) -> list[Skillset]:
+        """List all known skillsets."""
         ...
 
 

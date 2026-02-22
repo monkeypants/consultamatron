@@ -428,7 +428,11 @@ def _format_skillset_list(resp: Any) -> None:
         return
     for s in resp.skillsets:
         status = "implemented" if s.is_implemented else "prospectus"
-        click.echo(f"  {s.name}  {s.display_name}  ({len(s.stages)} stages, {status})")
+        total_stages = sum(len(p.stages) for p in s.pipelines)
+        click.echo(
+            f"  {s.name}  {s.display_name}"
+            f"  ({len(s.pipelines)} pipelines, {total_stages} stages, {status})"
+        )
 
 
 def _format_skillset_show(resp: Any) -> None:
@@ -437,7 +441,6 @@ def _format_skillset_show(resp: Any) -> None:
     click.echo(f"Name:        {s.name}")
     click.echo(f"Display:     {s.display_name}")
     click.echo(f"Description: {s.description}")
-    click.echo(f"Slug:        {s.slug_pattern}")
     click.echo(f"Status:      {status}")
     if s.problem_domain:
         click.echo(f"Domain:      {s.problem_domain}")
@@ -449,9 +452,12 @@ def _format_skillset_show(resp: Any) -> None:
         click.echo(f"Tags:        {', '.join(s.classification)}")
     if s.evidence:
         click.echo(f"Evidence:    {', '.join(s.evidence)}")
-    click.echo(f"Pipeline:    {len(s.stages)} stages")
-    for st in s.stages:
-        click.echo(f"  {st.order}. {st.description} ({st.skill})")
+    for p in s.pipelines:
+        click.echo(f"\nPipeline: {p.name} ({p.display_name})")
+        click.echo(f"  Slug:   {p.slug_pattern}")
+        click.echo(f"  Stages: {len(p.stages)}")
+        for st in p.stages:
+            click.echo(f"    {st.order}. {st.description} ({st.skill})")
 
 
 def _format_prospectus_register(resp: Any) -> None:
