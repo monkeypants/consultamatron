@@ -29,6 +29,7 @@ class ProjectInfo(BaseModel):
     slug: str
     engagement: str
     skillset: str
+    pipeline: str
     status: str
     created: date
     notes: str
@@ -39,6 +40,7 @@ class ProjectInfo(BaseModel):
             slug=p.slug,
             engagement=p.engagement,
             skillset=p.skillset,
+            pipeline=p.pipeline,
             status=p.status.value,
             created=p.created,
             notes=p.notes,

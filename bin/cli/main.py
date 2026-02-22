@@ -111,6 +111,8 @@ def _format_get_project(resp: Any) -> None:
     p = resp.project
     click.echo(f"Slug:     {p.slug}")
     click.echo(f"Skillset: {p.skillset}")
+    if p.pipeline:
+        click.echo(f"Pipeline: {p.pipeline}")
     click.echo(f"Status:   {p.status}")
     click.echo(f"Created:  {p.created}")
     if p.notes:
