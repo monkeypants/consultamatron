@@ -619,6 +619,76 @@ skill.add_command(
 )
 
 
+@skill.group("link")
+def skill_link() -> None:
+    """Manage agent skill symlinks based on skill type."""
+
+
+@skill_link.command("sync")
+@click.option("--dry-run", is_flag=True, default=False, help="Report changes without modifying filesystem.")
+@click.pass_context
+def skill_link_sync(ctx: click.Context, dry_run: bool) -> None:
+    """Synchronise agent skill symlinks.
+
+    Links generic skills into all agent directories.
+    Unlinks pipeline skills from agent directories.
+    Removes broken symlinks.
+
+    Replaces bin/maintain-symlinks.sh.
+    """
+    from bin.cli.usecases import SyncSkillLinksUseCase, SyncSkillLinksRequest
+
+    di = ctx.obj
+    uc = SyncSkillLinksUseCase(di.config.repo_root)
+    resp = uc.execute(SyncSkillLinksRequest(dry_run=dry_run))
+
+    prefix = "[dry-run] " if dry_run else ""
+    for entry in resp.linked:
+        click.echo(f"{prefix}linked   {entry.skill}  ({entry.reason})")
+    for entry in resp.unlinked:
+        click.echo(f"{prefix}unlinked {entry.skill}  ({entry.reason})")
+    for entry in resp.removed:
+        click.echo(f"{prefix}removed  {entry.skill}  ({entry.reason})")
+    for entry in resp.ok:
+        click.echo(f"{prefix}ok       {entry.skill}  ({entry.reason})")
+
+    if not (resp.linked or resp.unlinked or resp.removed or resp.ok):
+        click.echo("No skills found.")
+
+
+@skill_link.command("status")
+@click.pass_context
+def skill_link_status(ctx: click.Context) -> None:
+    """Report current skill link state.
+
+    Shows which skills are linked into agent directories (generic)
+    and which are not (pipeline, accessed through CLI only).
+    """
+    from bin.cli.usecases import GetSkillLinkStatusUseCase, SkillLinkStatusRequest
+
+    di = ctx.obj
+    uc = GetSkillLinkStatusUseCase(di.config.repo_root)
+    resp = uc.execute(SkillLinkStatusRequest())
+
+    if not resp.statuses:
+        click.echo("No skills found.")
+        return
+
+    generic = [s for s in resp.statuses if s.skill_type == "generic"]
+    pipeline = [s for s in resp.statuses if s.skill_type == "pipeline"]
+
+    if generic:
+        click.echo("GENERIC (dyadic control surface):")
+        for s in sorted(generic, key=lambda x: x.skill):
+            linked_label = "linked" if s.linked else "not linked"
+            click.echo(f"  {s.skill:<30}  {linked_label}")
+
+    if pipeline:
+        click.echo("PIPELINE (access via CLI only):")
+        for s in sorted(pipeline, key=lambda x: x.skill):
+            click.echo(f"  {s.skill:<30}  not linked (pipeline)")
+
+
 # ---------------------------------------------------------------------------
 # pantheon (cross-skillset luminary aggregation)
 # ---------------------------------------------------------------------------
