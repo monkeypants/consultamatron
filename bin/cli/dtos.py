@@ -595,6 +595,34 @@ class SourceInfo(BaseModel):
     skillset_names: list[str]
 
 
+# ---------------------------------------------------------------------------
+# Pipeline — browse pipelines within a skillset
+# ---------------------------------------------------------------------------
+
+
+class ListPipelinesRequest(BaseModel):
+    """List pipelines for a skillset."""
+
+    skillset: str = Field(description="Skillset name.")
+
+
+class ListPipelinesResponse(BaseModel):
+    skillset: str
+    pipelines: list[PipelineInfo]
+
+
+class ShowPipelineRequest(BaseModel):
+    """Show details of one pipeline within a skillset."""
+
+    skillset: str = Field(description="Skillset name.")
+    pipeline: str = Field(description="Pipeline name.")
+
+
+class ShowPipelineResponse(BaseModel):
+    skillset: str
+    pipeline: PipelineInfo
+
+
 class ListSourcesRequest(BaseModel):
     """List all installed skillset sources."""
 
