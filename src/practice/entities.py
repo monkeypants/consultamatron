@@ -507,6 +507,22 @@ class FreedomLevel(str, Enum):
     LOW = "low"
 
 
+class SkillType(str, Enum):
+    """Whether a skill is a generic control surface or a pipeline step.
+
+    Generic skills (no ``skillset`` in metadata) are always present in the
+    agent's global context via symlinks — they form the dyadic control
+    surface (``/idea``, ``/review``, etc.).
+
+    Pipeline skills (``skillset`` set in metadata) are accessed only through
+    the CLI narrow waist (``practice skill path --name X``). They are never
+    linked directly into agent directories.
+    """
+
+    GENERIC = "generic"
+    PIPELINE = "pipeline"
+
+
 class SkillMetadata(BaseModel):
     """Metadata block nested inside SKILL.md frontmatter."""
 
@@ -528,6 +544,19 @@ class SkillManifest(BaseModel):
     name: str = Field(max_length=64, pattern=r"^[a-z][a-z0-9]*(-[a-z][a-z0-9]*)*$")
     description: str = Field(min_length=1, max_length=1024)
     metadata: SkillMetadata
+
+    @property
+    def skill_type(self) -> SkillType:
+        """Derive skill type from metadata.
+
+        A skill with ``metadata.skillset`` set is a pipeline skill — it
+        belongs to a bounded context methodology and is accessed through
+        the CLI. A skill without a skillset is generic — always linked
+        into agent directories as a dyadic control surface command.
+        """
+        if self.metadata.skillset is not None:
+            return SkillType.PIPELINE
+        return SkillType.GENERIC
 
 
 # ---------------------------------------------------------------------------
