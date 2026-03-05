@@ -135,7 +135,7 @@ text files.
 Skills are defined at the repository root (`*/SKILL.md`). Symlinks in
 `.claude/skills/`, `.agents/skills/`, `.github/skills/`, and
 `.gemini/skills/` ensure each agent platform discovers them at its
-preferred path. Run `bin/maintain-symlinks.sh` after adding or removing
+preferred path. Run `practice skill link sync` after adding or removing
 skills.
 
 ## Extending the practice
