@@ -866,3 +866,47 @@ class FlushObservationsResponse(BaseModel):
     routed: int
     rejected: int
     flushed: int
+
+
+# ---------------------------------------------------------------------------
+# SkillLinkSync — synchronise agent skill symlinks
+# ---------------------------------------------------------------------------
+
+
+class SyncSkillLinksRequest(BaseModel):
+    """Request to synchronise skill symlinks in agent directories."""
+
+    dry_run: bool = Field(default=False, description="Report changes without modifying filesystem.")
+
+
+class SyncResultEntryInfo(BaseModel):
+    skill: str
+    reason: str = ""
+
+
+class SyncSkillLinksResponse(BaseModel):
+    """Result of a skill link sync operation."""
+
+    linked: list[SyncResultEntryInfo] = []
+    unlinked: list[SyncResultEntryInfo] = []
+    removed: list[SyncResultEntryInfo] = []
+    ok: list[SyncResultEntryInfo] = []
+
+
+# ---------------------------------------------------------------------------
+# SkillLinkStatus — report current link state
+# ---------------------------------------------------------------------------
+
+
+class SkillLinkStatusRequest(BaseModel):
+    """Request current skill link state."""
+
+
+class SkillLinkStatusInfo(BaseModel):
+    skill: str
+    skill_type: str
+    linked: bool
+
+
+class SkillLinkStatusResponse(BaseModel):
+    statuses: list[SkillLinkStatusInfo] = []
