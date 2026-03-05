@@ -495,6 +495,7 @@ class SkillLinkStatus:
 
 
 @runtime_checkable
+@runtime_checkable
 class SkillLinkManager(Protocol):
     """Enforces the generic/pipeline skill type distinction as a protocol.
 
