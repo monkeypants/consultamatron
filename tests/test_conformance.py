@@ -780,27 +780,31 @@ class TestHowtoPages:
     platform and get started without reading the codebase first.
     """
 
-    @pytest.mark.parametrize("filename", [
-        "howto-getting-started.md",
-        "howto-personal-skillset.md",
-        "howto-contribute-to-commons.md",
-        "howto-proprietary-skillsets.md",
-        "howto-hacking-consultamatron.md",
-    ])
+    @pytest.mark.parametrize(
+        "filename",
+        [
+            "howto-getting-started.md",
+            "howto-personal-skillset.md",
+            "howto-contribute-to-commons.md",
+            "howto-proprietary-skillsets.md",
+            "howto-hacking-consultamatron.md",
+        ],
+    )
     def test_howto_page_exists(self, filename):
         """Each required HOWTO page is present in the docs/ knowledge pack."""
         page = _REPO_ROOT / "docs" / filename
-        assert page.is_file(), (
-            f"Missing HOWTO page: docs/{filename}"
-        )
+        assert page.is_file(), f"Missing HOWTO page: docs/{filename}"
 
-    @pytest.mark.parametrize("filename", [
-        "howto-getting-started.md",
-        "howto-personal-skillset.md",
-        "howto-contribute-to-commons.md",
-        "howto-proprietary-skillsets.md",
-        "howto-hacking-consultamatron.md",
-    ])
+    @pytest.mark.parametrize(
+        "filename",
+        [
+            "howto-getting-started.md",
+            "howto-personal-skillset.md",
+            "howto-contribute-to-commons.md",
+            "howto-proprietary-skillsets.md",
+            "howto-hacking-consultamatron.md",
+        ],
+    )
     def test_howto_page_has_content(self, filename):
         """Each HOWTO page has substantive content (at least 500 chars)."""
         page = _REPO_ROOT / "docs" / filename
