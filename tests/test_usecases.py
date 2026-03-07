@@ -1274,9 +1274,7 @@ class TestNextActionIncludesPipeline:
     use-case thread is being progressed — not just which skill to run.
     """
 
-    def test_next_action_includes_pipeline_for_multi_pipeline_skillset(
-        self, workspace
-    ):
+    def test_next_action_includes_pipeline_for_multi_pipeline_skillset(self, workspace):
         from tests.conftest import make_pipeline, make_skillset
 
         class _MultiRepo:
@@ -1361,9 +1359,7 @@ class TestNextActionIncludesPipeline:
                 self._ss = make_skillset(
                     name="wardley-mapping",
                     pipelines=[
-                        make_pipeline(
-                            name="analyse", slug_pattern="analyse-{n}"
-                        ),
+                        make_pipeline(name="analyse", slug_pattern="analyse-{n}"),
                     ],
                 )
 
