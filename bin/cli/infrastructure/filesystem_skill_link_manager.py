@@ -20,7 +20,7 @@ from pydantic import ValidationError
 from practice.bc_discovery import skill_search_dirs
 from practice.entities import SkillManifest, SkillType
 from practice.frontmatter import parse_frontmatter
-from practice.repositories import SkillLinkManager, SkillLinkStatus, SyncResult
+from practice.repositories import SkillLinkStatus, SyncResult
 
 AGENT_SKILL_DIRS = [
     Path(".agents/skills"),

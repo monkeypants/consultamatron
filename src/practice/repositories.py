@@ -24,7 +24,6 @@ from practice.entities import (
     ProjectStatus,
     ResearchTopic,
     SkillManifest,
-    SkillType,
     Skillset,
     SkillsetSource,
 )

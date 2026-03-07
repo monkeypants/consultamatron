@@ -15,6 +15,7 @@ from .conftest import (
     make_pipeline,
     make_project,
     make_prospectus,
+    make_skill_manifest,
     make_skillset,
 )
 
