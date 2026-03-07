@@ -496,6 +496,7 @@ class NextActionRequest(BaseModel):
 class NextActionResponse(BaseModel):
     skill: str | None
     project_slug: str | None
+    pipeline: str | None = None
     reason: str
     nudges: list[str] = []
 
