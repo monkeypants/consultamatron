@@ -1807,9 +1807,18 @@ class SyncSkillLinksUseCase:
         mgr = FilesystemSkillLinkManager(self._repo_root)
         result = mgr.sync(dry_run=request.dry_run)
         return SyncSkillLinksResponse(
-            linked=[SyncResultEntryInfo(skill=e.skill, reason=e.reason) for e in result.linked],
-            unlinked=[SyncResultEntryInfo(skill=e.skill, reason=e.reason) for e in result.unlinked],
-            removed=[SyncResultEntryInfo(skill=e.skill, reason=e.reason) for e in result.removed],
+            linked=[
+                SyncResultEntryInfo(skill=e.skill, reason=e.reason)
+                for e in result.linked
+            ],
+            unlinked=[
+                SyncResultEntryInfo(skill=e.skill, reason=e.reason)
+                for e in result.unlinked
+            ],
+            removed=[
+                SyncResultEntryInfo(skill=e.skill, reason=e.reason)
+                for e in result.removed
+            ],
             ok=[SyncResultEntryInfo(skill=e.skill, reason=e.reason) for e in result.ok],
         )
 

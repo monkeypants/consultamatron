@@ -116,9 +116,7 @@ class TestSkillLinkSyncCommand:
     def test_sync_removes_stale_pipeline_link_and_reports_it(self, isolated_run):
         """skill link sync removes stale links for pipeline skills and reports it."""
         run, repo_root = isolated_run
-        skill_dir = (
-            repo_root / "commons/mp/wm/skillsets/wm/skills/wm-research"
-        )
+        skill_dir = repo_root / "commons/mp/wm/skillsets/wm/skills/wm-research"
         skill_dir.mkdir(parents=True)
         (skill_dir / "SKILL.md").write_text(
             "---\nname: wm-research\ndescription: Research.\n"

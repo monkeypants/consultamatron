@@ -625,7 +625,12 @@ def skill_link() -> None:
 
 
 @skill_link.command("sync")
-@click.option("--dry-run", is_flag=True, default=False, help="Report changes without modifying filesystem.")
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    default=False,
+    help="Report changes without modifying filesystem.",
+)
 @click.pass_context
 def skill_link_sync(ctx: click.Context, dry_run: bool) -> None:
     """Synchronise agent skill symlinks.

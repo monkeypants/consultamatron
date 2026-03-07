@@ -876,7 +876,9 @@ class FlushObservationsResponse(BaseModel):
 class SyncSkillLinksRequest(BaseModel):
     """Request to synchronise skill symlinks in agent directories."""
 
-    dry_run: bool = Field(default=False, description="Report changes without modifying filesystem.")
+    dry_run: bool = Field(
+        default=False, description="Report changes without modifying filesystem."
+    )
 
 
 class SyncResultEntryInfo(BaseModel):

@@ -294,7 +294,7 @@ class TestSyncResult:
         _all_agent_dirs(tmp_path)
 
         uc = SyncSkillLinksUseCase(tmp_path)
-        uc.execute(SyncSkillLinksRequest())   # first run links
+        uc.execute(SyncSkillLinksRequest())  # first run links
         result = uc.execute(SyncSkillLinksRequest())  # second run: already ok
 
         names = {e.skill for e in result.ok}
