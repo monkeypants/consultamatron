@@ -29,7 +29,6 @@ class ProjectInfo(BaseModel):
     slug: str
     engagement: str
     skillset: str
-    pipeline: str
     status: str
     created: date
     notes: str
@@ -40,7 +39,6 @@ class ProjectInfo(BaseModel):
             slug=p.slug,
             engagement=p.engagement,
             skillset=p.skillset,
-            pipeline=p.pipeline,
             status=p.status.value,
             created=p.created,
             notes=p.notes,
@@ -136,7 +134,6 @@ class RegisterProjectRequest(BaseModel):
     engagement: str = Field(description="Engagement slug.")
     slug: str = Field(description="Project slug (e.g. maps-1).")
     skillset: str = Field(description="Skillset name (must match a manifest).")
-    pipeline: str = Field(default="", description="Pipeline name within the skillset.")
     scope: str = Field(description="Project scope description.")
     notes: str = Field(default="", description="Additional notes.")
 
@@ -146,7 +143,6 @@ class RegisterProjectResponse(BaseModel):
     engagement: str
     slug: str
     skillset: str
-    pipeline: str
 
 
 # ---------------------------------------------------------------------------
@@ -313,7 +309,6 @@ class GetProjectProgressResponse(BaseModel):
     client: str
     project_slug: str
     skillset: str
-    pipeline: str
     stages: list[StageProgress]
     current_stage: str | None
     next_prerequisite: str | None
@@ -480,7 +475,6 @@ class ProjectPositionInfo(BaseModel):
 
     project_slug: str
     skillset: str
-    pipeline: str
     current_stage: int
     total_stages: int
     completed_gates: list[str]
@@ -536,26 +530,18 @@ class SkillsetStageInfo(BaseModel):
     produces_gate: str
 
 
-class PipelineInfo(BaseModel):
-    name: str
-    display_name: str
-    description: str
-    slug_pattern: str
-    is_implemented: bool
-    stages: list[SkillsetStageInfo]
-
-
 class SkillsetInfo(BaseModel):
     name: str
     display_name: str
     description: str
+    slug_pattern: str
     is_implemented: bool
     problem_domain: str
     deliverables: list[str]
     value_proposition: str
     classification: list[str]
     evidence: list[str]
-    pipelines: list[PipelineInfo]
+    stages: list[SkillsetStageInfo]
 
 
 class ListSkillsetsRequest(BaseModel):

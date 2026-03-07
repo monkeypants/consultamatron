@@ -275,7 +275,6 @@ def make_project(**overrides) -> Project:
         client=DEFAULT_CLIENT,
         engagement=DEFAULT_ENGAGEMENT,
         skillset="test-skillset",
-        pipeline="",
         status=ProjectStatus.PLANNING,
         created=DEFAULT_DATE,
     )
