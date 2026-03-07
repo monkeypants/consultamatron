@@ -1232,8 +1232,7 @@ class ShowPipelineUseCase:
         pipeline = skillset.get_pipeline(request.pipeline)
         if pipeline is None:
             raise NotFoundError(
-                f"Pipeline not found: {request.pipeline} "
-                f"(skillset: {request.skillset})"
+                f"Pipeline not found: {request.pipeline} (skillset: {request.skillset})"
             )
         return ShowPipelineResponse(
             skillset=skillset.name,

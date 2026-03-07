@@ -29,12 +29,18 @@ def _register(run, slug="maps-1", pipeline="wardley-mapping"):
     return run(
         "project",
         "register",
-        "--client", CLIENT,
-        "--engagement", ENGAGEMENT,
-        "--slug", slug,
-        "--skillset", "wardley-mapping",
-        "--pipeline", pipeline,
-        "--scope", "Freight operations",
+        "--client",
+        CLIENT,
+        "--engagement",
+        ENGAGEMENT,
+        "--slug",
+        slug,
+        "--skillset",
+        "wardley-mapping",
+        "--pipeline",
+        pipeline,
+        "--scope",
+        "Freight operations",
     )
 
 
@@ -68,18 +74,24 @@ class TestPipelineShowCommand:
     def test_pipeline_show_exits_zero(self, run):
         """pipeline show exits 0 for a known pipeline."""
         result = run(
-            "pipeline", "show",
-            "--skillset", "wardley-mapping",
-            "--pipeline", "wardley-mapping",
+            "pipeline",
+            "show",
+            "--skillset",
+            "wardley-mapping",
+            "--pipeline",
+            "wardley-mapping",
         )
         assert result.exit_code == 0, result.output
 
     def test_pipeline_show_displays_stages(self, run):
         """pipeline show includes stage information."""
         result = run(
-            "pipeline", "show",
-            "--skillset", "wardley-mapping",
-            "--pipeline", "wardley-mapping",
+            "pipeline",
+            "show",
+            "--skillset",
+            "wardley-mapping",
+            "--pipeline",
+            "wardley-mapping",
         )
         assert result.exit_code == 0
         # Should contain at least one stage
@@ -88,17 +100,23 @@ class TestPipelineShowCommand:
     def test_pipeline_show_unknown_skillset_exits_one(self, run):
         """pipeline show exits 1 for an unknown skillset."""
         result = run(
-            "pipeline", "show",
-            "--skillset", "no-such-skillset",
-            "--pipeline", "create",
+            "pipeline",
+            "show",
+            "--skillset",
+            "no-such-skillset",
+            "--pipeline",
+            "create",
         )
         assert result.exit_code == 1
 
     def test_pipeline_show_unknown_pipeline_exits_one(self, run):
         """pipeline show exits 1 for an unknown pipeline."""
         result = run(
-            "pipeline", "show",
-            "--skillset", "wardley-mapping",
-            "--pipeline", "no-such-pipeline",
+            "pipeline",
+            "show",
+            "--skillset",
+            "wardley-mapping",
+            "--pipeline",
+            "no-such-pipeline",
         )
         assert result.exit_code == 1
