@@ -30,6 +30,7 @@ from bin.cli.dtos import (
     ListProfilesRequest,
     ListProjectsRequest,
     ListResearchTopicsRequest,
+    ListPipelinesRequest,
     ListSkillsetsRequest,
     ListSourcesRequest,
     GetWipRequest,
@@ -43,6 +44,7 @@ from bin.cli.dtos import (
     RemoveEngagementSourceRequest,
     RenderSiteRequest,
     ShowProfileRequest,
+    ShowPipelineRequest,
     ShowSkillsetRequest,
     ShowSourceRequest,
     SkillPathRequest,
@@ -607,6 +609,64 @@ skill.add_command(
         request_model=SkillPathRequest,
         usecase_attr="skill_path_usecase",
         format_output=_format_skill_path,
+    )
+)
+
+
+# ---------------------------------------------------------------------------
+# pipeline (browse pipelines within a skillset)
+# ---------------------------------------------------------------------------
+
+
+def _format_pipeline_list(resp: Any) -> None:
+    if not resp.pipelines:
+        click.echo(f"No pipelines registered for skillset {resp.skillset!r}.")
+        return
+    click.echo(f"Pipelines for {resp.skillset} ({len(resp.pipelines)}):")
+    for p in resp.pipelines:
+        status = "implemented" if p.is_implemented else "prospectus"
+        click.echo(f"  {p.name:<30}  {status}")
+        if p.description:
+            click.echo(f"    {p.description}")
+
+
+def _format_pipeline_show(resp: Any) -> None:
+    p = resp.pipeline
+    click.echo(f"Pipeline: {p.name} ({resp.skillset})")
+    if p.display_name:
+        click.echo(f"  {p.display_name}")
+    if p.description:
+        click.echo(f"  {p.description}")
+    if p.stages:
+        click.echo(f"  Stages ({len(p.stages)}):")
+        for s in sorted(p.stages, key=lambda st: st.order):
+            click.echo(f"    {s.order}. {s.description} ({s.skill})")
+            if s.gate:
+                click.echo(f"       gate: {s.gate}")
+    else:
+        click.echo("  No stages (prospectus only)")
+
+
+@cli.group()
+def pipeline() -> None:
+    """Browse pipelines within a skillset."""
+
+
+pipeline.add_command(
+    generate_command(
+        name="list",
+        request_model=ListPipelinesRequest,
+        usecase_attr="list_pipelines_usecase",
+        format_output=_format_pipeline_list,
+    )
+)
+
+pipeline.add_command(
+    generate_command(
+        name="show",
+        request_model=ShowPipelineRequest,
+        usecase_attr="show_pipeline_usecase",
+        format_output=_format_pipeline_show,
     )
 )
 

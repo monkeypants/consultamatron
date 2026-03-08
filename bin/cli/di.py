@@ -77,6 +77,8 @@ from bin.cli.usecases import (
     RemoveEngagementSourceUseCase,
     RenderSiteUseCase,
     ShowProfileUseCase,
+    ListPipelinesUseCase,
+    ShowPipelineUseCase,
     ShowSkillsetUseCase,
     ShowSourceUseCase,
     SkillPathUseCase,
@@ -321,6 +323,12 @@ class Container:
             sources=self.sources,
         )
         self.show_skillset_usecase = ShowSkillsetUseCase(
+            skillsets=self.skillsets,
+        )
+        self.list_pipelines_usecase = ListPipelinesUseCase(
+            skillsets=self.skillsets,
+        )
+        self.show_pipeline_usecase = ShowPipelineUseCase(
             skillsets=self.skillsets,
         )
         self.list_sources_usecase = ListSourcesUseCase(

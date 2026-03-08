@@ -41,6 +41,8 @@ from bin.cli.dtos import (
     ListProjectsResponse,
     ListResearchTopicsRequest,
     ListResearchTopicsResponse,
+    ListPipelinesRequest,
+    ListPipelinesResponse,
     ListSkillsetsRequest,
     ListSkillsetsResponse,
     ListSourcesRequest,
@@ -73,6 +75,8 @@ from bin.cli.dtos import (
     ResearchTopicInfo,
     ShowProfileRequest,
     ShowProfileResponse,
+    ShowPipelineRequest,
+    ShowPipelineResponse,
     ShowSkillsetRequest,
     ShowSkillsetResponse,
     ShowSourceRequest,
@@ -1140,6 +1144,48 @@ class ShowSkillsetUseCase:
         if skillset is None:
             raise NotFoundError(f"Skillset not found: {request.name}")
         return ShowSkillsetResponse(skillset=_skillset_to_info(skillset))
+
+
+# ---------------------------------------------------------------------------
+# Pipeline (browse pipelines within a skillset)
+# ---------------------------------------------------------------------------
+
+
+class ListPipelinesUseCase:
+    """List all pipelines for a given skillset."""
+
+    def __init__(self, skillsets: SkillsetRepository) -> None:
+        self._skillsets = skillsets
+
+    def execute(self, request: ListPipelinesRequest) -> ListPipelinesResponse:
+        skillset = self._skillsets.get(request.skillset)
+        if skillset is None:
+            raise NotFoundError(f"Skillset not found: {request.skillset}")
+        return ListPipelinesResponse(
+            skillset=skillset.name,
+            pipelines=[_pipeline_to_info(p) for p in skillset.pipelines],
+        )
+
+
+class ShowPipelineUseCase:
+    """Show details of one pipeline within a skillset."""
+
+    def __init__(self, skillsets: SkillsetRepository) -> None:
+        self._skillsets = skillsets
+
+    def execute(self, request: ShowPipelineRequest) -> ShowPipelineResponse:
+        skillset = self._skillsets.get(request.skillset)
+        if skillset is None:
+            raise NotFoundError(f"Skillset not found: {request.skillset}")
+        pipeline = skillset.get_pipeline(request.pipeline)
+        if pipeline is None:
+            raise NotFoundError(
+                f"Pipeline not found: {request.pipeline} (skillset: {request.skillset})"
+            )
+        return ShowPipelineResponse(
+            skillset=skillset.name,
+            pipeline=_pipeline_to_info(pipeline),
+        )
 
 
 # ---------------------------------------------------------------------------
