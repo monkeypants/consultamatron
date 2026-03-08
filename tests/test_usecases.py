@@ -1049,3 +1049,342 @@ class TestEngagementStatusNudges:
             EngagementStatusRequest(client=CLIENT, engagement=ENGAGEMENT)
         )
         assert isinstance(resp.nudges, list)
+
+
+# ---------------------------------------------------------------------------
+# Multi-pipeline skillset support
+# ---------------------------------------------------------------------------
+
+
+class TestSkillsetRepositoryReturnsSkillsets:
+    """SkillsetRepository must return Skillset entities, not bare Pipelines."""
+
+    def test_repo_get_returns_skillset(self, di):
+        from practice.entities import Skillset
+
+        result = di.skillsets.get("wardley-mapping")
+        assert result is not None
+        assert isinstance(result, Skillset)
+
+    def test_repo_list_all_returns_skillsets(self, di):
+        from practice.entities import Skillset
+
+        all_items = di.skillsets.list_all()
+        assert len(all_items) > 0
+        assert all(isinstance(s, Skillset) for s in all_items)
+
+
+class _StubSkillsetRepo:
+    """Test double with a multi-pipeline skillset."""
+
+    def __init__(self):
+        from tests.conftest import make_pipeline, make_skillset
+
+        self._skillset = make_skillset(
+            name="test-multi",
+            pipelines=[
+                make_pipeline(name="create", slug_pattern="create-{n}"),
+                make_pipeline(name="refine", slug_pattern="refine-{n}"),
+            ],
+        )
+
+    def get(self, name):
+        if name == self._skillset.name:
+            return self._skillset
+        return None
+
+    def list_all(self):
+        return [self._skillset]
+
+
+class TestRegisterProjectWithPipeline:
+    """Projects record both skillset and pipeline."""
+
+    @pytest.fixture
+    def multi_workspace(self, workspace):
+        """Workspace with a multi-pipeline stub skillset repo."""
+        workspace.skillsets = _StubSkillsetRepo()
+        workspace.register_project_usecase._skillsets = workspace.skillsets
+        workspace.get_project_progress_usecase._skillsets = workspace.skillsets
+        workspace.get_next_action_usecase._skillsets = workspace.skillsets
+        workspace.get_engagement_status_usecase._skillsets = workspace.skillsets
+        return workspace
+
+    def test_register_with_pipeline(self, multi_workspace):
+        _ensure_engagement(multi_workspace)
+        resp = multi_workspace.register_project_usecase.execute(
+            RegisterProjectRequest(
+                client=CLIENT,
+                engagement=ENGAGEMENT,
+                slug="test-1",
+                skillset="test-multi",
+                pipeline="create",
+                scope="Test operations",
+            )
+        )
+        assert resp.pipeline == "create"
+        project = multi_workspace.projects.get(CLIENT, ENGAGEMENT, "test-1")
+        assert project.pipeline == "create"
+
+    def test_register_validates_pipeline(self, multi_workspace):
+        _ensure_engagement(multi_workspace)
+        with pytest.raises(NotFoundError, match="Pipeline not found"):
+            multi_workspace.register_project_usecase.execute(
+                RegisterProjectRequest(
+                    client=CLIENT,
+                    engagement=ENGAGEMENT,
+                    slug="test-1",
+                    skillset="test-multi",
+                    pipeline="nonexistent-pipeline",
+                    scope="Test",
+                )
+            )
+
+    def test_register_default_single_pipeline(self, workspace):
+        """Single-pipeline skillset: omitting pipeline auto-selects it."""
+        from tests.conftest import make_pipeline, make_skillset
+
+        class _SinglePipelineRepo:
+            def __init__(self):
+                self._ss = make_skillset(
+                    name="single-pipe",
+                    pipelines=[make_pipeline(name="only-one")],
+                )
+
+            def get(self, name):
+                return self._ss if name == "single-pipe" else None
+
+            def list_all(self):
+                return [self._ss]
+
+        workspace.skillsets = _SinglePipelineRepo()
+        workspace.register_project_usecase._skillsets = workspace.skillsets
+
+        _ensure_engagement(workspace)
+        resp = workspace.register_project_usecase.execute(
+            RegisterProjectRequest(
+                client=CLIENT,
+                engagement=ENGAGEMENT,
+                slug="test-1",
+                skillset="single-pipe",
+                scope="Test",
+            )
+        )
+        assert resp.pipeline == "only-one"
+
+
+class TestProgressUsesProjectPipeline:
+    """GetProjectProgress resolves stages from the project's pipeline."""
+
+    def test_progress_uses_project_pipeline(self, workspace):
+        from tests.conftest import make_pipeline, make_skillset
+
+        class _MultiRepo:
+            def __init__(self):
+                self._ss = make_skillset(
+                    name="test-multi",
+                    pipelines=[
+                        make_pipeline(name="create", slug_pattern="create-{n}"),
+                        make_pipeline(name="refine", slug_pattern="refine-{n}"),
+                    ],
+                )
+
+            def get(self, name):
+                return self._ss if name == "test-multi" else None
+
+            def list_all(self):
+                return [self._ss]
+
+        workspace.skillsets = _MultiRepo()
+        workspace.register_project_usecase._skillsets = workspace.skillsets
+        workspace.get_project_progress_usecase._skillsets = workspace.skillsets
+
+        _ensure_engagement(workspace)
+        workspace.register_project_usecase.execute(
+            RegisterProjectRequest(
+                client=CLIENT,
+                engagement=ENGAGEMENT,
+                slug="test-1",
+                skillset="test-multi",
+                pipeline="create",
+                scope="Test",
+            )
+        )
+        resp = workspace.get_project_progress_usecase.execute(
+            GetProjectProgressRequest(
+                client=CLIENT,
+                engagement=ENGAGEMENT,
+                project_slug="test-1",
+            )
+        )
+        assert resp.pipeline == "create"
+
+
+class TestNextActionUsesPipeline:
+    """GetNextAction resolves stages from the project's pipeline."""
+
+    def test_next_action_uses_pipeline(self, workspace):
+        from tests.conftest import make_pipeline, make_skillset
+
+        class _MultiRepo:
+            def __init__(self):
+                self._ss = make_skillset(
+                    name="test-multi",
+                    pipelines=[
+                        make_pipeline(name="create", slug_pattern="create-{n}"),
+                        make_pipeline(name="refine", slug_pattern="refine-{n}"),
+                    ],
+                )
+
+            def get(self, name):
+                return self._ss if name == "test-multi" else None
+
+            def list_all(self):
+                return [self._ss]
+
+        workspace.skillsets = _MultiRepo()
+        workspace.register_project_usecase._skillsets = workspace.skillsets
+        workspace.get_next_action_usecase._skillsets = workspace.skillsets
+
+        _ensure_engagement(workspace)
+        workspace.register_project_usecase.execute(
+            RegisterProjectRequest(
+                client=CLIENT,
+                engagement=ENGAGEMENT,
+                slug="test-1",
+                skillset="test-multi",
+                pipeline="create",
+                scope="Test",
+            )
+        )
+        resp = workspace.get_next_action_usecase.execute(
+            NextActionRequest(
+                client=CLIENT,
+                engagement=ENGAGEMENT,
+            )
+        )
+        assert resp.project_slug == "test-1"
+
+
+class TestNextActionIncludesPipeline:
+    """GetNextAction response includes the resolved pipeline name.
+
+    When a project is registered against a named pipeline, the next-action
+    response should surface the pipeline slug so the operator knows which
+    use-case thread is being progressed — not just which skill to run.
+    """
+
+    def test_next_action_includes_pipeline_for_multi_pipeline_skillset(self, workspace):
+        from tests.conftest import make_pipeline, make_skillset
+
+        class _MultiRepo:
+            def __init__(self):
+                self._ss = make_skillset(
+                    name="wardley-mapping",
+                    pipelines=[
+                        make_pipeline(name="create", slug_pattern="create-{n}"),
+                        make_pipeline(name="refine", slug_pattern="refine-{n}"),
+                    ],
+                )
+
+            def get(self, name):
+                return self._ss if name == "wardley-mapping" else None
+
+            def list_all(self):
+                return [self._ss]
+
+        workspace.skillsets = _MultiRepo()
+        workspace.register_project_usecase._skillsets = workspace.skillsets
+        workspace.get_next_action_usecase._skillsets = workspace.skillsets
+
+        _ensure_engagement(workspace)
+        workspace.register_project_usecase.execute(
+            RegisterProjectRequest(
+                client=CLIENT,
+                engagement=ENGAGEMENT,
+                slug="wm-refine-1",
+                skillset="wardley-mapping",
+                pipeline="refine",
+                scope="Refine the map with customer feedback",
+            )
+        )
+        resp = workspace.get_next_action_usecase.execute(
+            NextActionRequest(client=CLIENT, engagement=ENGAGEMENT)
+        )
+        assert resp.pipeline == "refine"
+
+    def test_next_action_includes_pipeline_for_single_pipeline_skillset(
+        self, workspace
+    ):
+        from tests.conftest import make_pipeline, make_skillset
+
+        class _SingleRepo:
+            def __init__(self):
+                self._ss = make_skillset(
+                    name="business-model-canvas",
+                    pipelines=[make_pipeline(name="create", slug_pattern="bmc-{n}")],
+                )
+
+            def get(self, name):
+                return self._ss if name == "business-model-canvas" else None
+
+            def list_all(self):
+                return [self._ss]
+
+        workspace.skillsets = _SingleRepo()
+        workspace.register_project_usecase._skillsets = workspace.skillsets
+        workspace.get_next_action_usecase._skillsets = workspace.skillsets
+
+        _ensure_engagement(workspace)
+        workspace.register_project_usecase.execute(
+            RegisterProjectRequest(
+                client=CLIENT,
+                engagement=ENGAGEMENT,
+                slug="bmc-1",
+                skillset="business-model-canvas",
+                pipeline="create",
+                scope="Map the business model",
+            )
+        )
+        resp = workspace.get_next_action_usecase.execute(
+            NextActionRequest(client=CLIENT, engagement=ENGAGEMENT)
+        )
+        assert resp.pipeline == "create"
+
+    def test_next_action_reason_names_the_pipeline(self, workspace):
+        from tests.conftest import make_pipeline, make_skillset
+
+        class _Repo:
+            def __init__(self):
+                self._ss = make_skillset(
+                    name="wardley-mapping",
+                    pipelines=[
+                        make_pipeline(name="analyse", slug_pattern="analyse-{n}"),
+                    ],
+                )
+
+            def get(self, name):
+                return self._ss if name == "wardley-mapping" else None
+
+            def list_all(self):
+                return [self._ss]
+
+        workspace.skillsets = _Repo()
+        workspace.register_project_usecase._skillsets = workspace.skillsets
+        workspace.get_next_action_usecase._skillsets = workspace.skillsets
+
+        _ensure_engagement(workspace)
+        workspace.register_project_usecase.execute(
+            RegisterProjectRequest(
+                client=CLIENT,
+                engagement=ENGAGEMENT,
+                slug="wm-analyse-1",
+                skillset="wardley-mapping",
+                pipeline="analyse",
+                scope="Perform strategic analysis",
+            )
+        )
+        resp = workspace.get_next_action_usecase.execute(
+            NextActionRequest(client=CLIENT, engagement=ENGAGEMENT)
+        )
+        assert "analyse" in resp.reason

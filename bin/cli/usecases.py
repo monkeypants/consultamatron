@@ -966,9 +966,10 @@ class GetNextActionUseCase:
                     return NextActionResponse(
                         skill=None,
                         project_slug=project.slug,
+                        pipeline=pipeline.name,
                         reason=(
                             f"Blocked: prerequisite {stage.prerequisite_gate} "
-                            f"missing for {project.slug}"
+                            f"missing for {project.slug} ({pipeline.name})"
                         ),
                         nudges=nudges,
                     )
@@ -976,8 +977,9 @@ class GetNextActionUseCase:
                 return NextActionResponse(
                     skill=stage.skill,
                     project_slug=project.slug,
+                    pipeline=pipeline.name,
                     reason=(
-                        f"Run {stage.skill} for {project.slug}"
+                        f"Run {stage.skill} for {project.slug} [{pipeline.name}]"
                         + (
                             f" (prerequisite {stage.prerequisite_gate} exists)"
                             if stage.prerequisite_gate
