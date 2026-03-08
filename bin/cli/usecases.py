@@ -81,6 +81,12 @@ from bin.cli.dtos import (
     ShowSkillsetResponse,
     ShowSourceRequest,
     ShowSourceResponse,
+    SkillLinkStatusRequest,
+    SkillLinkStatusResponse,
+    SkillLinkStatusInfo,
+    SyncSkillLinksRequest,
+    SyncSkillLinksResponse,
+    SyncResultEntryInfo,
     SkillPathRequest,
     SkillPathResponse,
     SkillsetInfo,
@@ -1767,4 +1773,74 @@ class FlushObservationsUseCase:
 
         return FlushObservationsResponse(
             routed=routed, rejected=rejected, flushed=flushed
+        )
+
+
+# ---------------------------------------------------------------------------
+# SyncSkillLinks — synchronise agent skill symlinks
+# ---------------------------------------------------------------------------
+
+
+class SyncSkillLinksUseCase:
+    """Synchronise agent skill symlinks based on skill type.
+
+    Generic skills (no skillset in metadata) are linked into all agent
+    directories. Pipeline skills (skillset set) are unlinked. Broken
+    symlinks are removed.
+    """
+
+    def __init__(self, repo_root: Path) -> None:
+        self._repo_root = repo_root
+
+    def execute(self, request: SyncSkillLinksRequest) -> SyncSkillLinksResponse:
+        from bin.cli.infrastructure.filesystem_skill_link_manager import (
+            FilesystemSkillLinkManager,
+        )
+
+        mgr = FilesystemSkillLinkManager(self._repo_root)
+        result = mgr.sync(dry_run=request.dry_run)
+        return SyncSkillLinksResponse(
+            linked=[
+                SyncResultEntryInfo(skill=e.skill, reason=e.reason)
+                for e in result.linked
+            ],
+            unlinked=[
+                SyncResultEntryInfo(skill=e.skill, reason=e.reason)
+                for e in result.unlinked
+            ],
+            removed=[
+                SyncResultEntryInfo(skill=e.skill, reason=e.reason)
+                for e in result.removed
+            ],
+            ok=[SyncResultEntryInfo(skill=e.skill, reason=e.reason) for e in result.ok],
+        )
+
+
+# ---------------------------------------------------------------------------
+# GetSkillLinkStatus — report current skill link state
+# ---------------------------------------------------------------------------
+
+
+class GetSkillLinkStatusUseCase:
+    """Report current link state for all discovered skills."""
+
+    def __init__(self, repo_root: Path) -> None:
+        self._repo_root = repo_root
+
+    def execute(self, request: SkillLinkStatusRequest) -> SkillLinkStatusResponse:
+        from bin.cli.infrastructure.filesystem_skill_link_manager import (
+            FilesystemSkillLinkManager,
+        )
+
+        mgr = FilesystemSkillLinkManager(self._repo_root)
+        statuses = mgr.status()
+        return SkillLinkStatusResponse(
+            statuses=[
+                SkillLinkStatusInfo(
+                    skill=s.skill,
+                    skill_type=s.skill_type,
+                    linked=s.linked,
+                )
+                for s in statuses
+            ]
         )

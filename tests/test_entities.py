@@ -15,6 +15,7 @@ from .conftest import (
     make_pipeline,
     make_project,
     make_prospectus,
+    make_skill_manifest,
     make_skillset,
 )
 
@@ -126,3 +127,43 @@ class TestEngagementStatus:
             visited.append(nxt)
             status = nxt
         assert len(visited) == 4
+
+
+# ---------------------------------------------------------------------------
+# SkillType — generic vs pipeline classification
+# ---------------------------------------------------------------------------
+
+
+class TestSkillType:
+    """SkillManifest.skill_type derives from metadata.skillset presence.
+
+    A skill with no skillset in its metadata is a generic skill: always
+    in agent context, available as a dyadic control surface command.
+    A skill with a skillset is a pipeline skill: accessed only through
+    the CLI, never linked directly into agent directories.
+    """
+
+    def test_generic_skill_has_no_skillset(self):
+        from practice.entities import SkillType
+
+        manifest = make_skill_manifest()  # no skillset in metadata
+        assert manifest.skill_type == SkillType.GENERIC
+
+    def test_pipeline_skill_has_skillset(self):
+        from practice.entities import SkillType
+
+        manifest = make_skill_manifest(
+            metadata=dict(
+                author="monkeypants",
+                version="0.1",
+                freedom="medium",
+                skillset="wardley-mapping",
+            )
+        )
+        assert manifest.skill_type == SkillType.PIPELINE
+
+    def test_skill_type_enum_values(self):
+        from practice.entities import SkillType
+
+        assert SkillType.GENERIC == "generic"
+        assert SkillType.PIPELINE == "pipeline"

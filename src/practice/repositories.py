@@ -438,3 +438,79 @@ class ResearchTopicRepository(Protocol):
     def exists(self, client: str, filename: str) -> bool:
         """Check whether a research topic exists for this filename."""
         ...
+
+
+# ---------------------------------------------------------------------------
+# Skill link management (generic/pipeline enforcement)
+# ---------------------------------------------------------------------------
+
+
+class SyncResultEntry:
+    """One entry in a SyncResult: a skill name and what action was taken."""
+
+    def __init__(self, skill: str, reason: str = "") -> None:
+        self.skill = skill
+        self.reason = reason
+
+    def __repr__(self) -> str:  # pragma: no cover
+        return f"SyncResultEntry(skill={self.skill!r}, reason={self.reason!r})"
+
+
+class SyncResult:
+    """Result of a skill link sync operation."""
+
+    def __init__(self) -> None:
+        self.linked: list[SyncResultEntry] = []
+        self.unlinked: list[SyncResultEntry] = []
+        self.removed: list[SyncResultEntry] = []
+        self.ok: list[SyncResultEntry] = []
+
+    def add_linked(self, skill: str, reason: str = "") -> None:
+        self.linked.append(SyncResultEntry(skill, reason))
+
+    def add_unlinked(self, skill: str, reason: str = "") -> None:
+        self.unlinked.append(SyncResultEntry(skill, reason))
+
+    def add_removed(self, skill: str, reason: str = "") -> None:
+        self.removed.append(SyncResultEntry(skill, reason))
+
+    def add_ok(self, skill: str, reason: str = "") -> None:
+        self.ok.append(SyncResultEntry(skill, reason))
+
+
+class SkillLinkStatus:
+    """Current link state for one skill."""
+
+    def __init__(self, skill: str, skill_type: str, linked: bool) -> None:
+        self.skill = skill
+        self.skill_type = skill_type
+        self.linked = linked
+
+    def __repr__(self) -> str:  # pragma: no cover
+        return (
+            f"SkillLinkStatus(skill={self.skill!r}, "
+            f"skill_type={self.skill_type!r}, linked={self.linked!r})"
+        )
+
+
+@runtime_checkable
+@runtime_checkable
+class SkillLinkManager(Protocol):
+    """Enforces the generic/pipeline skill type distinction as a protocol.
+
+    Creates symlinks for generic skills in all agent directories.
+    Removes symlinks for pipeline skills. Removes stale and broken links.
+    """
+
+    def sync(self, dry_run: bool = False) -> SyncResult:
+        """Synchronise agent skill symlinks based on skill type.
+
+        Links generic skills, unlinks pipeline skills, removes stale/broken
+        links. When ``dry_run`` is True, reports changes without modifying
+        the filesystem.
+        """
+        ...
+
+    def status(self) -> list[SkillLinkStatus]:
+        """Report current link state for all discovered skills."""
+        ...

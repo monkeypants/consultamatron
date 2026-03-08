@@ -514,7 +514,7 @@ class TestSkillFileConformance:
         skills_dir = _REPO_ROOT / ".claude" / "skills"
         if not skills_dir.is_dir() or not any(skills_dir.iterdir()):
             pytest.skip(
-                "No .claude/skills/ symlinks (regenerate with maintain-symlinks.sh)"
+                "No .claude/skills/ symlinks (regenerate with: practice skill link sync)"
             )
         skill_dir = skills_dir / skill_name
         assert skill_dir.exists(), f"No .claude/skills/{skill_name} directory/symlink"
@@ -766,4 +766,59 @@ class TestNoCrossBCImports:
                 )
         assert not violations, f"{bc_name} imports from other BCs:\n" + "\n".join(
             violations
+        )
+
+
+@pytest.mark.doctrine
+class TestSkillLinkInvariants:
+    """Agent skill directories obey the generic/pipeline distinction.
+
+    Generic skills (no skillset in metadata) must be present in agent
+    skill directories. Pipeline skills (skillset set) must not appear
+    in agent skill directories. This is a structural protocol enforced
+    by ``practice skill link sync``.
+    """
+
+    def test_no_pipeline_skills_in_agent_dirs(self):
+        """Agent directories contain no pipeline skill symlinks.
+
+        If this fails, run: practice skill link sync
+        """
+        from practice.entities import SkillManifest, SkillType
+        from practice.frontmatter import parse_frontmatter
+        from pydantic import ValidationError
+
+        agent_dirs = [
+            _REPO_ROOT / ".claude" / "skills",
+            _REPO_ROOT / ".agents" / "skills",
+            _REPO_ROOT / ".gemini" / "skills",
+            _REPO_ROOT / ".github" / "skills",
+        ]
+
+        violations = []
+        for agent_dir in agent_dirs:
+            if not agent_dir.is_dir():
+                continue
+            for link in agent_dir.iterdir():
+                if not link.is_symlink():
+                    continue
+                skill_md = link / "SKILL.md"
+                if not skill_md.is_file():
+                    continue
+                fm = parse_frontmatter(skill_md)
+                if not fm:
+                    continue
+                try:
+                    manifest = SkillManifest.model_validate(fm)
+                except (ValidationError, TypeError):
+                    continue
+                if manifest.skill_type == SkillType.PIPELINE:
+                    violations.append(
+                        f"  {agent_dir.name}/skills/{link.name} "
+                        f"(pipeline skill, skillset={manifest.metadata.skillset!r})"
+                    )
+
+        assert not violations, (
+            "Pipeline skills found in agent directories "
+            "(run: practice skill link sync):\n" + "\n".join(violations)
         )
